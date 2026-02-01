@@ -122,8 +122,12 @@ The skill contains the full workflow knowledge. The distinction between `/irf` a
 **When to Use**: Before implementation - when defining what to build
 
 **Key Capabilities**:
+- Plan interview (request → plan.md)
+- Plan consult (gap detection + edits)
+- Plan review (high-accuracy validation)
+- Plan revision (apply feedback)
 - Seed capture (idea → structured artifacts)
-- Backlog generation (seed → small tickets)
+- Backlog generation (seed/baseline/plan → small tickets)
 - Research spikes (sequential or parallel)
 - Baseline capture (brownfield analysis)
 - Follow-up ticket creation
@@ -135,6 +139,10 @@ The skill contains the full workflow knowledge. The distinction between `/irf` a
 **Command Mapping**:
 | Command | Model | Skill | Notes |
 |---------|-------|-------|-------|
+| `/irf-plan` | `gpt-5.1-codex-mini` | `irf-planning` | Create plan document |
+| `/irf-plan-consult` | `gpt-5.1-codex-mini` | `irf-planning` | Gap detection + edits |
+| `/irf-plan-revise` | `gpt-5.1-codex-mini` | `irf-planning` | Apply feedback |
+| `/irf-plan-review` | `gpt-5.1-codex-mini` | `irf-planning` | Validate plan |
 | `/irf-seed` | `gpt-5.1-codex-mini` | `irf-planning` | Lite version recommended |
 | `/irf-backlog` | `gpt-5.1-codex-mini` | `irf-planning` | Lite version recommended |
 | `/irf-spike` | `gpt-5.1-codex-mini` | `irf-planning` | With --parallel flag support |

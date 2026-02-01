@@ -11,20 +11,25 @@ This refactoring transforms pi-tk-workflow from a command-heavy architecture to 
 | Skill | Purpose | Lines | Key Procedures |
 |-------|---------|-------|----------------|
 | `irf-workflow` | Core IRF implementation cycle | ~300 | Re-anchor, Research, Implement, Review, Fix, Close, Ralph Integration |
-| `irf-planning` | Research & planning activities | ~350 | Seed Capture, Backlog Generation, Research Spike, Baseline, Follow-ups, OpenSpec Bridge |
+| `irf-planning` | Research & planning activities | ~350 | Plan Interview, Plan Consult, Plan Review, Plan Revision, Seed Capture, Backlog Generation, Research Spike, Baseline, Follow-ups, OpenSpec Bridge |
 | `irf-config` | Setup & maintenance | ~200 | Verify Setup, Sync Models, Generate Aliases, Verify MCP |
 | `ralph` | Autonomous loop orchestration | ~250 | Initialize, Start Loop, Extract Lessons, Update Progress, Prune |
 
 **Total skill content: ~1100 lines** of dense, reusable expertise.
 
-### 10 Thin Command Wrappers (in `prompts/*-new.md`)
+### 15 Thin Command Wrappers (in `prompts/*-new.md`)
 
 | Command | Model | Skill | Lines |
 |---------|-------|-------|-------|
 | `/irf` | Kimi-K2.5 | irf-workflow | ~70 |
 | `/irf-lite` | Kimi-K2.5 | irf-workflow | ~75 |
+| `/irf-plan` | GPT-5.1-mini | irf-planning | ~55 |
+| `/irf-plan-consult` | GPT-5.1-mini | irf-planning | ~55 |
+| `/irf-plan-revise` | GPT-5.1-mini | irf-planning | ~55 |
+| `/irf-plan-review` | GPT-5.1-mini | irf-planning | ~55 |
 | `/irf-seed` | GPT-5.1-mini | irf-planning | ~50 |
 | `/irf-backlog` | GPT-5.1-mini | irf-planning | ~55 |
+| `/irf-backlog-ls` | GPT-5.1-mini | irf-planning | ~40 |
 | `/irf-spike` | GPT-5.1-mini | irf-planning | ~70 |
 | `/irf-baseline` | GPT-5.1-mini | irf-planning | ~55 |
 | `/irf-followups` | GPT-5.1-mini | irf-planning | ~65 |
@@ -32,7 +37,7 @@ This refactoring transforms pi-tk-workflow from a command-heavy architecture to 
 | `/irf-sync` | GLM-4.7 | irf-config | ~85 |
 | `/ralph-start` | (current) | ralph | ~80 |
 
-**Total command content: ~625 lines** of thin wrappers (vs ~12,000 lines in original prompts).
+**Total command content: ~885 lines** of thin wrappers (vs ~12,000 lines in original prompts).
 
 ## Architecture Comparison
 

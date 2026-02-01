@@ -57,11 +57,16 @@ skills/                      # Domain expertise (4 files)
 ├── irf-config/SKILL.md      # Setup & sync
 └── ralph/SKILL.md           # Autonomous loop
 
-prompts/                     # Thin wrappers (11 files)
+prompts/                     # Thin wrappers (15 files)
 ├── irf.md                   # model: Kimi-K2.5, skill: irf-workflow
 ├── irf-lite.md              # model: Kimi-K2.5, skill: irf-workflow
+├── irf-plan.md              # model: codex-mini, skill: irf-planning
+├── irf-plan-consult.md      # model: codex-mini, skill: irf-planning
+├── irf-plan-revise.md       # model: codex-mini, skill: irf-planning
+├── irf-plan-review.md       # model: codex-mini, skill: irf-planning
 ├── irf-seed.md              # model: codex-mini, skill: irf-planning
 ├── irf-backlog.md           # model: codex-mini, skill: irf-planning
+├── irf-backlog-ls.md        # model: codex-mini, skill: irf-planning
 ├── irf-spike.md             # model: codex-mini, skill: irf-planning
 ├── irf-baseline.md          # model: codex-mini, skill: irf-planning
 ├── irf-followups.md         # model: codex-mini, skill: irf-planning
@@ -165,8 +170,13 @@ To use new skill-based commands:
 |---------|-------|-------|-------|
 | `/irf` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Full subagent workflow |
 | `/irf-lite` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Model-switch workflow (recommended) |
+| `/irf-plan` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Create plan document |
+| `/irf-plan-consult` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Gap detection + edits |
+| `/irf-plan-revise` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Apply plan feedback |
+| `/irf-plan-review` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Validate plan |
 | `/irf-seed` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Capture ideas |
 | `/irf-backlog` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Create tickets |
+| `/irf-backlog-ls` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | List backlog status |
 | `/irf-spike` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Research topic |
 | `/irf-baseline` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Document codebase |
 | `/irf-followups` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | From reviews |
@@ -179,10 +189,12 @@ To use new skill-based commands:
 With the extension, commands show skill and model in autocomplete:
 
 ```
-/irf-lite        Implement ticket [irf-workflow +Kimi-K2.5] (user)
-/irf-seed        Capture idea [irf-planning +codex-mini] (user)
-/irf-sync        Sync config [irf-config +GLM-4.7] (user)
-/ralph-start     Autonomous loop [ralph] (user)
+/irf-lite         Implement ticket [irf-workflow +Kimi-K2.5] (user)
+/irf-plan         Create plan [irf-planning +codex-mini] (user)
+/irf-seed         Capture idea [irf-planning +codex-mini] (user)
+/irf-backlog-ls   List backlogs [irf-planning +codex-mini] (user)
+/irf-sync         Sync config [irf-config +GLM-4.7] (user)
+/ralph-start      Autonomous loop [ralph] (user)
 ```
 
 ## Skill Content Overview

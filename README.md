@@ -29,7 +29,8 @@ prompts/                        # Command entry points (thin wrappers)
   irf.md                        # Full workflow with subagents
   irf-lite.md                   # Recommended - uses model-switch
   irf-seed.md                   # Capture ideas into seed artifacts
-  irf-backlog.md                # Create tickets from seeds
+  irf-backlog.md                # Create tickets from seeds or baselines
+  irf-backlog-ls.md             # List backlog status and tickets
   irf-spike.md                  # Research spike
   irf-baseline.md               # Capture project baseline
   irf-followups.md              # Create tickets from review warnings
@@ -171,12 +172,17 @@ Installs into:
 ### Planning Workflows
 
 ```bash
-/irf-seed <idea>                  # Capture idea into seed artifacts
-/irf-backlog <seed-path>          # Create tickets from seed
-/irf-spike <topic> [--parallel]   # Research spike
-/irf-baseline [focus]             # Capture brownfield status quo
-/irf-followups <review-path>      # Create follow-up tickets
-/irf-from-openspec <change-id>    # Bridge from OpenSpec
+/irf-plan <request>               # Create a plan document
+/irf-plan-consult <plan-id>        # Gap detection + edits in plan
+/irf-plan-revise <plan-id>         # Apply feedback to plan
+/irf-plan-review <plan-id>         # Validate plan (use --high-accuracy)
+/irf-seed <idea>                   # Capture idea into seed artifacts
+/irf-backlog <seed-baseline-plan>  # Create tickets from seed/baseline/plan
+/irf-backlog-ls [topic]            # List backlog status and tickets
+/irf-spike <topic> [--parallel]    # Research spike
+/irf-baseline [focus]              # Capture brownfield status quo
+/irf-followups <review-path>       # Create follow-up tickets
+/irf-from-openspec <change-id>     # Bridge from OpenSpec
 ```
 
 ### Configuration
@@ -207,9 +213,10 @@ Installs into:
 ### Commands
 
 ```bash
-./bin/irf setup   # Interactive install + extensions + MCP
-./bin/irf sync    # Sync models from config into agent files
-./bin/irf doctor  # Preflight checks for tools and extensions
+./bin/irf setup       # Interactive install + extensions + MCP
+./bin/irf sync        # Sync models from config into agent files
+./bin/irf doctor      # Preflight checks for tools and extensions
+./bin/irf backlog-ls  # List backlog status and tickets
 ```
 
 ### Ralph Loop Commands
@@ -308,12 +315,12 @@ Works standalone or in a Ralph loop—no configuration needed.
 
 ### Small, Self-Contained Tickets
 
-Planning workflows (`/irf-backlog`, `/irf-from-openspec`) create:
+Planning workflows (`/irf-backlog`, `/irf-from-openspec`) create tickets from seeds, baselines, or specs:
 
 - **30 lines or less** per ticket description
 - **1-2 hours** estimated work
 - **Self-contained context** - no need to load full planning docs
-- **Summarized constraints** from original specs
+- **Summarized constraints** from seeds, baselines, or specs
 
 ---
 
@@ -402,7 +409,7 @@ Core implementation workflow. Contains procedures for:
 
 Research & planning activities. Contains procedures for:
 - Seed capture (idea → artifacts)
-- Backlog generation (seed → tickets)
+- Backlog generation (seed/baseline → tickets)
 - Research spike (sequential/parallel)
 - Baseline capture (project analysis)
 - Follow-up creation (review → tickets)

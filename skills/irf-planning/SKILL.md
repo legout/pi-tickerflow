@@ -11,6 +11,7 @@ Expertise for upstream planning activities - everything that happens BEFORE impl
 
 - Capturing a new feature idea
 - Researching a technical topic
+- Creating and validating implementation plans
 - Creating implementation tickets from seeds/specs
 - Analyzing an existing codebase (baseline)
 - Creating follow-up tickets from reviews
@@ -32,6 +33,162 @@ Read workflow config (project overrides global):
 Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
 
 ## Execution Procedures
+
+### Procedure: Plan Interview (Planner)
+
+**Purpose**: Create a single plan document from a project/feature/refactor request.
+
+**Input**: Request description (from user)
+
+**Steps**:
+
+1. **Create topic ID**:
+   - If input already starts with `plan-`, use it as topic-id
+   - Otherwise slugify request (lowercase, spaces → dashes, max 40 chars)
+   - Prefix with `plan-`
+   - Example: "Refactor auth flow" → `plan-refactor-auth-flow`
+
+2. **Create directory**:
+   ```bash
+   mkdir -p "{knowledgeDir}/topics/{topic-id}"
+   ```
+
+3. **Write `plan.md`** (single source of truth):
+   ```markdown
+   ---
+   id: {topic-id}
+   status: draft
+   last_updated: YYYY-MM-DD
+   ---
+
+   # Plan: <title>
+
+   ## Summary
+   <1–2 paragraphs>
+
+   ## Requirements
+   - ...
+
+   ## Constraints
+   - ...
+
+   ## Assumptions
+   - ...
+
+   ## Risks & Gaps
+   - ...
+
+   ## Work Plan (phases / tickets)
+   1. ...
+
+   ## Acceptance Criteria
+   - [ ] ...
+
+   ## Open Questions
+   - ...
+
+   ---
+
+   ## Consultant Notes (Metis)
+   - YYYY-MM-DD: <gap detection / ambiguity flags>
+
+   ## Reviewer Notes (Momus)
+   - YYYY-MM-DD: PASS|FAIL
+     - Blockers:
+       - ...
+     - Required changes:
+       - ...
+   ```
+
+4. **Update index.json**:
+   ```json
+   {
+     "id": "{topic-id}",
+     "title": "{plan title}",
+     "keywords": ["keyword1"],
+     "overview": "topics/{topic-id}/plan.md",
+     "sources": "topics/{topic-id}/plan.md"
+   }
+   ```
+
+**Output**: `plan.md` stored in topic directory, status = `draft`
+
+---
+
+### Procedure: Plan Consultant (Gap Detection)
+
+**Purpose**: Identify missing requirements, ambiguities, risks, or over-engineering.
+
+**Input**: Plan topic-id or path
+
+**Steps**:
+
+1. **Locate plan directory**:
+   - If path provided: use directly
+   - If topic-id: `{knowledgeDir}/topics/{topic-id}/`
+   - If no input: auto-locate if exactly one `plan-*` exists; otherwise ask
+
+2. **Read `plan.md`**.
+
+3. **Update the plan directly**:
+   - Add missing requirements, constraints, risks, or acceptance criteria
+   - Clarify ambiguous items
+   - Keep structure intact
+
+4. **Append Consultant Notes** with findings and changes.
+
+5. **Update frontmatter**: set `status: consulted`, update `last_updated`.
+
+**Output**: Updated `plan.md`
+
+---
+
+### Procedure: Plan Revision
+
+**Purpose**: Apply consultant/reviewer feedback to the plan.
+
+**Input**: Plan topic-id or path
+
+**Steps**:
+
+1. Locate plan directory (same as consultant)
+2. Read `plan.md` plus Consultant/Reviewer notes
+3. Update plan sections to resolve gaps and blockers
+4. Append a revision note under Consultant Notes or Reviewer Notes (as appropriate)
+5. Update frontmatter: set `status: revised`, update `last_updated`
+
+**Output**: Updated `plan.md` ready for re-review
+
+---
+
+### Procedure: Plan Review (High-Accuracy)
+
+**Purpose**: Validate the plan with high-precision checks.
+
+**Input**: Plan topic-id or path (supports `--high-accuracy` flag from prompt)
+
+**Steps**:
+
+1. Locate plan directory (same as consultant)
+2. Read `plan.md`
+3. Validate:
+   - Requirements completeness
+   - Clear scope boundaries
+   - Constraints covered
+   - Risks identified with mitigations
+   - Work plan sequenced and feasible
+   - Acceptance criteria testable
+   - Open questions minimized
+4. Update plan sections if needed for clarity/precision
+5. Append **Reviewer Notes** with PASS/FAIL and blockers
+6. Update frontmatter:
+   - `status: approved` if PASS
+   - `status: blocked` if FAIL
+   - Update `last_updated`
+
+**Output**: Updated `plan.md` with approval status
+
+---
 
 ### Procedure: Seed Capture
 
@@ -99,26 +256,46 @@ Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
 
 ---
 
-### Procedure: Backlog Generation
+### Procedure: Backlog Generation (Seed, Baseline, or Plan)
 
-**Purpose**: Create small, actionable tickets from a seed.
+**Purpose**: Create small, actionable tickets from a seed (greenfield), baseline (brownfield), or plan.
 
-**Input**: Seed topic-id or path
+**Input**: Seed, baseline, or plan topic-id or path
 
 **Steps**:
 
-1. **Locate seed**:
+1. **Locate topic directory**:
    - If path provided: use directly
    - If topic-id: `{knowledgeDir}/topics/{topic-id}/`
-   - Auto-locate if only one seed exists
+   - If no input: auto-locate if exactly one seed, baseline, or plan exists; otherwise ask for a topic
 
-2. **Read seed artifacts**:
-   - `seed.md` (required)
-   - `mvp-scope.md`, `success-metrics.md`, `constraints.md` (if exist)
+2. **Detect mode**:
+   - If `plan.md` exists or topic-id starts with `plan-` → **plan mode**
+   - If `baseline.md` exists or topic-id starts with `baseline-` → **baseline mode**
+   - If `seed.md` exists or topic-id starts with `seed-` → **seed mode**
+   - If both/neither, ask user to clarify
+   - If plan mode: read frontmatter `status`; if not `approved`, **warn** but continue
 
-3. **Create tickets** (5-15 small tickets):
+3. **Seed mode**:
+   - Read `seed.md` (required)
+   - Read `mvp-scope.md`, `success-metrics.md`, `constraints.md` (if exist)
+   - Derive 5-15 small tickets from the seed
 
-   For each ticket, use this template:
+4. **Baseline mode**:
+   - Read `baseline.md` (required)
+   - Read `risk-map.md`, `test-inventory.md`, `dependency-map.md`, `overview.md` (if exist)
+   - Derive 5-15 small tickets from risks, test gaps, dependency issues, and architectural hotspots
+   - Split large refactors into 1-2 hour chunks
+
+5. **Plan mode**:
+   - Read `plan.md` (required)
+   - Extract Summary, Requirements, Constraints, Acceptance Criteria, and Work Plan items
+   - Derive 5-15 small tickets from Work Plan entries
+   - Split large phases into 1-2 hour chunks
+
+6. **Create tickets** (1-2 hours each, 30 lines max):
+
+   **Seed ticket template:**
    ```markdown
    ## Task
    <Single-sentence description>
@@ -138,7 +315,50 @@ Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
    - Seed: <topic-id>
    ```
 
-4. **Create via `tk`**:
+   **Baseline ticket template:**
+   ```markdown
+   ## Task
+   <Single-sentence description>
+
+   ## Context
+   <2-3 sentences summarizing relevant context>
+
+   ## Acceptance Criteria
+   - [ ] <criterion 1>
+   - [ ] <criterion 2>
+   - [ ] <criterion 3>
+
+   ## Constraints
+   - <relevant constraint>
+
+   ## References
+   - Baseline: <topic-id>
+   - Source: risk-map.md|test-inventory.md|dependency-map.md
+   ```
+
+   **Plan ticket template:**
+   ```markdown
+   ## Task
+   <Single-sentence description>
+
+   ## Context
+   <2-3 sentences from the plan summary/requirements>
+
+   ## Acceptance Criteria
+   - [ ] <criterion 1>
+   - [ ] <criterion 2>
+   - [ ] <criterion 3>
+
+   ## Constraints
+   - <relevant constraint>
+
+   ## References
+   - Plan: <topic-id>
+   ```
+
+7. **Create via `tk`**:
+
+   **Seed:**
    ```bash
    tk create "<title>" \
      --description "<description>" \
@@ -147,13 +367,72 @@ Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
      --priority 2
    ```
 
-5. **Write backlog.md**:
+   **Baseline:**
+   ```bash
+   tk create "<title>" \
+     --description "<description>" \
+     --tags irf,backlog,baseline \
+     --type task \
+     --priority 2
+   ```
+
+   **Plan:**
+   ```bash
+   tk create "<title>" \
+     --description "<description>" \
+     --tags irf,backlog,plan \
+     --type task \
+     --priority 2
+   ```
+
+8. **Write backlog.md**:
    ```markdown
    # Backlog: {topic-id}
    | ID | Title | Est. Hours |
    |----|-------|------------|
    | {id} | {title} | 1-2 |
    ```
+
+---
+
+### Procedure: Backlog Listing
+
+**Purpose**: Show backlog status and corresponding tickets for seed/baseline topics.
+
+**Input**: Optional topic-id or path
+
+**Steps**:
+
+1. **Resolve knowledgeDir** from config (default: `.pi/knowledge`).
+
+2. **If input provided**:
+   - If path provided: use directly
+   - If topic-id: `{knowledgeDir}/topics/{topic-id}/`
+   - If not found: list available `seed-*`, `baseline-*`, and `plan-*` topics, ask user to choose, then stop
+
+3. **If no input**:
+   - Scan `{knowledgeDir}/topics/` for `seed-*`, `baseline-*`, and `plan-*`
+   - For each topic, check for `backlog.md`
+
+4. **If `backlog.md` exists**:
+   - Read and parse the backlog table
+   - Extract ticket IDs and titles
+   - Count tickets and show a summary
+
+5. **If `backlog.md` missing**:
+   - Mark as **unticketed**
+   - Suggest running `/irf-backlog <topic>`
+
+6. **Output format**:
+   - If a single topic is requested: print full backlog table + summary
+   - If multiple topics: print summary table:
+     ```markdown
+     | Topic | Type | Backlog | Tickets |
+     |-------|------|---------|---------|
+     | seed-foo | seed | yes | 8 (TKT-1, TKT-2, TKT-3…) |
+     | plan-auth-rewrite | plan | yes | 5 (TKT-4, TKT-5…) |
+     | baseline-bar | baseline | no | 0 |
+     ```
 
 ---
 
@@ -331,6 +610,7 @@ tk create "<title>" \
 │   └── {ticket-id}.md      # Per-ticket research
 └── topics/
     └── {topic-id}/
+        ├── plan.md
         ├── overview.md
         ├── seed.md|spike.md|baseline.md
         ├── sources.md
@@ -340,6 +620,7 @@ tk create "<title>" \
 ## Error Handling
 
 - **Seed not found**: List available seeds and ask user
+- **Plan not found**: List available plans and ask user
 - **No warnings/suggestions**: Write "No follow-ups needed" and exit
 - **OpenSpec not found**: Ask for explicit path
 - **tk create fails**: Log error, continue with remaining tickets
@@ -348,6 +629,10 @@ tk create "<title>" \
 
 | Procedure | Primary Output | Secondary Output |
 |-----------|---------------|------------------|
+| Plan Interview | `plan.md` | index.json updated |
+| Plan Consultant | `plan.md` | status = consulted |
+| Plan Revision | `plan.md` | status = revised |
+| Plan Review | `plan.md` | status = approved/blocked |
 | Seed Capture | `topics/{id}/` directory | index.json updated |
 | Backlog | `backlog.md` | Tickets in `tk` |
 | Spike | `topics/{id}/` directory | index.json updated |
