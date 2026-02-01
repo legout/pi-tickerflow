@@ -1,6 +1,6 @@
 ---
 description: Create tickets from OpenSpec change [irf-planning +codex-mini]
-model: openai-codex/gpt-5.1-codex-mini
+model: openai-codex/gpt-5.1-codex-mini:medium
 skill: irf-planning
 ---
 
@@ -65,6 +65,8 @@ Follow the **IRF Planning Skill** "OpenSpec Bridge" procedure:
    tk create "<title>" \
      --description "<description>" \
      --tags irf,openspec \
+     --type task \
+     --priority 2 \
      --external-ref "openspec-{change_id}"
    ```
 6. Write `backlog.md` in change directory
@@ -85,5 +87,5 @@ Follow the **IRF Planning Skill** "OpenSpec Bridge" procedure:
 
 Start implementation:
 ```
-/irf-lite <ticket-id>
+/irf <ticket-id>
 ```

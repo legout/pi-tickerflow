@@ -259,7 +259,7 @@ Use the `ralph_loop` tool:
 ```json
 {
   "conditionCommand": "tk list --status ready | grep -q . && echo true || echo false",
-  "task": "Pick the next ready ticket and run /irf-lite on it with --auto flag. After completion, check if more tickets remain.",
+  "task": "Pick the next ready ticket and run /irf on it with --auto flag. After completion, check if more tickets remain.",
   "maxIterations": {N from args or config},
   "sleepMs": 5000
 }
@@ -275,7 +275,7 @@ while tk list --status ready | grep -q .; do
   Read .pi/ralph/progress.md for context
   
   # Execute
-  /irf-lite $TICKET --auto
+  /irf $TICKET --auto
   
   # Check for promise sigil in output
   if output contains "<promise>COMPLETE</promise>"; then
@@ -346,9 +346,9 @@ Lessons learned: {count}
 ```
 ```
 
-### 3.3 Update `/irf-lite` for Ralph Awareness
+### 3.3 Update `/irf` for Ralph Awareness
 
-**Add to `prompts/irf-lite.md`:**
+**Add to `prompts/irf.md`:**
 
 ```markdown
 ## Ralph Loop Integration
@@ -380,7 +380,7 @@ When running inside a Ralph loop (`.pi/ralph/progress.md` exists with status RUN
 
 ### 4.1 Enhance Ticket Descriptions with References
 
-**Update `/irf-from-openspec-lite.md` ticket description template:**
+**Update `/irf-from-openspec.md` ticket description template:**
 
 ```markdown
 ## Origin
@@ -397,7 +397,7 @@ Task from: ${change_dir}/tasks.md
 ${task description}
 ```
 
-**Update `/irf-backlog-lite.md` ticket description template:**
+**Update `/irf-backlog.md` ticket description template:**
 
 ```markdown
 ## Origin
@@ -468,10 +468,10 @@ On ticket start:
 | `agents/implementer.md` | Read Ralph context, load planning docs |
 | `agents/closer.md` | Update progress, synthesize lessons, output promise |
 | `agents/fixer.md` | Note lessons for future iterations |
-| `prompts/irf-lite.md` | Ralph loop awareness, re-anchoring |
-| `prompts/irf-from-openspec-lite.md` | Enhanced ticket description with paths |
-| `prompts/irf-backlog-lite.md` | Enhanced ticket description with paths |
-| `prompts/irf-followups-lite.md` | Enhanced ticket description with paths |
+| `prompts/irf.md` | Ralph loop awareness, re-anchoring |
+| `prompts/irf-from-openspec.md` | Enhanced ticket description with paths |
+| `prompts/irf-backlog.md` | Enhanced ticket description with paths |
+| `prompts/irf-followups.md` | Enhanced ticket description with paths |
 | `install.sh` | Create .pi/ralph/ directory |
 | `bin/irf` | Add ralph-init command |
 
@@ -488,7 +488,7 @@ On ticket start:
 ### Sprint 2: Loop Control
 5. Create `prompts/ralph-start.md`
 6. Create `prompts/ralph-status.md`
-7. Update `prompts/irf-lite.md` for Ralph awareness
+7. Update `prompts/irf.md` for Ralph awareness
 
 ### Sprint 3: Traceability
 8. Enhance ticket descriptions in all planning prompts

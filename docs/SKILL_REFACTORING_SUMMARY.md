@@ -22,7 +22,7 @@ This refactoring transforms pi-tk-workflow from a command-heavy architecture to 
 | Command | Model | Skill | Lines |
 |---------|-------|-------|-------|
 | `/irf` | Kimi-K2.5 | irf-workflow | ~70 |
-| `/irf-lite` | Kimi-K2.5 | irf-workflow | ~75 |
+| `/irf-lite` (deprecated alias) | Kimi-K2.5 | irf-workflow | ~75 |
 | `/irf-plan` | GPT-5.1-mini | irf-planning | ~55 |
 | `/irf-plan-consult` | GPT-5.1-mini | irf-planning | ~55 |
 | `/irf-plan-revise` | GPT-5.1-mini | irf-planning | ~55 |
@@ -87,7 +87,7 @@ Total: ~1,100 lines skills + ~625 lines wrappers = ~1,725 lines
 
 ## How It Works
 
-1. User types `/irf-lite ABC-123`
+1. User types `/irf ABC-123`
 2. Extension reads frontmatter:
    ```yaml
    model: chutes/moonshotai/Kimi-K2.5-TEE:high
@@ -117,7 +117,7 @@ Total: ~1,100 lines skills + ~625 lines wrappers = ~1,725 lines
 
 ### Phase 4: Cleanup (Future)
 - Remove legacy prompts
-- Consider consolidating `/irf` and `/irf-lite` (they use same skill)
+- Consolidated: `/irf` is the standard workflow; `/irf-lite` remains as a deprecated alias
 
 ## Extension Requirements
 
@@ -197,13 +197,9 @@ All planning commands share:
 - Same pattern (model-switch → execute inline → write artifacts)
 - Similar tool usage (file I/O, `tk` CLI)
 
-### Why Keep `/irf` And `/irf-lite` Separate?
+### Why Keep `/irf-lite` as an Alias?
 
-They use the same skill but different execution strategies:
-- `/irf`: Spawns subagents for each phase
-- `/irf-lite`: Uses model-switch for sequential phases
-
-Keeping both lets users choose their reliability/parallelism tradeoff.
+`/irf` is now the standard model-switch workflow. `/irf-lite` remains as a deprecated alias for compatibility with existing scripts and docs. It runs the same workflow and will be removed in a future release.
 
 ## Future Opportunities
 

@@ -45,7 +45,9 @@ Structure:
     "reviewer-general": "openai-codex/gpt-5.1-codex-mini:high",
     "review-merge": "zai/glm-4.7:medium",
     "fixer": "zai/glm-4.7:high",
-    "closer": "zai/glm-4.7:medium"
+    "closer": "zai/glm-4.7:medium",
+    "planning": "openai-codex/gpt-5.1-codex-mini:medium",
+    "config": "zai/glm-4.7:medium"
   },
   "checkers": {
     "typescript": {
@@ -110,9 +112,9 @@ Check complete installation status:
 
 ### Procedure: Sync Models
 
-Update agent files from config:
+Update agent **and prompt** files from config:
 
-**Mapping (config key → agent file)**:
+**Agent mapping (config key → agent file)**:
 | Config Key | Agent File |
 |------------|------------|
 | `models.implementer` | `agents/implementer.md` |
@@ -125,11 +127,18 @@ Update agent files from config:
 | `models.researcher` | `agents/researcher.md` |
 | `models.researcher-fetch` | `agents/researcher-fetch.md` |
 
+**Prompt mapping (config key → prompt file)**:
+| Config Key | Prompt File |
+|------------|-------------|
+| `models.implementer` | `prompts/irf.md`, `prompts/irf-lite.md` |
+| `models.planning` | `prompts/irf-plan.md`, `prompts/irf-plan-consult.md`, `prompts/irf-plan-revise.md`, `prompts/irf-plan-review.md`, `prompts/irf-seed.md`, `prompts/irf-backlog.md`, `prompts/irf-backlog-ls.md`, `prompts/irf-spike.md`, `prompts/irf-from-openspec.md`, `prompts/irf-baseline.md`, `prompts/irf-followups.md` |
+| `models.config` | `prompts/irf-sync.md` |
+
 **Steps**:
 
 1. Read workflow config
 2. For each mapping:
-   - Read agent file
+   - Read file
    - Find `model:` line in frontmatter
    - If different from config, update it
    - Write file back
@@ -172,6 +181,10 @@ If `pi-model-switch` is installed, suggest useful aliases:
   "irf-planning": [
     "openai-codex/gpt-5.1-codex-mini",
     "zai/glm-4.7"
+  ],
+  "irf-config": [
+    "zai/glm-4.7",
+    "openai-codex/gpt-5.1-codex-mini"
   ]
 }
 ```
@@ -233,6 +246,12 @@ Always provide clear status report:
 - reviewer-general: openai-codex/gpt-5.1-codex-mini:high
 - ...
 
+## Prompt Models Updated
+- irf-plan.md: openai-codex/gpt-5.1-codex-mini → openai-codex/gpt-5.1-codex-mini:medium
+
+## Prompt Models Unchanged
+- irf.md: chutes/moonshotai/Kimi-K2.5-TEE:high
+
 ## Recommendations
 - Consider installing pi-mcp-adapter for research capabilities
 ```
@@ -241,5 +260,6 @@ Always provide clear status report:
 
 - **Config not found**: Create from template
 - **Agent file not found**: Skip with warning
+- **Prompt file not found**: Skip with warning
 - **Model format invalid**: Report and skip
 - **Permission denied**: Suggest running with appropriate permissions

@@ -3,7 +3,7 @@ name: reviewer-general
 description: General fresh-eyes code review with GPT 5.2 Codex - finds bugs, logic flaws, security issues
 tools: read, bash, write
 model: openai-codex/gpt-5.1-codex-mini:high
-output: review.md
+output: review-general.md
 defaultReads: implementation.md
 defaultProgress: false
 ---

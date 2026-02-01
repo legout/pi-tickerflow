@@ -9,14 +9,14 @@ This document outlines a refactoring from slash commands to a skill-based archit
 ### Current Structure
 ```
 prompts/                    # Commands (prompt templates)
-├── irf.md                  # /irf (6-8 subagents)
-├── irf-lite.md             # /irf-lite (3 subagents) - RECOMMENDED
-├── irf-seed.md / irf-seed-lite.md
-├── irf-backlog.md / irf-backlog-lite.md
-├── irf-spike.md / irf-spike-lite.md
-├── irf-baseline.md / irf-baseline-lite.md
-├── irf-followups.md / irf-followups-lite.md
-├── irf-from-openspec.md / irf-from-openspec-lite.md
+├── irf.md                  # /irf (model-switch standard)
+├── irf-lite.md             # /irf-lite (deprecated alias)
+├── irf-seed.md
+├── irf-backlog.md
+├── irf-spike.md
+├── irf-baseline.md
+├── irf-followups.md
+├── irf-from-openspec.md
 └── irf-sync.md
 
 agents/                     # Subagent definitions
@@ -36,8 +36,8 @@ workflows/implement-review-fix-close/
 ```
 
 ### Current Command Count: 17 prompts
-- 2 core workflows (`/irf`, `/irf-lite`)
-- 12 planning workflows (6 original + 6 lite)
+- 1 core workflow (`/irf`) plus deprecated alias (`/irf-lite`)
+- 6 planning workflows
 - 1 sync command (`/irf-sync`)
 - Plus Ralph loop commands
 
@@ -65,7 +65,7 @@ skills/                     # Domain expertise
 
 prompts/                    # Thin command wrappers (frontmatter only)
 ├── irf.md
-├── irf-lite.md
+├── irf-lite.md             # deprecated alias for /irf
 ├── irf-seed.md
 ├── irf-backlog.md
 ├── irf-spike.md
@@ -107,11 +107,11 @@ agents/                     # Subagent definitions (unchanged)
 **Command Mapping**:
 | Command | Model | Skill | Notes |
 |---------|-------|-------|-------|
-| `/irf` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Full workflow with all subagents |
-| `/irf-lite` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Simplified, uses model-switch |
+| `/irf` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Model-switch workflow (standard) |
+| `/irf-lite` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Deprecated alias for `/irf` |
 
 **Why Combined?**
-The skill contains the full workflow knowledge. The distinction between `/irf` and `/irf-lite` is in execution strategy (subagent nesting depth), not domain expertise. Both use the same patterns.
+The skill contains the full workflow knowledge. `/irf` is the standard entry point; `/irf-lite` remains only as a deprecated compatibility alias.
 
 ---
 
@@ -196,7 +196,7 @@ All planning activities share:
 - Monitor loop status
 
 **Model Strategy**:
-- Same as workflow (delegates to `/irf-lite`)
+- Same as workflow (delegates to `/irf`)
 
 **Command Mapping**:
 | Command | Model | Skill | Notes |
@@ -217,11 +217,11 @@ This is distinct domain knowledge from the workflow itself.
 
 ## Command Wrapper Examples
 
-### /irf-lite (Recommended Workflow)
+### /irf (Standard Workflow)
 
 ```markdown
 ---
-description: Implement ticket with simplified IRF workflow (Implement → Review → Fix → Close)
+description: Implement ticket with IRF workflow (Implement → Review → Fix → Close)
 model: chutes/moonshotai/Kimi-K2.5-TEE:high
 skill: irf-workflow
 ---
@@ -302,7 +302,7 @@ pi-tk-workflow/
 │
 ├── prompts/                   # Thin wrappers with frontmatter
 │   ├── irf.md
-│   ├── irf-lite.md
+│   ├── irf-lite.md             # deprecated alias for /irf
 │   ├── irf-seed.md
 │   ├── irf-backlog.md
 │   ├── irf-spike.md
@@ -358,8 +358,8 @@ pi-tk-workflow/
 
 ### Phase 4: Optimize (Future)
 - Consider removing `-lite` suffix since thin wrappers are inherently "lite"
-- `/irf` → Full workflow with model-switch (formerly /irf-lite)
-- `/irf-deep` → Full workflow with all subagents (formerly /irf)
+- `/irf` → Standard workflow with model-switch (formerly /irf-lite)
+- `/irf-lite` → Deprecated alias for `/irf`
 
 ---
 
@@ -404,8 +404,7 @@ pi install npm:pi-review-loop             # Post-execution review
 
 ## Open Questions
 
-1. **Original vs Lite**: Should we keep both `/irf` and `/irf-lite` as separate commands, or consolidate with flags?
-   - Recommendation: Keep both for flexibility, but document `/irf-lite` as recommended
+1. **Original vs Lite**: Consolidated. `/irf` is the standard workflow and `/irf-lite` is a deprecated alias for compatibility.
 
 2. **Skill Granularity**: Should `irf-research` be separate from `irf-planning`?
    - Recommendation: No - research is integral to planning, not used standalone

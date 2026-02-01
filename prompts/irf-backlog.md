@@ -1,6 +1,6 @@
 ---
 description: Create tickets from seed, baseline, or plan artifacts [irf-planning +codex-mini]
-model: openai-codex/gpt-5.1-codex-mini
+model: openai-codex/gpt-5.1-codex-mini:medium
 skill: irf-planning
 ---
 
@@ -43,7 +43,9 @@ Follow the **IRF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)"
    tk create "<title>" \
      --description "<description>" \
      --tags irf,backlog \
-     --external-ref "seed-{topic-id}"
+     --type task \
+     --priority 2 \
+     --external-ref "{topic-id}"
    ```
 
    **Baseline:**
@@ -51,7 +53,9 @@ Follow the **IRF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)"
    tk create "<title>" \
      --description "<description>" \
      --tags irf,backlog,baseline \
-     --external-ref "baseline-{topic-id}"
+     --type task \
+     --priority 2 \
+     --external-ref "{topic-id}"
    ```
 
    **Plan:**
@@ -59,7 +63,9 @@ Follow the **IRF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)"
    tk create "<title>" \
      --description "<description>" \
      --tags irf,backlog,plan \
-     --external-ref "plan-{topic-id}"
+     --type task \
+     --priority 2 \
+     --external-ref "{topic-id}"
    ```
 6. Write `backlog.md` with ticket summary
 
@@ -135,5 +141,5 @@ Follow the **IRF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)"
 
 Start implementation:
 ```
-/irf-lite <ticket-id>
+/irf <ticket-id>
 ```

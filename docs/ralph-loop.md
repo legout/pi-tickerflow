@@ -40,7 +40,7 @@ Future iterations read these lessons to avoid repeating mistakes.
 
 ### Promise Sigil
 
-The loop outputs `<promise>COMPLETE</promise>` when:
+The loop outputs `<promise>COMPLETE</promise>` when `promiseOnComplete` is true and:
 - All tickets are processed, OR
 - Max iterations reached, OR
 - Unrecoverable error occurs
@@ -105,10 +105,10 @@ If `.pi/ralph/AGENTS.md` exists, read it for lessons learned from
 autonomous ticket processing.
 ```
 
-### 3. Run /irf-lite (Ralph-Ready by Default)
+### 3. Run /irf (Ralph-Ready by Default)
 
 ```
-/irf-lite <ticket-id> [--auto]
+/irf <ticket-id> [--auto]
 ```
 
 **Automatically:**
@@ -129,7 +129,7 @@ Or manually:
 ```bash
 while tk ready | grep -q .; do
   TICKET=$(tk ready | head -1 | awk '{print $1}')
-  pi "/irf-lite $TICKET --auto"
+  pi "/irf $TICKET --auto"
 done
 ```
 
@@ -155,7 +155,7 @@ done
 │       - .pi/ralph/AGENTS.md (lessons)                   │
 │                                                         │
 │    2. GET TICKET                                        │
-│       - tk ready | head -1                              │
+│       - ticketQuery (default: tk ready | head -1)        │
 │                                                         │
 │    3. RE-ANCHOR                                         │
 │       - Inject lessons into context                     │
@@ -163,7 +163,7 @@ done
 │       - Load knowledge base                             │
 │                                                         │
 │    4. EXECUTE                                           │
-│       - /irf-lite <ticket> --auto                       │
+│       - /irf <ticket> --auto                            │
 │       - Agents work unchanged                           │
 │                                                         │
 │    5. PARSE RESULT                                      │
@@ -187,11 +187,15 @@ done
 {
   "maxIterations": 50,
   "maxIterationsPerTicket": 5,
-  "workflow": "/irf-lite",
+  "ticketQuery": "tk ready | head -1 | awk '{print $1}'",
+  "completionCheck": "tk ready | grep -q .",
+  "workflow": "/irf",
   "workflowFlags": "--auto",
   "sleepBetweenTickets": 5000,
+  "sleepBetweenRetries": 10000,
   "includeKnowledgeBase": true,
   "includePlanningDocs": true,
+  "promiseOnComplete": true,
   "lessonsMaxCount": 50
 }
 ```
@@ -199,9 +203,16 @@ done
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `maxIterations` | 50 | Total tickets to process |
-| `workflow` | `/irf-lite` | Command to run per ticket |
+| `maxIterationsPerTicket` | 5 | Retries per ticket before moving on |
+| `ticketQuery` | `tk ready | head -1 | awk '{print $1}'` | Command to pick next ticket |
+| `completionCheck` | `tk ready | grep -q .` | Command to detect empty backlog |
+| `workflow` | `/irf` | Command to run per ticket |
 | `workflowFlags` | `--auto` | Flags for workflow |
 | `sleepBetweenTickets` | 5000 | Ms to wait between tickets |
+| `sleepBetweenRetries` | 10000 | Ms to wait before retrying when no ticket found |
+| `includeKnowledgeBase` | true | Load knowledge base per ticket |
+| `includePlanningDocs` | true | Load planning docs per ticket |
+| `promiseOnComplete` | true | Emit `<promise>COMPLETE</promise>` on completion |
 | `lessonsMaxCount` | 50 | Max lessons before pruning |
 
 ## CLI Reference
@@ -269,7 +280,7 @@ Ralph works best with well-defined tickets:
 
 ```bash
 # Create detailed backlog first
-/irf-backlog-lite my-feature
+/irf-backlog my-feature
 
 # Then run Ralph
 /ralph-start
@@ -277,7 +288,7 @@ Ralph works best with well-defined tickets:
 
 ## Comparison: With vs Without Ralph
 
-| Aspect | Standalone `/irf-lite` | With Ralph Loop |
+| Aspect | Standalone `/irf` | With Ralph Loop |
 |--------|------------------------|-----------------|
 | Context | Fresh per invocation | Fresh per ticket + lessons |
 | Learning | None | Accumulates in AGENTS.md |
@@ -306,12 +317,12 @@ Ralph can process tickets from any planning source:
 
 | Source | Tickets Created By | Ralph Reads |
 |--------|-------------------|-------------|
-| IRF Seed | `/irf-backlog-lite` | Seed reference in ticket |
-| OpenSpec | `/irf-from-openspec-lite` | Change ID in ticket |
+| IRF Seed | `/irf-backlog` | Seed reference in ticket |
+| OpenSpec | `/irf-from-openspec` | Change ID in ticket |
 | Manual | `tk create` | Direct description |
 
 The planning docs (seed.md, proposal.md, design.md) are referenced in ticket descriptions and loaded during re-anchoring.
 
 ---
 
-**Key Principle**: Ralph is **additive orchestration**. Your core workflow (`/irf-lite`) works identically with or without Ralph. The loop is just a smart wrapper that manages context and tracks progress.
+**Key Principle**: Ralph is **additive orchestration**. Your core workflow (`/irf`) works identically with or without Ralph. The loop is just a smart wrapper that manages context and tracks progress.

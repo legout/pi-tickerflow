@@ -24,7 +24,7 @@ Start the Ralph autonomous loop for continuous ticket processing.
 
 - Ralph initialized: `./bin/irf ralph init`
 - Tickets ready in backlog: `tk ready`
-- `/irf-lite` working standalone
+- `/irf` working standalone
 
 ## Execution
 
@@ -35,13 +35,13 @@ FOR iteration = 1 TO maxIterations:
   1. READ STATE - Load config, progress, lessons
   2. GET TICKET - `tk ready | head -1`
   3. RE-ANCHOR - Load lessons, ticket, knowledge
-  4. EXECUTE - Run `/irf-lite {ticket} --auto`
+  4. EXECUTE - Run `/irf {ticket} --auto`
   5. PARSE RESULT - Check promise sigil
   6. UPDATE STATE - Progress, statistics, lessons
   7. SLEEP - Wait between tickets
 END FOR
 
-Output: <promise>COMPLETE</promise>
+Output: <promise>COMPLETE</promise> (if promiseOnComplete)
 ```
 
 ## How It Works
@@ -57,9 +57,13 @@ Output: <promise>COMPLETE</promise>
 ```json
 {
   "maxIterations": 50,
-  "workflow": "/irf-lite",
+  "ticketQuery": "tk ready | head -1 | awk '{print $1}'",
+  "completionCheck": "tk ready | grep -q .",
+  "workflow": "/irf",
   "workflowFlags": "--auto",
   "sleepBetweenTickets": 5000,
+  "sleepBetweenRetries": 10000,
+  "promiseOnComplete": true,
   "lessonsMaxCount": 50
 }
 ```
@@ -75,7 +79,7 @@ In another terminal:
 ## Stopping
 
 The loop stops when:
-- Backlog is empty (`tk ready` returns nothing)
+- `completionCheck` reports the backlog is empty
 - Max iterations reached
 - Unrecoverable error occurs
 

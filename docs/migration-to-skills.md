@@ -41,9 +41,9 @@ model: chutes/moonshotai/Kimi-K2.5-TEE:high
 skill: irf-workflow
 ---
 
-# /irf-lite
+# /irf
 
-Execute the simplified IRF workflow for ticket: $@
+Execute the IRF workflow for ticket: $@
 
 Follow the **IRF Workflow Skill** procedures.
 ```
@@ -59,7 +59,7 @@ skills/                      # Domain expertise (4 files)
 
 prompts/                     # Thin wrappers (15 files)
 ├── irf.md                   # model: Kimi-K2.5, skill: irf-workflow
-├── irf-lite.md              # model: Kimi-K2.5, skill: irf-workflow
+├── irf-lite.md              # deprecated alias for /irf
 ├── irf-plan.md              # model: codex-mini, skill: irf-planning
 ├── irf-plan-consult.md      # model: codex-mini, skill: irf-planning
 ├── irf-plan-revise.md       # model: codex-mini, skill: irf-planning
@@ -84,7 +84,7 @@ agents/                      # Unchanged
 
 ### 1. DRY (Don't Repeat Yourself)
 
-**Before**: Workflow knowledge duplicated across `/irf`, `/irf-lite`, and variations.
+**Before**: Workflow knowledge duplicated across `/irf` variants and planning commands.
 
 **After**: Single `irf-workflow` skill contains all workflow expertise. Commands reference it.
 
@@ -135,7 +135,7 @@ pi install npm:pi-model-switch
 
 **Why both model extensions?**
 
-- `pi-prompt-template-model` handles the **initial** model switch when you type `/irf-lite` (via frontmatter)
+- `pi-prompt-template-model` handles the **initial** model switch when you type `/irf` (via frontmatter)
 - `pi-model-switch` handles **runtime** model switches during execution (implement phase → cheap model for review merge)
 
 The workflow skill internally calls `switch_model` to move between phases, so both extensions are required.
@@ -168,8 +168,8 @@ To use new skill-based commands:
 
 | Command | Model | Skill | Notes |
 |---------|-------|-------|-------|
-| `/irf` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Full subagent workflow |
-| `/irf-lite` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Model-switch workflow (recommended) |
+| `/irf` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Model-switch workflow (standard) |
+| `/irf-lite` | `chutes/moonshotai/Kimi-K2.5-TEE:high` | `irf-workflow` | Deprecated alias for `/irf` |
 | `/irf-plan` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Create plan document |
 | `/irf-plan-consult` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Gap detection + edits |
 | `/irf-plan-revise` | `openai-codex/gpt-5.1-codex-mini` | `irf-planning` | Apply plan feedback |
@@ -189,7 +189,7 @@ To use new skill-based commands:
 With the extension, commands show skill and model in autocomplete:
 
 ```
-/irf-lite         Implement ticket [irf-workflow +Kimi-K2.5] (user)
+/irf              Implement ticket [irf-workflow +Kimi-K2.5] (user)
 /irf-plan         Create plan [irf-planning +codex-mini] (user)
 /irf-seed         Capture idea [irf-planning +codex-mini] (user)
 /irf-backlog-ls   List backlogs [irf-planning +codex-mini] (user)

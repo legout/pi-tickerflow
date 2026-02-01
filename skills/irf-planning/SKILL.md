@@ -365,7 +365,7 @@ Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
      --tags irf,backlog \
      --type task \
      --priority 2 \
-     --external-ref "seed-{topic-id}"
+     --external-ref "{topic-id}"
    ```
 
    **Baseline:**
@@ -375,7 +375,7 @@ Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
      --tags irf,backlog,baseline \
      --type task \
      --priority 2 \
-     --external-ref "baseline-{topic-id}"
+     --external-ref "{topic-id}"
    ```
 
    **Plan:**
@@ -385,7 +385,7 @@ Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
      --tags irf,backlog,plan \
      --type task \
      --priority 2 \
-     --external-ref "plan-{topic-id}"
+     --external-ref "{topic-id}"
    ```
 
 8. **Write backlog.md**:
@@ -400,7 +400,7 @@ Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
 
 ### Procedure: Backlog Listing
 
-**Purpose**: Show backlog status and corresponding tickets for seed/baseline topics.
+**Purpose**: Show backlog status and corresponding tickets for seed/baseline/plan topics.
 
 **Input**: Optional topic-id or path
 
@@ -612,7 +612,8 @@ tk create "<title>" \
   --description "<markdown description>" \
   --tags irf,<tag> \
   --type task \
-  --priority <1-5>
+  --priority <1-5> \
+  --external-ref "<source-id>"   # e.g., plan-foo, seed-bar, openspec-baz
 ```
 
 ### Knowledge Base Structure

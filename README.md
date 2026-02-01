@@ -4,7 +4,7 @@ A reusable Pi workflow package for ticket implementation:
 
 **Implement → Review → Fix → Close**
 
-This package bundles the agents, skills, prompts, and workflow config used by the `/irf` and `/irf-lite` commands.
+This package bundles the agents, skills, prompts, and workflow config used by the `/irf` command (with `/irf-lite` as a deprecated alias).
 
 ---
 
@@ -16,6 +16,9 @@ agents/                         # Subagent execution units
   reviewer-general.md           # General code review
   reviewer-spec-audit.md        # Specification audit
   reviewer-second-opinion.md    # Second opinion review
+  review-merge.md               # Review consolidation
+  researcher.md                 # Research coordinator
+  researcher-fetch.md           # Focused research fetcher
   fixer.md                      # Fix identified issues
   closer.md                     # Close ticket and summarize
 
@@ -26,8 +29,12 @@ skills/                         # Domain expertise (skills inject into context)
   ralph/SKILL.md                # Autonomous loop orchestration
 
 prompts/                        # Command entry points (thin wrappers)
-  irf.md                        # Full workflow with subagents
-  irf-lite.md                   # Recommended - uses model-switch
+  irf.md                        # Standard workflow (model-switch)
+  irf-lite.md                   # Deprecated alias for /irf
+  irf-plan.md                   # Create plan document
+  irf-plan-consult.md           # Gap detection + edits in plan
+  irf-plan-revise.md            # Apply plan feedback
+  irf-plan-review.md            # Validate plan
   irf-seed.md                   # Capture ideas into seed artifacts
   irf-backlog.md                # Create tickets from seeds or baselines
   irf-backlog-ls.md             # List backlog status and tickets
@@ -61,7 +68,7 @@ This package uses a **skill-centric** architecture:
 ### How it works
 
 ```
-User types: /irf-lite ABC-123
+User types: /irf ABC-123
 
 1. Extension reads frontmatter:
    model: chutes/moonshotai/Kimi-K2.5-TEE:high
@@ -162,11 +169,13 @@ Installs into:
 ### Implementation Workflows
 
 ```bash
-# Recommended - uses model-switch for sequential phases
-/irf-lite <ticket-id> [--auto] [--no-research] [--with-research]
+# Standard workflow (model-switch for sequential phases)
+/irf <ticket-id> [--auto] [--no-research] [--with-research] [--plan] [--dry-run]
+                 [--create-followups] [--simplify-tickets] [--final-review-loop]
 
-# Full workflow - uses subagents for each phase
-/irf <ticket-id> [flags]
+# Deprecated alias (same behavior)
+/irf-lite <ticket-id> [--auto] [--no-research] [--with-research] [--plan] [--dry-run]
+                      [--create-followups] [--simplify-tickets] [--final-review-loop]
 ```
 
 ### Planning Workflows
@@ -204,6 +213,10 @@ Installs into:
 | `--auto` / `--no-clarify` | Run headless (no confirmation prompts) |
 | `--no-research` | Skip research step |
 | `--with-research` | Force enable research step |
+| `--plan` / `--dry-run` | Show resolved chain and exit |
+| `--create-followups` | Create follow-up tickets after review merge |
+| `--simplify-tickets` | Run `/simplify --create-tickets --last-implementation` (if available) |
+| `--final-review-loop` | Run `/review-start` after chain (if available) |
 | `--parallel` | Use parallel subagents for research (/irf-spike only) |
 
 ---
@@ -214,7 +227,7 @@ Installs into:
 
 ```bash
 ./bin/irf setup       # Interactive install + extensions + MCP
-./bin/irf sync        # Sync models from config into agent files
+./bin/irf sync        # Sync models from config into agent + prompt files
 ./bin/irf doctor      # Preflight checks for tools and extensions
 ./bin/irf backlog-ls  # List backlog status and tickets
 ```
@@ -240,17 +253,19 @@ Edit `workflows/implement-review-fix-close/config.json` and run:
 ./bin/irf sync
 ```
 
+This updates `model:` frontmatter in agent and prompt files.
+
 ---
 
 ## Workflow Flows
 
-### `/irf-lite` flow (recommended)
+### `/irf` flow (standard)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  MAIN AGENT                                                 │
 ├─────────────────────────────────────────────────────────────┤
-│  0. Research (optional, sequential, no subagent)            │
+│  0. Research (optional, sequential or parallel)             │
 │  1. Implement (model-switch to implementer model)           │
 ├─────────────────────────────────────────────────────────────┤
 │  2. SUBAGENT: Parallel Reviews ← Only subagent step         │
@@ -260,30 +275,17 @@ Edit `workflows/implement-review-fix-close/config.json` and run:
 ├─────────────────────────────────────────────────────────────┤
 │  3. Merge reviews (model-switch to cheap model)             │
 │  4. Fix issues (same cheap model)                           │
-│  5. Close ticket                                            │
-│  6. Learn & Track (updates .pi/ralph/ if active)            │
+│  5. Follow-ups (optional, --create-followups)               │
+│  6. Close ticket (optional/gated)                           │
+│  7. Final review loop (optional, --final-review-loop)       │
+│  8. Simplify tickets (optional, --simplify-tickets)         │
+│  9. Learn & Track (updates .pi/ralph/ if active)            │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 **Ralph-Ready**: Automatically loads lessons from `.pi/ralph/AGENTS.md` and tracks progress.
 
-### `/irf` flow (subagent-based)
-
-```
-researcher (optional subagent)
-    ↓
-implementer (subagent)
-    ↓
-┌─ reviewer-general ──────┐
-├─ reviewer-spec-audit ───┼─ (parallel subagents)
-└─ reviewer-second-opinion┘
-    ↓
-review-merge (main agent)
-    ↓
-fixer (main agent)
-    ↓
-closer (main agent)
-```
+`/irf-lite` is a deprecated alias for `/irf`.
 
 ### Planning workflows
 
@@ -304,7 +306,7 @@ closer (main agent)
 
 ### Ralph-Ready by Default
 
-`/irf-lite` is designed for autonomous operation:
+`/irf` is designed for autonomous operation:
 
 - **Re-anchoring**: Reads `AGENTS.md` and `.pi/ralph/AGENTS.md` at start
 - **Lessons Learned**: Synthesizes and appends lessons after each ticket
@@ -335,8 +337,10 @@ Models are configured in `workflows/implement-review-fix-close/config.json`:
 | review-merge | GPT-5.1-mini | Deduplication and consolidation |
 | fixer | GLM-4.7 | Cheap fixes |
 | closer | GLM-4.7 | Cheap summarization |
+| planning | GPT-5.1-mini | Planning workflows |
+| config | GLM-4.7 | Setup and sync |
 
-Run `/irf-sync` after editing config to apply changes.
+Run `/irf-sync` after editing config to apply changes to agents and prompts.
 
 ---
 
@@ -353,7 +357,7 @@ The Ralph Loop enables autonomous ticket processing with re-anchoring and lesson
 │  while tickets remain:                                       │
 │    1. RE-ANCHOR: Read .pi/ralph/AGENTS.md (lessons learned)  │
 │    2. PICK: Get next ready ticket from backlog               │
-│    3. EXECUTE: Run /irf-lite <ticket> --auto                 │
+│    3. EXECUTE: Run /irf <ticket> --auto                      │
 │    4. LEARN: Append lessons to .pi/ralph/AGENTS.md           │
 │    5. TRACK: Update .pi/ralph/progress.md                    │
 │    6. PROMISE: Output <promise>COMPLETE</promise> when done  │

@@ -1,17 +1,18 @@
 ---
-description: Implement ticket with full IRF workflow [irf-workflow +Kimi-K2.5]
+description: Implement ticket with IRF workflow [irf-workflow +Kimi-K2.5]
 model: chutes/moonshotai/Kimi-K2.5-TEE:high
 skill: irf-workflow
 ---
 
 # /irf
 
-Execute the full Implement → Review → Fix → Close workflow with all subagents.
+Execute the standard Implement → Review → Fix → Close workflow for a ticket.
 
 ## Usage
 
 ```
-/irf <ticket-id> [--auto] [--no-research] [--with-research]
+/irf <ticket-id> [--auto] [--no-research] [--with-research] [--plan] [--dry-run]
+             [--create-followups] [--simplify-tickets] [--final-review-loop]
 ```
 
 ## Arguments
@@ -26,33 +27,40 @@ Execute the full Implement → Review → Fix → Close workflow with all subage
 | `--auto` / `--no-clarify` | Run headless (no confirmation prompts) |
 | `--no-research` | Skip research step |
 | `--with-research` | Force enable research step |
+| `--plan` / `--dry-run` | Print resolved chain and exit without running agents |
+| `--create-followups` | Run `/irf-followups` on merged review output |
+| `--simplify-tickets` | Run `/simplify --create-tickets --last-implementation` if available |
+| `--final-review-loop` | Run `/review-start` after the chain if available |
 
 ## Execution
 
-Follow the **IRF Workflow Skill** procedures, but use subagents for sequential phases:
+Follow the **IRF Workflow Skill** procedures:
 
 1. **Re-Anchor Context** - Load AGENTS.md, lessons, ticket details
-2. **Research** (optional) - Spawn `researcher` subagent
-3. **Implement** - Spawn `implementer` subagent
-4. **Parallel Reviews** - Spawn 3 reviewer subagents
-5. **Merge Reviews** - Spawn `review-merge` subagent
-6. **Fix Issues** - Spawn `fixer` subagent
-7. **Close Ticket** - Spawn `closer` subagent
+2. **Research** (optional) - MCP tools for knowledge gathering
+3. **Implement** (model-switch) - Code changes with quality checks
+4. **Parallel Reviews** (optional) - Reviewer subagents when enabled
+5. **Merge Reviews** (optional) - Deduplicate and consolidate
+6. **Fix Issues** (optional) - Apply fixes when enabled
+7. **Follow-ups** (optional) - Create follow-up tickets when requested
+8. **Close Ticket** (optional) - Add note and close in `tk` when allowed
+9. **Final Review Loop** (optional) - Run `/review-start` when requested
+10. **Simplify Tickets** (optional) - Run `/simplify` follow-on if available
+11. **Ralph Integration** (if active) - Update progress, extract lessons
 
-## Comparison with /irf-lite
+## Output Artifacts
 
-| Aspect | /irf | /irf-lite |
-|--------|------|-----------|
-| Subagents | 6-8 | 3 |
-| Points of failure | 6-8 | 3 |
-| Wall-clock time | Similar | Similar |
-| Reliability | Lower | **Higher** |
-| Ralph integration | Yes | **Yes** |
+- `implementation.md` - Implementation summary
+- `review.md` - Consolidated review
+- `fixes.md` - Fixes applied
+- `close-summary.md` - Final summary
 
-## Recommendation
+Ralph files (if `.pi/ralph/` exists):
+- `.pi/ralph/progress.md` - Updated
+- `.pi/ralph/AGENTS.md` - May be updated
 
-Use `/irf-lite` instead - it has fewer failure points and the same output quality.
+## Notes
 
-This `/irf` command is kept for:
-- Compatibility with existing workflows
-- Explicit subagent isolation when needed
+- This is the standard workflow (model-switch for sequential phases)
+- Only the parallel review step spawns subagents
+- `/irf-lite` is a deprecated alias that runs the same workflow

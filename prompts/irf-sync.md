@@ -1,6 +1,6 @@
 ---
 description: Sync IRF configuration [irf-config +GLM-4.7]
-model: zai/glm-4.7
+model: zai/glm-4.7:medium
 skill: irf-config
 ---
 
@@ -19,7 +19,7 @@ Apply the workflow configuration and verify required extensions.
 Follow the **IRF Config Skill** procedures:
 
 1. **Verify Setup** - Check extensions and agent files
-2. **Sync Models** - Update agent files from config.json
+2. **Sync Models** - Update agent and prompt files from config.json
 3. **Report Status** - Show what's installed and updated
 
 ## What Gets Synced
@@ -46,6 +46,13 @@ Config key → Agent file mapping:
 - `models.researcher` → `agents/researcher.md`
 - `models.researcher-fetch` → `agents/researcher-fetch.md`
 
+### Prompt Models Updated
+
+Config key → Prompt file mapping:
+- `models.implementer` → `prompts/irf.md`, `prompts/irf-lite.md`
+- `models.planning` → `prompts/irf-plan.md`, `prompts/irf-plan-consult.md`, `prompts/irf-plan-revise.md`, `prompts/irf-plan-review.md`, `prompts/irf-seed.md`, `prompts/irf-backlog.md`, `prompts/irf-backlog-ls.md`, `prompts/irf-spike.md`, `prompts/irf-from-openspec.md`, `prompts/irf-baseline.md`, `prompts/irf-followups.md`
+- `models.config` → `prompts/irf-sync.md`
+
 ## Configuration Sources
 
 Read and merge (project overrides global):
@@ -67,6 +74,9 @@ Read and merge (project overrides global):
 ## Agent Models Unchanged
 - reviewer-general: openai-codex/gpt-5.1-codex-mini:high
 - ...
+
+## Prompt Models Updated
+- irf-plan.md: openai-codex/gpt-5.1-codex-mini → openai-codex/gpt-5.1-codex-mini:medium
 
 ## Recommendations
 - Consider installing pi-mcp-adapter for research capabilities

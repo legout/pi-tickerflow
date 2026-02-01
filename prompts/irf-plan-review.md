@@ -1,6 +1,6 @@
 ---
 description: Review an implementation plan with high-accuracy validation [irf-planning +codex-mini]
-model: openai-codex/gpt-5.1-codex-mini
+model: openai-codex/gpt-5.1-codex-mini:medium
 skill: irf-planning
 ---
 

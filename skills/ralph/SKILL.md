@@ -54,6 +54,8 @@ Emitted when:
 - Max iterations reached
 - Unrecoverable error occurs
 
+Controlled by `promiseOnComplete` (default: true).
+
 ## Directory Structure
 
 ```
@@ -70,11 +72,15 @@ Emitted when:
 {
   "maxIterations": 50,
   "maxIterationsPerTicket": 5,
-  "workflow": "/irf-lite",
+  "ticketQuery": "tk ready | head -1 | awk '{print $1}'",
+  "completionCheck": "tk ready | grep -q .",
+  "workflow": "/irf",
   "workflowFlags": "--auto",
   "sleepBetweenTickets": 5000,
+  "sleepBetweenRetries": 10000,
   "includeKnowledgeBase": true,
   "includePlanningDocs": true,
+  "promiseOnComplete": true,
   "lessonsMaxCount": 50
 }
 ```
@@ -129,8 +135,9 @@ FOR iteration = 1 TO maxIterations:
      - Load AGENTS.md
 
   2. GET TICKET
-     - Run: tk ready | head -1
-     - If no tickets: GOTO COMPLETE
+     - Run `ticketQuery` from config (default: `tk ready | head -1 | awk '{print $1}'`).
+     - If no ticket and `completionCheck` indicates empty backlog, GOTO COMPLETE.
+     - If no ticket but backlog not empty, sleep `sleepBetweenRetries` and retry.
 
   3. RE-ANCHOR
      - Inject lessons from AGENTS.md
@@ -138,7 +145,7 @@ FOR iteration = 1 TO maxIterations:
      - Load knowledge base (if configured)
 
   4. EXECUTE
-     - Run workflow: /irf-lite {ticket} --auto
+     - Run workflow: `{workflow} {ticket} {workflowFlags}` from config
      - Wait for completion
 
   5. PARSE RESULT
@@ -241,7 +248,7 @@ Read and summarize:
 
 ## Integration with IRF Workflow
 
-Ralph is **additive** - the core `/irf-lite` workflow works identically:
+Ralph is **additive** - the core `/irf` workflow works identically:
 
 | Aspect | Standalone | With Ralph |
 |--------|-----------|------------|
@@ -258,14 +265,14 @@ The workflow skill handles ticket implementation. Ralph skill handles:
 
 ## Error Handling
 
-- **No tickets ready**: Sleep and retry, or complete if max idle
+- **No tickets ready**: Use `completionCheck` to decide complete vs sleep `sleepBetweenRetries`
 - **Workflow fails**: Mark failed, continue to next ticket
 - **State files corrupt**: Re-initialize from scratch
 - **Max iterations reached**: Output promise sigil and stop
 
 ## Output
 
-Always output promise sigil on completion:
+Output promise sigil on completion when `promiseOnComplete` is true:
 ```
 <promise>COMPLETE</promise>
 ```

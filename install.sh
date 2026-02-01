@@ -59,47 +59,36 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Create directories
-mkdir -p "$TARGET_BASE/agents"
-mkdir -p "$TARGET_BASE/skills/irf-workflow"
-mkdir -p "$TARGET_BASE/skills/irf-planning"
-mkdir -p "$TARGET_BASE/skills/irf-config"
-mkdir -p "$TARGET_BASE/skills/ralph"
-mkdir -p "$TARGET_BASE/prompts"
-mkdir -p "$TARGET_BASE/workflows/implement-review-fix-close"
+MANIFEST="$SCRIPT_DIR/config/install-manifest.txt"
 
-# Copy agents (execution units for parallel reviews)
-cp "$SCRIPT_DIR/agents/implementer.md" "$TARGET_BASE/agents/"
-cp "$SCRIPT_DIR/agents/reviewer-general.md" "$TARGET_BASE/agents/"
-cp "$SCRIPT_DIR/agents/reviewer-spec-audit.md" "$TARGET_BASE/agents/"
-cp "$SCRIPT_DIR/agents/reviewer-second-opinion.md" "$TARGET_BASE/agents/"
-cp "$SCRIPT_DIR/agents/fixer.md" "$TARGET_BASE/agents/"
-cp "$SCRIPT_DIR/agents/closer.md" "$TARGET_BASE/agents/"
+if [ ! -f "$MANIFEST" ]; then
+  echo "Install manifest not found: $MANIFEST" >&2
+  exit 1
+fi
 
-# Copy skills (domain expertise)
-cp "$SCRIPT_DIR/skills/irf-workflow/SKILL.md" "$TARGET_BASE/skills/irf-workflow/"
-cp "$SCRIPT_DIR/skills/irf-planning/SKILL.md" "$TARGET_BASE/skills/irf-planning/"
-cp "$SCRIPT_DIR/skills/irf-config/SKILL.md" "$TARGET_BASE/skills/irf-config/"
-cp "$SCRIPT_DIR/skills/ralph/SKILL.md" "$TARGET_BASE/skills/ralph/"
+agents_count=0
+skills_count=0
+prompts_count=0
+workflows_count=0
 
-# Copy prompts (command entry points - skill-based)
-cp "$SCRIPT_DIR/prompts/irf.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/irf-lite.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/irf-seed.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/irf-backlog.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/irf-backlog-ls.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/irf-spike.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/irf-from-openspec.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/irf-baseline.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/irf-followups.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/irf-sync.md" "$TARGET_BASE/prompts/"
-cp "$SCRIPT_DIR/prompts/ralph-start.md" "$TARGET_BASE/prompts/"
-
-# Copy workflow config
-cp "$SCRIPT_DIR/workflows/implement-review-fix-close/config.json" \
-   "$TARGET_BASE/workflows/implement-review-fix-close/"
-cp "$SCRIPT_DIR/workflows/implement-review-fix-close/README.md" \
-   "$TARGET_BASE/workflows/implement-review-fix-close/"
+while IFS= read -r line || [ -n "$line" ]; do
+  line="$(printf '%s' "$line" | sed -e 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+  if [ -z "$line" ] || [[ "$line" == \#* ]]; then
+    continue
+  fi
+  if [ ! -f "$SCRIPT_DIR/$line" ]; then
+    echo "Missing install file: $SCRIPT_DIR/$line" >&2
+    exit 1
+  fi
+  mkdir -p "$TARGET_BASE/$(dirname "$line")"
+  cp "$SCRIPT_DIR/$line" "$TARGET_BASE/$line"
+  case "$line" in
+    agents/*) agents_count=$((agents_count + 1)) ;;
+    skills/*) skills_count=$((skills_count + 1)) ;;
+    prompts/*) prompts_count=$((prompts_count + 1)) ;;
+    workflows/*) workflows_count=$((workflows_count + 1)) ;;
+  esac
+ done < "$MANIFEST"
 
 # Create root AGENTS.md if it doesn't exist (for --project installs)
 if [ -f "$SCRIPT_DIR/docs/AGENTS.md.template" ] && [ ! -f "AGENTS.md" ]; then
@@ -112,12 +101,12 @@ fi
 echo "Installed IRF workflow files to: $TARGET_BASE"
 echo ""
 echo "Installed components:"
-echo "  - 6 agents (execution units)"
-echo "  - 4 skills (domain expertise)"
-echo "  - 11 prompts (command entry points)"
-echo "  - 1 workflow config"
+echo "  - $agents_count agents (execution units)"
+echo "  - $skills_count skills (domain expertise)"
+echo "  - $prompts_count prompts (command entry points)"
+echo "  - $workflows_count workflow files"
 echo ""
 echo "Next steps:"
 echo "  1. Review AGENTS.md (project patterns)"
 echo "  2. Initialize Ralph: ./bin/irf ralph init"
-echo "  3. Start working: /irf-lite <ticket>"
+echo "  3. Start working: /irf <ticket>"

@@ -8,7 +8,9 @@
     "fixer": "zai/glm-4.7:high",
     "closer": "zai/glm-4.7:medium",
     "researcher": "openai-codex/gpt-5.1-codex-mini:medium",
-    "researcher-fetch": "openai-codex/gpt-5.1-codex-mini:medium"
+    "researcher-fetch": "openai-codex/gpt-5.1-codex-mini:medium",
+    "planning": "openai-codex/gpt-5.1-codex-mini:medium",
+    "config": "zai/glm-4.7:medium"
   },
   "checkers": {
     "python": {

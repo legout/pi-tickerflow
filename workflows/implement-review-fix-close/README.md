@@ -84,8 +84,8 @@ The chain is triggered by:
 - `--auto` / `--no-clarify` → run headless
 - `--plan` / `--dry-run` → show resolved chain, do not run agents
 - `--create-followups` → run `/irf-followups` on merged review
-- `--simplify-tickets` → run `/simplify --create-tickets --last-implementation` after chain
-- `--final-review-loop` → run `/review-start` after chain
+- `--simplify-tickets` → run `/simplify --create-tickets --last-implementation` after chain (if available)
+- `--final-review-loop` → run `/review-start` after chain (if available)
 - `--with-research` → force enable research step
 - `--no-research` → force disable research step
 
@@ -111,16 +111,19 @@ Reviews use these categories:
 
 The fixer **only handles Critical/Major/Minor**. Warnings/Suggestions should be ticketized separately. If there are no Critical/Major/Minor issues, the fixer writes a "No fixes needed" stub and makes no changes.
 
+If `workflow.enableQualityGate` is true and any severity in `workflow.failOn` is present, the close step is skipped and the ticket remains open.
+
 ---
 
 ## Configuration
 
 Edit the config file to customize:
 
-- **Models** per agent
+- **Models** per agent and prompt role (planning/config)
 - **Checkers** per language (lint/format/typecheck)
 - **Workflow toggles** (enable/disable research, reviewers, fixer, closer, quality gate)
 - **Fail-on severities** (`workflow.failOn`, list of severities that block closing)
+- **Research parallelism** (`workflow.researchParallelAgents`)
 - **Knowledge directory** (`workflow.knowledgeDir`, default `.pi/knowledge`)
 - **MCP servers** (`workflow.mcpServers`, list of server ids to configure)
 - **Exclude globs** for generated files
@@ -130,7 +133,9 @@ Example (partial):
 {
   "models": {
     "implementer": "chutes/moonshotai/Kimi-K2.5-TEE:high",
-    "reviewer-general": "openai-codex/gpt-5.1-codex-mini:high"
+    "reviewer-general": "openai-codex/gpt-5.1-codex-mini:high",
+    "planning": "openai-codex/gpt-5.1-codex-mini:medium",
+    "config": "zai/glm-4.7:medium"
   },
   "checkers": {
     "python": {
@@ -170,7 +175,7 @@ Model changes are applied via:
 /irf-sync
 ```
 
-This updates the `model:` frontmatter in all workflow agent files.
+This updates the `model:` frontmatter in workflow agent **and prompt** files.
 
 ---
 

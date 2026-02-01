@@ -35,12 +35,13 @@ The current IRF workflows use many subagents, which introduces fragility:
 | fixer | Subagent | Different model | **Replace** - Use model-switch |
 | closer | Subagent | Different model | **Replace** - Use model-switch |
 
-### Solution: `/irf-lite`
+### Solution: `/irf` (Model-Switch Workflow)
 
 - Uses `pi-model-switch` for sequential model changes
 - Keeps subagents **only** for parallel reviews (3 subagents)
 - Reduces subagent spawns from 6-8 to 3
 - Cuts failure points by ~60%
+- Legacy full-subagent workflow has been removed; `/irf-lite` is now a deprecated alias
 
 ---
 
@@ -64,18 +65,18 @@ The `irf-planner` agent handles 6 different modes via a mode prefix. This design
 - The subagent exists only to use a different model
 - All logic could be in the prompt template with model-switch
 
-### Solution: `-lite` Variants
+### Solution: Inline Planning Prompts
 
 | Command | Subagents Before | Subagents After |
 |---------|------------------|-----------------|
-| `/irf-seed-lite` | 1 | 0 |
-| `/irf-backlog-lite` | 1 | 0 |
-| `/irf-baseline-lite` | 1 | 0 |
-| `/irf-followups-lite` | 1 | 0 |
-| `/irf-from-openspec-lite` | 1 | 0 |
-| `/irf-spike-lite` | 4 | 0 (or 3 with `--parallel`) |
+| `/irf-seed` | 1 | 0 |
+| `/irf-backlog` | 1 | 0 |
+| `/irf-baseline` | 1 | 0 |
+| `/irf-followups` | 1 | 0 |
+| `/irf-from-openspec` | 1 | 0 |
+| `/irf-spike` | 4 | 0 (or 3 with `--parallel`) |
 
-**Total planning workflow reduction:** 9 subagents → 0-3 subagents
+**Total planning workflow reduction:** 9 subagents → 0-3 subagents (planning prompts run inline)
 
 ---
 
@@ -83,15 +84,15 @@ The `irf-planner` agent handles 6 different modes via a mode prefix. This design
 
 ### Implementation Workflow
 
-| Workflow | Original | Lite |
-|----------|----------|------|
-| `/irf` | 6-8 subagents | - |
-| `/irf-lite` | - | 3 subagents |
+| Workflow | Subagent Spawns |
+|----------|-----------------|
+| `/irf` (model-switch) | 3 (parallel reviews only) |
+| `/irf-lite` (deprecated alias) | 3 (parallel reviews only) |
 
 ### Planning Workflows
 
-| Workflow | Original | Lite |
-|----------|----------|------|
+| Workflow | Original | Current |
+|----------|----------|---------|
 | `/irf-seed` | 1 | 0 |
 | `/irf-backlog` | 1 | 0 |
 | `/irf-baseline` | 1 | 0 |
@@ -104,7 +105,7 @@ The `irf-planner` agent handles 6 different modes via a mode prefix. This design
 | Scenario | Max Subagent Spawns |
 |----------|---------------------|
 | Original workflows | 14-17 |
-| Lite workflows | 3-6 |
+| Current workflows | 3-6 |
 | **Reduction** | **~70-80%** |
 
 ---
@@ -112,15 +113,16 @@ The `irf-planner` agent handles 6 different modes via a mode prefix. This design
 ## Files Created
 
 ### Implementation
-- `prompts/irf-lite.md` - Simplified implementation workflow
+- `prompts/irf.md` - Standard model-switch workflow
+- `prompts/irf-lite.md` - Deprecated alias for `/irf`
 
 ### Planning
-- `prompts/irf-seed-lite.md`
-- `prompts/irf-backlog-lite.md`
-- `prompts/irf-baseline-lite.md`
-- `prompts/irf-followups-lite.md`
-- `prompts/irf-from-openspec-lite.md`
-- `prompts/irf-spike-lite.md`
+- `prompts/irf-seed.md`
+- `prompts/irf-backlog.md`
+- `prompts/irf-baseline.md`
+- `prompts/irf-followups.md`
+- `prompts/irf-from-openspec.md`
+- `prompts/irf-spike.md`
 
 ### Config
 - `config/model-aliases.json` - Example aliases for pi-model-switch
@@ -129,18 +131,11 @@ The `irf-planner` agent handles 6 different modes via a mode prefix. This design
 
 ## Extension Requirements
 
-### For Lite Workflows (Recommended)
+### For Planning Workflows (Recommended)
 
 ```bash
 pi install npm:pi-subagents      # For parallel reviews only
 pi install npm:pi-model-switch   # For on-the-fly model switching
-pi install npm:pi-mcp-adapter    # Optional, for research MCP tools
-```
-
-### For Original Workflows (Fallback)
-
-```bash
-pi install npm:pi-subagents      # For all subagent spawns
 pi install npm:pi-mcp-adapter    # Optional, for research MCP tools
 ```
 
@@ -151,18 +146,7 @@ pi install npm:pi-mcp-adapter    # Optional, for research MCP tools
 ## Migration Path
 
 1. **Test `pi-model-switch`** - Verify it works as expected in your environment
-2. **Try `-lite` variants** - Start with `/irf-lite` on a test ticket
-3. **Compare reliability** - Track failure rates between original and lite
-4. **Migrate gradually** - Switch to lite variants as confidence grows
-5. **Deprecate originals** - Once lite is proven, consider removing originals
+2. **Use `/irf`** - Standard model-switch workflow for implementation tickets
+3. **Update scripts** - Replace `/irf-lite` calls with `/irf` (alias remains but is deprecated)
+4. **Remove legacy references** - Drop old subagent workflow assumptions
 
----
-
-## Original Agents (Kept as Fallback)
-
-The following agents are kept for the original workflows:
-- `agents/irf-planner.md` - God agent for planning (used by original prompts)
-- `agents/researcher.md` - Research coordinator
-- `agents/researcher-fetch.md` - Individual research fetcher
-
-These can be removed once lite workflows are validated and original prompts are deprecated.

@@ -1,6 +1,6 @@
 ---
 description: Revise an implementation plan based on feedback [irf-planning +codex-mini]
-model: openai-codex/gpt-5.1-codex-mini
+model: openai-codex/gpt-5.1-codex-mini:medium
 skill: irf-planning
 ---
 

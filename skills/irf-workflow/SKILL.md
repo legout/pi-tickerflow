@@ -23,17 +23,19 @@ Before executing, verify:
 
 ### Extension Requirements
 
-This skill requires two Pi extensions:
+This skill requires three Pi extensions:
 
 | Extension | Purpose |
 |-----------|---------|
 | `pi-prompt-template-model` | **Entry model switch** - Sets the initial model via frontmatter when the command starts |
 | `pi-model-switch` | **Runtime model switches** - Changes models between workflow phases (implement → review → fix) |
+| `pi-subagents` | **Parallel reviews** - Spawns reviewer subagents |
 
-Install both:
+Install them:
 ```bash
 pi install npm:pi-prompt-template-model
 pi install npm:pi-model-switch
+pi install npm:pi-subagents
 ```
 
 ## Configuration
@@ -44,10 +46,29 @@ Read workflow config (project overrides global):
 
 Key config values:
 - `models.implementer` - Model for implementation phase
+- `models.reviewer-*` - Models for reviewer agents
 - `models.review-merge` - Model for review merge
 - `models.fixer` - Model for fixes
+- `models.closer` - Model for closing phase
 - `workflow.enableResearcher` - Whether to run research step
+- `workflow.researchParallelAgents` - Parallelism for research fetches
+- `workflow.enableReviewers` - Which reviewers to run (empty = skip)
+- `workflow.enableFixer` - Whether to run fix step
+- `workflow.enableCloser` - Whether to run close step
+- `workflow.enableQualityGate` - Whether to enforce fail-on severities
+- `workflow.failOn` - List of severities that block closing
 - `workflow.knowledgeDir` - Where to store knowledge artifacts
+
+## Flag Handling
+
+Parse flags from the Task input before running any steps:
+
+- `--plan` / `--dry-run`: Print the resolved chain (enabled/disabled steps, models, reviewers) and exit without running agents.
+- `--no-research`: Skip research even if enabled in config.
+- `--with-research`: Force research even if disabled in config.
+- `--create-followups`: After review merge, run `/irf-followups` (or equivalent procedure) on the merged review.
+- `--simplify-tickets`: After the chain completes, run `/simplify --create-tickets --last-implementation` if the command exists. If not available, warn and continue.
+- `--final-review-loop`: After the chain completes, run `/review-start` if the review-loop extension is installed. If not available, warn and continue.
 
 ## Execution Procedures
 
@@ -74,14 +95,14 @@ Run this at the start of EVERY ticket implementation to prevent context rot.
 
 ### Procedure: Research (Optional)
 
-Skip if: `--no-research` flag OR `workflow.enableResearcher` is false
+Skip if: `--no-research` flag OR (`workflow.enableResearcher` is false AND `--with-research` not set)
 
 **With existing research:**
 - If `{knowledgeDir}/tickets/{ticket}.md` exists and is sufficient, use it
 
 **Fresh research:**
 1. Check available MCP tools (context7, exa, grep_app, zai-web-search)
-2. Query each available tool for relevant documentation/code
+2. If `workflow.researchParallelAgents` > 1 and `researcher-fetch` is available, spawn parallel fetches (docs/web/code). Otherwise, query sequentially.
 3. Synthesize findings
 4. Write to `{knowledgeDir}/tickets/{ticket}.md`
 
@@ -137,6 +158,11 @@ Skip if: `--no-research` flag OR `workflow.enableResearcher` is false
 
 This is the ONLY step requiring subagents.
 
+**Determine reviewers**:
+- If `workflow.enableReviewers` is set, use that list in order.
+- If not set, default to: `reviewer-general`, `reviewer-spec-audit`, `reviewer-second-opinion`.
+- If the list is empty, skip reviews and write a stub `review.md` with "No reviews run" in Critical.
+
 **Execute parallel subagents**:
 ```json
 {
@@ -152,19 +178,22 @@ Store returned paths for next step.
 
 ### Procedure: Merge Reviews
 
-1. **Switch to review-merge model**:
+1. **Handle skipped reviews**:
+   - If no reviewer outputs exist (reviews disabled), write a stub `review.md` with "No reviews run" in Critical and zero counts, then return.
+
+2. **Switch to review-merge model**:
    ```
    switch_model action="switch" search="{models.review-merge}"
    ```
 
-2. **Read all three review outputs**
+3. **Read available review outputs**
 
-3. **Deduplicate issues**:
+4. **Deduplicate issues**:
    - Match by file path + line number + description similarity
    - Keep highest severity when duplicates found
    - Note source reviewer(s)
 
-4. **Write consolidated `review.md`**:
+5. **Write consolidated `review.md`**:
    ```markdown
    # Review: {ticket-id}
 
@@ -193,37 +222,69 @@ Store returned paths for next step.
 
 ### Procedure: Fix Issues
 
-1. **Switch to fixer model** (if different):
+1. **Check if fixer is enabled**:
+   - If `workflow.enableFixer` is false, write `fixes.md` noting the fixer is disabled and skip this step.
+
+2. **Switch to fixer model** (if different):
    ```
    switch_model action="switch" search="{models.fixer}"
    ```
 
-2. **Check review issues**:
+3. **Check review issues**:
    - If zero Critical/Major/Minor: write "No fixes needed" to `fixes.md`, skip to Close
 
-3. **Fix issues**:
+4. **Fix issues**:
    - Fix all Critical issues (required)
    - Fix all Major issues (should do)
    - Fix Minor issues if low effort
    - Do NOT fix Warnings/Suggestions (these become follow-up tickets)
 
-4. **Re-run tests** after fixes
+5. **Re-run tests** after fixes
 
-5. **Write `fixes.md`** documenting what was fixed
+6. **Write `fixes.md`** documenting what was fixed
+
+### Procedure: Follow-up Tickets (Optional)
+
+Run only when `--create-followups` is provided.
+
+1. **Use merged review**: Ensure `review.md` exists.
+2. **Create follow-ups**: Run `/irf-followups <review.md>` or follow the IRF Planning "Follow-up Creation" procedure.
+3. **Write `followups.md`** documenting created tickets or "No follow-ups needed".
 
 ### Procedure: Close Ticket
 
 No model switch needed - stay on current model.
 
-1. **Read `implementation.md`, `review.md`, `fixes.md`**
+1. **Check close gating**:
+   - Parse `review.md` counts (Critical/Major/Minor/Warnings/Suggestions).
+   - If `workflow.enableCloser` is false, write `close-summary.md` noting closure was skipped and do not call `tk`.
+   - If `workflow.enableQualityGate` is true and any severity in `workflow.failOn` has a nonzero count, write `close-summary.md` with status BLOCKED and do not call `tk`.
 
-2. **Compose summary note** for ticket
+2. **Read `implementation.md`, `review.md`, `fixes.md`**
 
-3. **Add note via `tk add-note`**
+3. **Compose summary note** for ticket
 
-4. **Close ticket via `tk close`**
+4. **Add note via `tk add-note`**
 
-5. **Write `close-summary.md`**
+5. **Close ticket via `tk close`**
+
+6. **Write `close-summary.md`**
+
+### Procedure: Final Review Loop (Optional)
+
+Run only when `--final-review-loop` is provided.
+
+1. Check if `/review-start` is available (pi-review-loop extension).
+2. If available, run `/review-start`.
+3. If not available, warn and continue.
+
+### Procedure: Simplify Tickets (Optional)
+
+Run only when `--simplify-tickets` is provided.
+
+1. Check if `/simplify` is available.
+2. If available, run `/simplify --create-tickets --last-implementation`.
+3. If not available, warn and continue.
 
 ### Procedure: Ralph Integration (Optional)
 
@@ -256,28 +317,32 @@ Only if `.pi/ralph/` directory exists:
 
 ## Full Workflow Execution
 
-### For /irf-lite (Recommended)
+### For /irf (Standard)
 
 ```
 1. Re-Anchor Context
 2. Research (optional)
 3. Implement (model-switch)
-4. Parallel Reviews (subagents)
-5. Merge Reviews (model-switch)
-6. Fix Issues (model-switch)
-7. Close Ticket
-8. Ralph Integration (if active)
+4. Parallel Reviews (optional)
+5. Merge Reviews (optional)
+6. Fix Issues (optional)
+7. Follow-ups (optional)
+8. Close Ticket (optional / gated)
+9. Final Review Loop (optional)
+10. Simplify Tickets (optional)
+11. Ralph Integration (if active)
 ```
 
-### For /irf (Original)
+### /irf-lite (Deprecated Alias)
 
-Same phases, but steps 3-7 may spawn subagents instead of model-switch.
+`/irf-lite` runs the same workflow as `/irf` and will be removed in a future release.
 
 ## Error Handling
 
 - **switch_model fails**: Report error, continue with current model
 - **Parallel reviews fail**: Continue with available reviews
 - **tk commands fail**: Document in close-summary.md
+- **Quality gate blocks**: Skip closing, mark close-summary.md as BLOCKED
 - **Ralph files fail**: Log warning, don't fail ticket
 
 ## Output Artifacts
@@ -286,7 +351,9 @@ Always written to current working directory:
 - `implementation.md` - What was implemented
 - `review.md` - Consolidated review
 - `fixes.md` - What was fixed
+- `followups.md` - Follow-up tickets (if `--create-followups`)
 - `close-summary.md` - Final summary
+- `chain-summary.md` - Links to artifacts (if closer runs)
 
 Ralph files (if active):
 - `.pi/ralph/progress.md` - Updated
