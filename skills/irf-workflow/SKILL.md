@@ -168,6 +168,11 @@ This is the ONLY step requiring subagents.
 - If not set, default to: `reviewer-general`, `reviewer-spec-audit`, `reviewer-second-opinion`.
 - If the list is empty, skip reviews and write a stub `review.md` with "No reviews run" in Critical.
 
+Each reviewer uses a different meta-model:
+- `reviewer-general` → `metaModels.review-general.model`
+- `reviewer-spec-audit` → `metaModels.review-spec.model`  
+- `reviewer-second-opinion` → `metaModels.review-secop.model`
+
 **Execute parallel subagents**:
 ```json
 {
@@ -187,7 +192,8 @@ Store returned paths for next step.
    - If no reviewer outputs exist (reviews disabled), write a stub `review.md` with "No reviews run" in Critical and zero counts, then return.
 
 2. **Switch to review-merge model**:
-   - Look up `agents.review-merge` in config → get meta-model key (e.g., "fast")
+   - Look up `agents.review-merge` in config → get meta-model key ("fast")
+   - Look up `metaModels.fast.model` → get actual model ID
    - ```
      switch_model action="switch" search="{metaModels.fast.model}"
      ```
@@ -232,7 +238,8 @@ Store returned paths for next step.
    - If `workflow.enableFixer` is false, write `fixes.md` noting the fixer is disabled and skip this step.
 
 2. **Switch to fixer model** (if different):
-   - Look up `agents.fixer` in config → get meta-model key (e.g., "fast")
+   - Look up `agents.fixer` in config → get meta-model key ("fast")
+   - Look up `metaModels.fast.model` → get actual model ID
    - ```
      switch_model action="switch" search="{metaModels.fast.model}"
      ```

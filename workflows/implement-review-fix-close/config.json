@@ -1,36 +1,51 @@
 {
   "metaModels": {
     "planning": {
-      "model": "openai-codex/gpt-5.1-codex-mini",
+      "model": "openai-codex/gpt-5.2",
       "thinking": "medium",
-      "description": "Fast, cheap model for planning tasks"
+      "description": "Fast, capable model for planning and specification"
     },
     "worker": {
-      "model": "chutes/moonshotai/Kimi-K2.5-TEE",
+      "model": "kimi-coding/k2p5",
       "thinking": "high",
       "description": "Strong model for implementation and complex reasoning"
     },
     "research": {
-      "model": "openai-codex/gpt-5.1-codex-mini",
+      "model": "minimax/MiniMax-M2.1",
       "thinking": "medium",
       "description": "Fast model for research and information gathering"
     },
     "fast": {
-      "model": "zai/glm-4.7",
+      "model": "zai/glm-4.7-flash",
       "thinking": "medium",
       "description": "Cheapest model for quick tasks, fixes, and summaries"
     },
-    "review": {
+    "general": {
+      "model": "zai/glm-4.7",
+      "thinking": "medium",
+      "description": "General-purpose model for admin tasks"
+    },
+    "review-general": {
       "model": "openai-codex/gpt-5.1-codex-mini",
       "thinking": "high",
-      "description": "Capable model for code review"
+      "description": "Capable model for general code review"
+    },
+    "review-spec": {
+      "model": "openai-codex/gpt-5.2-codex",
+      "thinking": "high",
+      "description": "Strong model for specification compliance audit"
+    },
+    "review-secop": {
+      "model": "github-copilot/grok-code-fast-1",
+      "thinking": "high",
+      "description": "Fast model for second-opinion review"
     }
   },
   "agents": {
     "implementer": "worker",
-    "reviewer-general": "review",
-    "reviewer-spec-audit": "review",
-    "reviewer-second-opinion": "review",
+    "reviewer-general": "review-general",
+    "reviewer-spec-audit": "review-spec",
+    "reviewer-second-opinion": "review-secop",
     "review-merge": "fast",
     "fixer": "fast",
     "closer": "fast",
@@ -51,7 +66,7 @@
     "irf-baseline": "planning",
     "irf-followups": "planning",
     "irf-from-openspec": "planning",
-    "irf-sync": "fast",
+    "irf-sync": "general",
     "ralph-start": "worker"
   },
   "checkers": {
