@@ -10,12 +10,12 @@ usage() {
 Ticketflow CLI
 
 Usage:
-  ./bin/irf setup [--global|--project <path>]
-  ./bin/irf sync [--global|--project <path>]
-  ./bin/irf doctor [--global|--project <path>]
-  ./bin/irf backlog-ls [topic-id-or-path] [--global|--project <path>]
-  ./bin/irf track <path> [--file <files_changed_path>]
-  ./bin/irf ralph <subcommand> [options]
+  tf setup [--global|--project <path>]
+  tf sync [--global|--project <path>]
+  tf doctor [--global|--project <path>]
+  tf backlog-ls [topic-id-or-path] [--global|--project <path>]
+  tf track <path> [--file <files_changed_path>]
+  tf ralph <subcommand> [options]
 
 Commands:
   setup       Interactive install + optional dependencies + MCP config
@@ -255,7 +255,7 @@ configure_mcp() {
 track_file() {
   local tracked_path="${1:-}"
   if [ -z "$tracked_path" ]; then
-    echo "Usage: ./bin/irf track <path> [--file <files_changed_path>]" >&2
+    echo "Usage: tf track <path> [--file <files_changed_path>]" >&2
     exit 1
   fi
 
@@ -378,11 +378,11 @@ ralph_usage() {
 Ralph Loop Management
 
 Usage:
-  ./bin/irf ralph init         Create .pi/ralph/ directory structure
-  ./bin/irf ralph status       Show current loop state and statistics
-  ./bin/irf ralph reset        Clear progress (use --keep-lessons to preserve lessons)
-  ./bin/irf ralph lessons      Show lessons learned
-  ./bin/irf ralph lessons prune [N]  Keep only last N lessons (default: 20)
+  tf ralph init         Create .pi/ralph/ directory structure
+  tf ralph status       Show current loop state and statistics
+  tf ralph reset        Clear progress (use --keep-lessons to preserve lessons)
+  tf ralph lessons      Show lessons learned
+  tf ralph lessons prune [N]  Keep only last N lessons (default: 20)
 
 The Ralph loop itself is started via Pi prompt:
   /ralph-start [--max-iterations N]
@@ -500,7 +500,7 @@ CONFIG_EOF
 
 ralph_status() {
   if [ ! -d "$RALPH_DIR" ]; then
-    echo "Ralph not initialized. Run: ./bin/irf ralph init"
+    echo "Ralph not initialized. Run: tf ralph init"
     exit 1
   fi
   
@@ -546,7 +546,7 @@ ralph_status() {
 
 ralph_reset() {
   if [ ! -d "$RALPH_DIR" ]; then
-    echo "Ralph not initialized. Run: ./bin/irf ralph init"
+    echo "Ralph not initialized. Run: tf ralph init"
     exit 1
   fi
   
@@ -628,7 +628,7 @@ AGENTS_EOF
 
 ralph_lessons() {
   if [ ! -d "$RALPH_DIR" ]; then
-    echo "Ralph not initialized. Run: ./bin/irf ralph init"
+    echo "Ralph not initialized. Run: tf ralph init"
     exit 1
   fi
   
@@ -704,7 +704,7 @@ PY
       ;;
     *)
       echo "Unknown lessons subcommand: $subcmd"
-      echo "Usage: ./bin/irf ralph lessons [show|prune [N]]"
+      echo "Usage: tf ralph lessons [show|prune [N]]"
       exit 1
       ;;
   esac
@@ -747,21 +747,15 @@ agentsmd_usage() {
 AGENTS.md Management
 
 Usage:
-  ./bin/irf agentsmd init [path]          Create minimal AGENTS.md
-  ./bin/irf agentsmd status [path]        Show AGENTS.md overview
-  ./bin/irf agentsmd validate [path]      Check for bloat, stale paths
-  ./bin/irf agentsmd fix [path]           Auto-fix common issues
+  tf agentsmd init [path]          Create minimal AGENTS.md
+  tf agentsmd status [path]        Show AGENTS.md overview
+  tf agentsmd validate [path]      Check for bloat, stale paths
+  tf agentsmd fix [path]           Auto-fix formatting issues
+  tf agentsmd update [path]        Update tool preferences
 
 Options:
   [path]      Target directory (default: current directory)
-              Creates AGENTS.md at [path]/AGENTS.md
-
-Examples:
-  ./bin/irf agentsmd init                 # Create AGENTS.md in current dir
-  ./bin/irf agentsmd init ~/my-project    # Create in specific directory
-  ./bin/irf agentsmd status               # Check current AGENTS.md
-  ./bin/irf agentsmd validate             # Validate for issues
-  ./bin/irf agentsmd fix                  # Auto-fix with backup
+              Creates/updates AGENTS.md at [path]/AGENTS.md
 EOF
 }
 
@@ -1006,7 +1000,7 @@ EOF
   echo "Next steps:"
   echo "  1. Review and customize the description"
   echo "  2. Add convention docs to docs/ folder if needed"
-  echo "  3. Run './bin/irf agentsmd validate' to check"
+  echo "  3. Run 'tf agentsmd validate' to check"
   
   # Offer to symlink CLAUDE.md for Claude Code users
   if [ ! -f "$target_dir/CLAUDE.md" ]; then
@@ -1032,7 +1026,7 @@ agentsmd_status() {
     echo "❌ No AGENTS.md found at: $agents_file"
     echo ""
     echo "Create one with:"
-    echo "  ./bin/irf agentsmd init"
+    echo "  tf agentsmd init"
     exit 1
   fi
   
@@ -1193,7 +1187,7 @@ agentsmd_validate() {
   else
     echo "Issues: $issues, Warnings: $warnings"
     if [ $issues -gt 0 ]; then
-      echo "Run './bin/irf agentsmd fix' to attempt auto-fixes"
+      echo "Run 'tf agentsmd fix' to attempt auto-fixes"
     fi
   fi
 }
@@ -1265,6 +1259,35 @@ This project uses \`$pm\`.\\
   echo "Review changes with: git diff $agents_file"
 }
 
+agentsmd_update() {
+  local target_dir="${1:-$(pwd)}"
+  local agents_file="$target_dir/AGENTS.md"
+  
+  if [ ! -f "$agents_file" ]; then
+    echo "AGENTS.md not found. Run: tf agentsmd init"
+    exit 1
+  fi
+  
+  # Backup
+  cp "$agents_file" "$agents_file.backup.$(date +%Y%m%d%H%M%S)"
+  
+  # Update tool preferences section if it exists
+  if grep -q "## Tool Preferences" "$agents_file"; then
+    echo "Found Tool Preferences section - review manually"
+  else
+    # Add tool preferences section
+    cat >> "$agents_file" <<'EOF'
+
+## Tool Preferences
+- Use `rg` instead of `grep` for searching
+- Use `ast-grep` for semantic code search when available
+EOF
+    echo "Added Tool Preferences section"
+  fi
+  
+  echo "Review changes: git diff $agents_file"
+}
+
 agentsmd_cmd() {
   local subcmd="${1:-}"
   shift || true
@@ -1281,6 +1304,9 @@ agentsmd_cmd() {
       ;;
     fix)
       agentsmd_fix "$@"
+      ;;
+    update)
+      agentsmd_update "$@"
       ;;
     ""|help|--help|-h)
       agentsmd_usage
