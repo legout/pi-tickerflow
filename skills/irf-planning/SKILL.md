@@ -601,10 +601,17 @@ Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
 ## Common Tool Usage
 
 ### Model Switching
-All procedures use model-switch pattern:
-```
-switch_model action="switch" search="gpt-5.1-codex-mini"
-```
+All procedures use model-switch pattern with meta-model resolution:
+
+1. Look up `prompts.{command}` in config → get meta-model key (e.g., "planning")
+2. Look up `metaModels.{key}.model` → get actual model ID
+3. ```
+   switch_model action="switch" search="{metaModels.planning.model}"
+   ```
+
+For example, for `/irf-plan`:
+- `prompts.irf-plan` → "planning"
+- `metaModels.planning.model` → "openai-codex/gpt-5.1-codex-mini"
 
 ### Ticket Creation Pattern
 ```bash

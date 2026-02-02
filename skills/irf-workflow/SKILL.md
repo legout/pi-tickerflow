@@ -45,11 +45,14 @@ Read workflow config (project overrides global):
 - `~/.pi/agent/workflows/implement-review-fix-close/config.json`
 
 Key config values:
-- `models.implementer` - Model for implementation phase
-- `models.reviewer-*` - Models for reviewer agents
-- `models.review-merge` - Model for review merge
-- `models.fixer` - Model for fixes
-- `models.closer` - Model for closing phase
+- `metaModels` - Abstract model definitions (model + thinking)
+- `agents` - Maps agent names to meta-model keys
+- `workflow.*` - Enable/disable workflow steps
+
+Model resolution order:
+1. Look up agent name in `agents` map → get meta-model key
+2. Look up meta-model key in `metaModels` → get model ID
+3. Use `switch_model` with resolved model ID
 - `workflow.enableResearcher` - Whether to run research step
 - `workflow.researchParallelAgents` - Parallelism for research fetches
 - `workflow.enableReviewers` - Which reviewers to run (empty = skip)
@@ -109,9 +112,11 @@ Skip if: `--no-research` flag OR (`workflow.enableResearcher` is false AND `--wi
 ### Procedure: Implement
 
 1. **Switch to implementer model**:
-   ```
-   switch_model action="switch" search="{models.implementer}"
-   ```
+   - Look up `agents.implementer` in config → get meta-model key (e.g., "worker")
+   - Look up `metaModels.{key}.model` → get actual model ID
+   - ```
+     switch_model action="switch" search="{metaModels.worker.model}"
+     ```
 
 2. **Review all gathered context** from Re-Anchor procedure
 
@@ -182,9 +187,10 @@ Store returned paths for next step.
    - If no reviewer outputs exist (reviews disabled), write a stub `review.md` with "No reviews run" in Critical and zero counts, then return.
 
 2. **Switch to review-merge model**:
-   ```
-   switch_model action="switch" search="{models.review-merge}"
-   ```
+   - Look up `agents.review-merge` in config → get meta-model key (e.g., "fast")
+   - ```
+     switch_model action="switch" search="{metaModels.fast.model}"
+     ```
 
 3. **Read available review outputs**
 
@@ -226,9 +232,10 @@ Store returned paths for next step.
    - If `workflow.enableFixer` is false, write `fixes.md` noting the fixer is disabled and skip this step.
 
 2. **Switch to fixer model** (if different):
-   ```
-   switch_model action="switch" search="{models.fixer}"
-   ```
+   - Look up `agents.fixer` in config → get meta-model key (e.g., "fast")
+   - ```
+     switch_model action="switch" search="{metaModels.fast.model}"
+     ```
 
 3. **Check review issues**:
    - If zero Critical/Major/Minor: write "No fixes needed" to `fixes.md`, skip to Close
