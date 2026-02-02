@@ -95,6 +95,60 @@ This updates `model:` frontmatter in all agent and prompt files.
 
 ---
 
+## Workflow Configuration
+
+Additional workflow settings in `config.json`:
+
+```json
+{
+  "models": { ... },
+  "workflow": {
+    "enableResearcher": true,
+    "researchParallelAgents": 1,
+    "enableReviewers": ["reviewer-general", "reviewer-spec-audit", "reviewer-second-opinion"],
+    "enableFixer": true,
+    "enableCloser": true,
+    "enableQualityGate": false,
+    "failOn": ["Critical"],
+    "knowledgeDir": ".pi/knowledge"
+  }
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `enableResearcher` | `true` | Run research step before implementation |
+| `researchParallelAgents` | `1` | Number of parallel research fetches (1 = sequential) |
+| `enableReviewers` | `["reviewer-general", ...]` | Which reviewers to run (empty = skip) |
+| `enableFixer` | `true` | Run fix step after review |
+| `enableCloser` | `true` | Close ticket after completion |
+| `enableQualityGate` | `false` | Block closing if issues found |
+| `failOn` | `["Critical"]` | Severities that block closing |
+| `knowledgeDir` | `.pi/knowledge` | Where to store knowledge artifacts |
+
+---
+
+## Knowledge Base
+
+Planning and research artifacts are stored in `knowledgeDir` (default: `.pi/knowledge/`):
+
+```
+.pi/knowledge/
+├── index.json                    # Registry of all topics
+├── tickets/
+│   └── {ticket-id}.md           # Per-ticket research
+└── topics/
+    └── {topic-id}/
+        ├── overview.md
+        ├── seed.md|baseline.md|plan.md|spike.md
+        ├── backlog.md
+        └── ...
+```
+
+The knowledge base is automatically managed. You rarely need to edit it manually.
+
+---
+
 ## MCP Configuration (Optional)
 
 For research steps, install the MCP adapter:
@@ -133,6 +187,42 @@ Example structure:
   }
 }
 ```
+
+---
+
+## Ralph Configuration
+
+Ralph loop settings in `.pi/ralph/config.json`:
+
+```json
+{
+  "maxIterations": 50,
+  "maxIterationsPerTicket": 5,
+  "ticketQuery": "tk ready | head -1 | awk '{print $1}'",
+  "completionCheck": "tk ready | grep -q .",
+  "workflow": "/irf",
+  "workflowFlags": "--auto",
+  "sleepBetweenTickets": 5000,
+  "sleepBetweenRetries": 10000,
+  "includeKnowledgeBase": true,
+  "includePlanningDocs": true,
+  "promiseOnComplete": true,
+  "lessonsMaxCount": 50
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `maxIterations` | 50 | Total tickets to process |
+| `maxIterationsPerTicket` | 5 | Retries per ticket before moving on |
+| `ticketQuery` | `tk ready \| head -1` | Command to pick next ticket |
+| `completionCheck` | `tk ready \| grep -q .` | Command to detect empty backlog |
+| `workflow` | `/irf` | Command to run per ticket |
+| `workflowFlags` | `--auto` | Flags for workflow |
+| `sleepBetweenTickets` | 5000 | Ms to wait between tickets |
+| `sleepBetweenRetries` | 10000 | Ms to wait before retrying when no ticket found |
+| `promiseOnComplete` | true | Emit `<promise>COMPLETE</promise>` on completion |
+| `lessonsMaxCount` | 50 | Max lessons before pruning |
 
 ---
 
@@ -181,7 +271,15 @@ After installation:
 ├── workflows/
 │   └── implement-review-fix-close/
 │       └── config.json
-└── mcp.json  # (if configured)
+├── mcp.json              # (if configured)
+├── ralph/                # (if initialized)
+│   ├── AGENTS.md
+│   ├── progress.md
+│   └── config.json
+└── knowledge/            # (auto-created)
+    ├── index.json
+    ├── tickets/
+    └── topics/
 ```
 
 ---
@@ -213,3 +311,9 @@ pi install npm:pi-prompt-template-model
 - Verify `pi-mcp-adapter` installed
 - Check `.pi/mcp.json` exists and is valid
 - Verify API keys are set for external services
+
+### Knowledge base not created
+
+- Check `workflow.knowledgeDir` in config.json
+- Ensure write permissions in project directory
+- Knowledge base is auto-created on first use

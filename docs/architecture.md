@@ -11,6 +11,7 @@ pi-tk-workflow uses a **skill-centric** architecture where:
 - **Skills** contain domain expertise and procedures
 - **Commands** are thin wrappers with `model:` and `skill:` frontmatter
 - **Agents** are execution units spawned by skills for parallel work
+- **Knowledge Base** stores planning and research artifacts
 
 ---
 
@@ -66,9 +67,9 @@ Skills are the core expertise containers. They live in `skills/*/SKILL.md`.
 | Skill | Purpose | Key Procedures |
 |-------|---------|----------------|
 | `irf-workflow` | Core implementation | Re-anchor, Research, Implement, Review, Fix, Close |
-| `irf-planning` | Research & planning | Seed capture, Backlog generation, Research spike |
+| `irf-planning` | Research & planning | Seed capture, Backlog generation, Plan lifecycle, Research spike, Baseline, Follow-ups, OpenSpec bridge |
 | `irf-config` | Setup & maintenance | Verify setup, Sync models, Check MCP |
-| `ralph` | Autonomous loop | Initialize, Start loop, Extract lessons |
+| `ralph` | Autonomous loop | Initialize, Start loop, Extract lessons, Progress tracking |
 
 ### Skill Structure
 
@@ -125,16 +126,15 @@ Execute the IRF workflow for ticket: $@
 Follow the **IRF Workflow Skill** procedures.
 ```
 
-### Autocomplete Display
+### Command Categories
 
-With the `pi-prompt-template-model` extension, commands show skill and model:
-
-```
-/irf              Implement ticket [irf-workflow +Kimi-K2.5]
-/irf-plan         Create plan [irf-planning +codex-mini]
-/irf-sync         Sync config [irf-config +GLM-4.7]
-/ralph-start      Autonomous loop [ralph]
-```
+| Category | Commands | Skill |
+|----------|----------|-------|
+| Implementation | `/irf`, `/ralph-start` | irf-workflow, ralph |
+| Planning | `/irf-plan`, `/irf-plan-consult`, `/irf-plan-revise`, `/irf-plan-review` | irf-planning |
+| Research | `/irf-seed`, `/irf-spike`, `/irf-baseline` | irf-planning |
+| Ticket Creation | `/irf-backlog`, `/irf-backlog-ls`, `/irf-followups`, `/irf-from-openspec` | irf-planning |
+| Config | `/irf-sync` | irf-config |
 
 ---
 
@@ -157,6 +157,55 @@ Agents are subagent definitions in `agents/*.md`. They are:
 | `review-merge` | Consolidate reviews | After parallel reviews |
 | `fixer` | Fix identified issues | After review merge |
 | `closer` | Close ticket, summarize | After fixes complete |
+| `researcher` | Research coordination | Research phase (optional) |
+| `researcher-fetch` | Fetch specific sources | Research phase (parallel) |
+
+---
+
+## Knowledge Base
+
+All planning and research artifacts are stored in `.pi/knowledge/`:
+
+```
+.pi/knowledge/
+├── index.json                    # Registry of all topics
+├── tickets/
+│   └── {ticket-id}.md           # Per-ticket research
+└── topics/
+    └── {topic-id}/
+        ├── overview.md           # Summary + keywords
+        ├── sources.md            # References and URLs
+        ├── seed.md               # Greenfield ideas
+        ├── baseline.md           # Brownfield analysis
+        ├── plan.md               # Implementation plans
+        ├── spike.md              # Research findings
+        ├── backlog.md            # Generated tickets
+        ├── mvp-scope.md          # What's in/out
+        ├── risk-map.md           # Technical risks
+        ├── test-inventory.md     # Test coverage
+        └── dependency-map.md     # External dependencies
+```
+
+### Topic Types
+
+| Prefix | Type | Created By | Purpose |
+|--------|------|------------|---------|
+| `seed-*` | Greenfield | `/irf-seed` | New ideas and features |
+| `baseline-*` | Brownfield | `/irf-baseline` | Existing project analysis |
+| `plan-*` | Plan | `/irf-plan` | Structured implementation plans |
+| `spike-*` | Research | `/irf-spike` | Technology research |
+
+### Linking Tickets to Topics
+
+Tickets are linked to topics via `external-ref`:
+
+```bash
+tk create "Title" \
+  --description "..." \
+  --external-ref "seed-my-feature"
+```
+
+During implementation, the workflow reads the linked topic for context.
 
 ---
 
@@ -183,43 +232,106 @@ Used by skills to switch between phases:
 
 ---
 
-## Workflow Flow
+## Workflow Flows
 
-### `/irf` Flow (Standard)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  MAIN AGENT                                                 │
-├─────────────────────────────────────────────────────────────┤
-│  0. Research (optional, sequential or parallel)             │
-│  1. Implement (model-switch to implementer model)           │
-├─────────────────────────────────────────────────────────────┤
-│  2. SUBAGENT: Parallel Reviews                              │
-│     ├─ reviewer-general                                     │
-│     ├─ reviewer-spec-audit                                  │
-│     └─ reviewer-second-opinion                              │
-├─────────────────────────────────────────────────────────────┤
-│  3. Merge reviews (model-switch to cheap model)             │
-│  4. Fix issues (same cheap model)                           │
-│  5. Follow-ups (optional, --create-followups)               │
-│  6. Close ticket                                            │
-│  7. Final review loop (optional, --final-review-loop)       │
-│  8. Simplify tickets (optional, --simplify-tickets)         │
-│  9. Learn & Track (updates .pi/ralph/ if active)            │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Planning Flow
+### `/irf` Flow (Implementation)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  MAIN AGENT                                                 │
 ├─────────────────────────────────────────────────────────────┤
-│  1. model-switch to planning model (cheap)                  │
-│  2. Execute planning task inline                            │
-│  3. Write artifacts to knowledge base                       │
-│  4. [spike only, --parallel] Optional parallel research     │
+│  0. Re-anchor Context                                       │
+│     - Read root AGENTS.md                                   │
+│     - Read .pi/ralph/AGENTS.md (lessons)                    │
+│     - Read ticket + knowledge base                          │
+├─────────────────────────────────────────────────────────────┤
+│  1. Research (optional)                                     │
+│     - MCP tools (context7, exa, grep_app)                   │
+│     - Write to .pi/knowledge/tickets/{id}.md                │
+├─────────────────────────────────────────────────────────────┤
+│  2. Implement (model-switch)                                │
+│     - Switch to implementer model                           │
+│     - Write implementation.md                               │
+├─────────────────────────────────────────────────────────────┤
+│  3. Parallel Reviews (subagents)                            │
+│     - reviewer-general                                      │
+│     - reviewer-spec-audit                                   │
+│     - reviewer-second-opinion                               │
+├─────────────────────────────────────────────────────────────┤
+│  4. Merge Reviews (model-switch)                            │
+│     - Switch to cheap model                                 │
+│     - Deduplicate issues                                    │
+│     - Write review.md                                       │
+├─────────────────────────────────────────────────────────────┤
+│  5. Fix Issues                                              │
+│     - Fix Critical/Major/Minor                              │
+│     - Write fixes.md                                        │
+├─────────────────────────────────────────────────────────────┤
+│  6. Follow-ups (optional, --create-followups)               │
+│     - Create tickets from Warnings/Suggestions              │
+├─────────────────────────────────────────────────────────────┤
+│  7. Close Ticket                                            │
+│     - Add note to tk                                        │
+│     - Close ticket                                          │
+│     - Write close-summary.md                                │
+├─────────────────────────────────────────────────────────────┤
+│  8. Ralph Integration (if .pi/ralph/ exists)                │
+│     - Update progress.md                                    │
+│     - Extract lessons → AGENTS.md                           │
+│     - Output <promise>TICKET_COMPLETE</promise>             │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### Planning Flows
+
+#### Seed → Tickets
+
+```
+/irf-seed "Idea"
+  ↓
+Create .pi/knowledge/topics/seed-*/
+  - seed.md, mvp-scope.md, success-metrics.md, etc.
+  ↓
+/irf-backlog seed-*
+  ↓
+Create tickets in tk (with external-ref: seed-*)
+  ↓
+/irf <ticket>
+```
+
+#### Baseline → Tickets
+
+```
+/irf-baseline [focus]
+  ↓
+Create .pi/knowledge/topics/baseline-*/
+  - baseline.md, risk-map.md, test-inventory.md, etc.
+  ↓
+/irf-backlog baseline-*
+  ↓
+Create tickets from risks, test gaps, dependencies
+  ↓
+/irf <ticket>
+```
+
+#### Plan Lifecycle
+
+```
+/irf-plan "Feature"
+  ↓
+plan.md (status: draft)
+  ↓
+/irf-plan-consult → plan.md (status: consulted)
+  ↓
+/irf-plan-revise → plan.md (status: revised)
+  ↓
+/irf-plan-review → plan.md (status: approved/blocked)
+  ↓
+(if approved)
+  ↓
+/irf-backlog plan-*
+  ↓
+/irf <ticket>
 ```
 
 ---
@@ -239,28 +351,6 @@ Models are configured in `workflows/implement-review-fix-close/config.json`:
 | config | GLM-4.7 | Setup and sync |
 
 Run `/irf-sync` after editing config to apply changes.
-
----
-
-## Knowledge Base
-
-Workflows write artifacts to a knowledge base:
-
-```
-.pi/knowledge/
-├── topics/
-│   └── <topic>/
-│       ├── seed.md
-│       ├── mvp-scope.md
-│       └── success-metrics.md
-├── plans/
-│   └── <plan>.md
-├── tickets/
-│   └── <ticket>.md
-└── index.json
-```
-
-Tickets can reference planning docs in their descriptions for traceability.
 
 ---
 

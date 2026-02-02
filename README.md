@@ -1,12 +1,14 @@
 # pi-tk-workflow
 
-A reusable Pi workflow package for ticket-based development using the **Implement → Review → Fix → Close** cycle.
+A comprehensive Pi workflow package for ticket-based development using the **Implement → Review → Fix → Close** cycle.
 
 ```
 ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
 │ Implement│ → │  Review  │ → │   Fix    │ → │  Close   │
 └──────────┘    └──────────┘    └──────────┘    └──────────┘
 ```
+
+**Features:** Planning → Research → Ticket Creation → Implementation → Review → Autonomous Processing
 
 ---
 
@@ -16,7 +18,7 @@ A reusable Pi workflow package for ticket-based development using the **Implemen
 
 - [Pi](https://github.com/mariozechner/pi) installed and configured
 - `tk` CLI in your PATH (ticket management)
-- Language tools for your project (see workflow-specific docs)
+- Language tools for your project
 
 ### Required Pi Extensions
 
@@ -52,27 +54,31 @@ Files are installed to:
 
 ## Quick Start
 
-### 1. Create a Ticket
+### 1. Capture an Idea
 
 ```bash
-# Create a ticket using your ticket CLI
-tk create "Add user authentication endpoint"
+/irf-seed "Build a CLI tool for managing database migrations"
 ```
 
-### 2. Run the IRF Workflow
+Creates structured artifacts in `.pi/knowledge/topics/seed-build-a-cli/`.
+
+### 2. Create Tickets
+
+```bash
+/irf-backlog seed-build-a-cli
+```
+
+Generates 5-15 small, actionable tickets (1-2 hours each) linked to your seed.
+
+### 3. Run the IRF Workflow
 
 ```
 /irf TICKET-123
 ```
 
-This executes the full cycle:
-1. **Research** (optional) - Gather context via MCP tools
-2. **Implement** - Write code with model-switch to strong model
-3. **Review** - Parallel subagents review the changes
-4. **Fix** - Address issues with cheap model
-5. **Close** - Mark ticket complete
+Executes the full cycle: Research → Implement → Review → Fix → Close.
 
-### 3. Run Autonomously (Optional)
+### 4. Run Autonomously (Optional)
 
 ```
 /ralph-start --max-iterations 10
@@ -82,20 +88,76 @@ Processes tickets in a loop until backlog is empty.
 
 ---
 
+## Workflows
+
+### Greenfield Development
+
+```
+/irf-seed "Your idea" → /irf-backlog seed-* → /irf <ticket>
+```
+
+### Brownfield Development
+
+```
+/irf-baseline [focus] → /irf-backlog baseline-* → /irf <ticket>
+```
+
+### Structured Planning
+
+```
+/irf-plan "Feature description" → /irf-plan-consult → /irf-plan-revise → /irf-plan-review → /irf-backlog plan-*
+```
+
+### Research First
+
+```
+/irf-spike "Technical topic" [--parallel] → /irf-seed → /irf-backlog → /irf <ticket>
+```
+
+---
+
 ## Commands Overview
+
+### Implementation
 
 | Command | Purpose |
 |---------|---------|
 | `/irf <ticket>` | Execute IRF workflow on a ticket |
-| `/irf-plan <request>` | Create a plan document |
-| `/irf-seed <idea>` | Capture idea into seed artifacts |
-| `/irf-backlog <seed>` | Create tickets from seed/baseline |
-| `/irf-spike <topic>` | Research spike on a topic |
-| `/irf-baseline [focus]` | Capture project baseline |
-| `/irf-sync` | Sync models from config |
-| `/ralph-start` | Start autonomous loop |
+| `/ralph-start` | Start autonomous processing loop |
 
-See [docs/commands.md](docs/commands.md) for complete reference.
+### Planning & Design
+
+| Command | Purpose |
+|---------|---------|
+| `/irf-plan <request>` | Create implementation plan |
+| `/irf-plan-consult <plan>` | Gap detection and edits |
+| `/irf-plan-revise <plan>` | Apply feedback to plan |
+| `/irf-plan-review <plan>` | Validate plan (high-accuracy) |
+
+### Research & Discovery
+
+| Command | Purpose |
+|---------|---------|
+| `/irf-seed <idea>` | Capture idea into structured artifacts |
+| `/irf-spike <topic>` | Research spike (sequential or parallel) |
+| `/irf-baseline [focus]` | Capture project baseline/status-quo |
+
+### Ticket Creation
+
+| Command | Purpose |
+|---------|---------|
+| `/irf-backlog <topic>` | Create tickets from seed/baseline/plan |
+| `/irf-backlog-ls [topic]` | List backlog status and tickets |
+| `/irf-followups <review>` | Create tickets from review warnings |
+| `/irf-from-openspec <change>` | Create tickets from OpenSpec |
+
+### Configuration
+
+| Command | Purpose |
+|---------|---------|
+| `/irf-sync` | Sync models from config to agents |
+
+See [docs/commands.md](docs/commands.md) for complete reference with all flags.
 
 ---
 
@@ -112,7 +174,7 @@ skills/              # Domain expertise (reusable)
 
 prompts/             # Command entry points (thin wrappers)
   irf.md             # References irf-workflow skill
-  irf-plan.md        # References irf-planning skill
+  irf-seed.md        # References irf-planning skill
   ...
 
 agents/              # Subagent execution units
@@ -122,13 +184,41 @@ agents/              # Subagent execution units
   closer.md
 ```
 
-When you type `/irf`:
+When you type a command:
 1. Extension reads `model:` and `skill:` frontmatter
 2. Switches to specified model
 3. Injects skill content into context
 4. Executes command
 
 See [docs/architecture.md](docs/architecture.md) for details.
+
+---
+
+## Knowledge Base
+
+All planning and research artifacts are stored in `.pi/knowledge/`:
+
+```
+.pi/knowledge/
+├── index.json                    # Registry of all topics
+├── tickets/
+│   └── {ticket-id}.md           # Per-ticket research
+└── topics/
+    └── {topic-id}/
+        ├── overview.md           # Summary + keywords
+        ├── sources.md            # References and URLs
+        ├── seed.md               # Greenfield ideas
+        ├── baseline.md           # Brownfield analysis
+        ├── plan.md               # Implementation plans
+        ├── spike.md              # Research findings
+        ├── backlog.md            # Generated tickets
+        ├── mvp-scope.md          # What's in/out
+        ├── risk-map.md           # Technical risks
+        ├── test-inventory.md     # Test coverage
+        └── dependency-map.md     # External dependencies
+```
+
+Topics are automatically linked to tickets via `external-ref`.
 
 ---
 
@@ -154,7 +244,7 @@ Apply changes with:
 /irf-sync
 ```
 
-See [docs/configuration.md](docs/configuration.md) for full setup options including MCP servers.
+See [docs/configuration.md](docs/configuration.md) for full setup options.
 
 ---
 
@@ -196,9 +286,10 @@ pi-tk-workflow/
 
 ---
 
-## Next Steps
+## Documentation
 
-- **Commands**: See [docs/commands.md](docs/commands.md) for detailed command reference
-- **Architecture**: See [docs/architecture.md](docs/architecture.md) to understand how it works
-- **Ralph Loop**: See [docs/ralph.md](docs/ralph.md) for autonomous processing
-- **Configuration**: See [docs/configuration.md](docs/configuration.md) for model setup
+- **[docs/commands.md](docs/commands.md)** - Complete command reference
+- **[docs/architecture.md](docs/architecture.md)** - How it works
+- **[docs/ralph.md](docs/ralph.md)** - Autonomous processing
+- **[docs/configuration.md](docs/configuration.md)** - Setup and models
+- **[docs/workflows.md](docs/workflows.md)** - Detailed workflow guides
