@@ -4,6 +4,9 @@
 # CLI tool (will be installed to bin/irf)
 bin/irf
 
+# Helper scripts for CLI
+scripts/irf_config.py
+
 agents/implementer.md
 agents/reviewer-general.md
 agents/reviewer-spec-audit.md
