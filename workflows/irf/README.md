@@ -20,10 +20,10 @@ The chain is triggered by:
 ## Files & Locations
 
 **Config (global):**
-- `~/.pi/agent/workflows/implement-review-fix-close/config.json`
+- `~/.pi/agent/workflows/irf/config.json`
 
 **Config (project override):**
-- `<project>/.pi/workflows/implement-review-fix-close/config.json`
+- `<project>/.pi/workflows/irf/config.json`
 
 **Prompt template:**
 - `~/.pi/agent/prompts/irf.md`

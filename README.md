@@ -391,7 +391,7 @@ Topics are automatically linked to tickets via `external-ref`.
 
 ## Configuration
 
-Models are configured in `workflows/implement-review-fix-close/config.json`:
+Models are configured in `workflows/irf/config.json`:
 
 ```json
 {

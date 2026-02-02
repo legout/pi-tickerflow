@@ -57,8 +57,8 @@ Config key → Prompt file mapping:
 ## Configuration Sources
 
 Read and merge (project overrides global):
-- `.pi/workflows/implement-review-fix-close/config.json` (project)
-- `~/.pi/agent/workflows/implement-review-fix-close/config.json` (global)
+- `.pi/workflows/irf/config.json` (project)
+- `~/.pi/agent/workflows/irf/config.json` (global)
 
 ## Output Example
 

@@ -338,7 +338,7 @@ plan.md (status: draft)
 
 ## Model Strategy
 
-Models are configured in `workflows/implement-review-fix-close/config.json`:
+Models are configured in `workflows/irf/config.json`:
 
 | Role | Default Model | Purpose |
 |------|---------------|---------|

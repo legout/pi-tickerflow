@@ -27,14 +27,14 @@ def merge(a, b):
 
 
 def resolve_project_config(base: Path) -> Path:
-    project_config = Path(".pi/workflows/implement-review-fix-close/config.json")
+    project_config = Path(".pi/workflows/irf/config.json")
     if str(base).endswith("/.pi"):
-        project_config = base / "workflows/implement-review-fix-close/config.json"
+        project_config = base / "workflows/irf/config.json"
     return project_config
 
 
 def load_workflow_config(base: Path, ignore_project: bool) -> dict:
-    global_config = Path.home() / ".pi/agent/workflows/implement-review-fix-close/config.json"
+    global_config = Path.home() / ".pi/agent/workflows/irf/config.json"
     project_config = resolve_project_config(base)
 
     if ignore_project:

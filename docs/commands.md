@@ -325,7 +325,7 @@ Sync configuration from `config.json` to agent and prompt files.
 /irf-sync
 ```
 
-Updates `model:` frontmatter in all agent and prompt files based on `workflows/implement-review-fix-close/config.json`.
+Updates `model:` frontmatter in all agent and prompt files based on `workflows/irf/config.json`.
 
 ---
 

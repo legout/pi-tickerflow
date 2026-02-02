@@ -27,8 +27,8 @@ All ticket creation in this skill follows these rules:
 ## Configuration
 
 Read workflow config (project overrides global):
-- `.pi/workflows/implement-review-fix-close/config.json`
-- `~/.pi/agent/workflows/implement-review-fix-close/config.json`
+- `.pi/workflows/irf/config.json`
+- `~/.pi/agent/workflows/irf/config.json`
 
 Extract `workflow.knowledgeDir` (default: `.pi/knowledge`).
 

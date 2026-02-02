@@ -103,7 +103,7 @@ The current IRF workflow provides a strong end‑to‑end chain (Research → Im
 ## Suggested Files to Update
 - `prompts/irf.md`
 - `prompts/irf-followups.md` (new command)
-- `workflows/implement-review-fix-close/config.json`
+- `workflows/irf/config.json`
 - `bin/irf`
 - Agent files (`implementer.md`, `review-merge.md`, `fixer.md`, `closer.md`) where needed for new artifacts
 

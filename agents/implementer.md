@@ -27,7 +27,7 @@ Implement the ticket described in the Task input (ticket ID).
 5. **Implement**: Make changes following existing project patterns
 6. **Code Quality Checks** (run BEFORE tests):
    - **A. Load workflow config (preferred)**:
-     - Check for `.pi/workflows/implement-review-fix-close/config.json` (project override) and `~/.pi/agent/workflows/implement-review-fix-close/config.json` (global).
+     - Check for `.pi/workflows/irf/config.json` (project override) and `~/.pi/agent/workflows/irf/config.json` (global).
      - If both exist, merge with project settings taking precedence.
      - If `workflow.exclude` exists, filter those paths out of `files_changed.txt` before running checkers.
      - If `checkers` exists, use it to drive lint/format/typecheck commands.

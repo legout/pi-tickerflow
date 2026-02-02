@@ -51,7 +51,7 @@ pi install npm:pi-subagents              # Parallel reviewer subagents
 
 ## Model Configuration
 
-Models are configured in `workflows/implement-review-fix-close/config.json`:
+Models are configured in `workflows/irf/config.json`:
 
 ### Default Config
 
@@ -260,7 +260,7 @@ After installation:
 ├── skills/
 ├── prompts/
 └── workflows/
-    └── implement-review-fix-close/
+    └── irf/
         └── config.json
 
 # Project install
@@ -269,7 +269,7 @@ After installation:
 ├── skills/
 ├── prompts/
 ├── workflows/
-│   └── implement-review-fix-close/
+│   └── irf/
 │       └── config.json
 ├── mcp.json              # (if configured)
 ├── ralph/                # (if initialized)

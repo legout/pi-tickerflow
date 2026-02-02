@@ -38,5 +38,5 @@ prompts/irf-followups.md
 prompts/irf-sync.md
 prompts/ralph-start.md
 
-workflows/implement-review-fix-close/config.json
-workflows/implement-review-fix-close/README.md
+workflows/irf/config.json
+workflows/irf/README.md

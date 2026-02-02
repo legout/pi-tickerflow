@@ -10,8 +10,8 @@
 
 ## Sources
 - README.md
-- workflows/implement-review-fix-close/README.md
-- workflows/implement-review-fix-close/config.json
+- workflows/irf/README.md
+- workflows/irf/config.json
 - prompts/irf.md
 - bin/irf
 - agents/researcher.md

@@ -34,8 +34,8 @@ pi list | grep -q "pi-review-loop" && echo "✓ pi-review-loop" || echo "○ pi-
 ### Workflow Config
 
 Location (project overrides global):
-- `.pi/workflows/implement-review-fix-close/config.json` (project)
-- `~/.pi/agent/workflows/implement-review-fix-close/config.json` (global)
+- `.pi/workflows/irf/config.json` (project)
+- `~/.pi/agent/workflows/irf/config.json` (global)
 
 Structure:
 ```json
@@ -99,7 +99,7 @@ Check complete installation status:
    - `agents/closer.md`
 
 3. **Check workflow config exists**:
-   - Look for `workflows/implement-review-fix-close/config.json`
+   - Look for `workflows/irf/config.json`
 
 4. **Check `tk` CLI**:
    ```bash
