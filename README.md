@@ -90,74 +90,180 @@ Processes tickets in a loop until backlog is empty.
 
 ## Workflows
 
-### Greenfield Development
+Choose the workflow that matches your situation:
+
+### 🌱 Greenfield Development
+**When to use:** Starting a new project or feature from scratch
 
 ```
-/irf-seed "Your idea" → /irf-backlog seed-* → /irf <ticket>
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────┐
+│  /irf-seed  │ →  │ /irf-backlog │ →  │  /irf       │ →  │  /ralph  │
+│  "Your idea"│    │   seed-*     │    │  <ticket>   │    │  -start  │
+└─────────────┘    └──────────────┘    └─────────────┘    │(optional)│
+                                                          └──────────┘
 ```
 
-### Brownfield Development
+1. Capture your idea with `/irf-seed`
+2. Generate tickets with `/irf-backlog`
+3. Implement with `/irf <ticket>`
+4. (Optional) Run autonomously with `/ralph-start`
+
+---
+
+### 🏗️ Brownfield Development
+**When to use:** Working with an existing codebase, refactoring, or improvements
 
 ```
-/irf-baseline [focus] → /irf-backlog baseline-* → /irf <ticket>
+┌──────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────┐
+│/irf-baseline │ →  │ /irf-backlog │ →  │  /irf       │ →  │  /ralph  │
+│  [focus]     │    │  baseline-*  │    │  <ticket>   │    │  -start  │
+└──────────────┘    └──────────────┘    └─────────────┘    │(optional)│
+                                                           └──────────┘
 ```
 
-### Structured Planning
+1. Capture current state with `/irf-baseline` (analyzes risks, tests, dependencies)
+2. Create improvement tickets with `/irf-backlog`
+3. Implement with `/irf <ticket>`
+4. (Optional) Run autonomously with `/ralph-start`
+
+---
+
+### 📋 Structured Planning
+**When to use:** Complex features requiring careful design, multiple stakeholders, or high-risk changes
 
 ```
-/irf-plan "Feature description" → /irf-plan-consult → /irf-plan-revise → /irf-plan-review → /irf-backlog plan-*
+┌────────────┐   ┌──────────────┐   ┌─────────────┐   ┌─────────────┐   ┌──────────────┐   ┌──────────┐
+│ /irf-plan  │ → │/irf-plan-    │ → │/irf-plan-   │ → │/irf-plan-   │ → │ /irf-backlog │ → │  /irf    │
+│  "Feature" │   │   consult    │   │   revise    │   │   review    │   │    plan-*    │   │ <ticket> │
+└────────────┘   └──────────────┘   └─────────────┘   └─────────────┘   └──────────────┘   └──────────┘
+      ↓                                                                                           ↓
+   draft                                                                                      approved
 ```
 
-### Research First
+1. Create plan with `/irf-plan`
+2. Detect gaps with `/irf-plan-consult`
+3. Apply feedback with `/irf-plan-revise`
+4. Validate with `/irf-plan-review` (must be approved)
+5. Create tickets with `/irf-backlog`
+6. Implement with `/irf <ticket>`
+
+---
+
+### 🔬 Research First
+**When to use:** Evaluating technical approaches, unfamiliar technology, or making architectural decisions
 
 ```
-/irf-spike "Technical topic" [--parallel] → /irf-seed → /irf-backlog → /irf <ticket>
+┌─────────────┐    ┌─────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────┐
+│ /irf-spike  │ →  │  /irf-seed  │ →  │ /irf-backlog │ →  │   /irf      │ →  │  /ralph  │
+│  "Topic"    │    │  "Decision" │    │    seed-*    │    │   <ticket>  │    │  -start  │
+│ [--parallel]│    │             │    │              │    │             │    │(optional)│
+└─────────────┘    └─────────────┘    └──────────────┘    └─────────────┘    └──────────┘
 ```
+
+1. Research with `/irf-spike` (use `--parallel` for faster research)
+2. Capture decision as `/irf-seed`
+3. Create tickets with `/irf-backlog`
+4. Implement with `/irf <ticket>`
+5. (Optional) Run autonomously with `/ralph-start`
+
+---
+
+### 📄 OpenSpec Integration
+**When to use:** Working from external specifications or product requirements documents
+
+```
+┌──────────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────┐
+│/irf-from-openspec│ →  │  (review     │ →  │   /irf      │ →  │  /ralph  │
+│   <change-id>    │    │  tickets)    │    │   <ticket>  │    │  -start  │
+└──────────────────┘    └──────────────┘    └─────────────┘    │(optional)│
+                                                               └──────────┘
+```
+
+1. Import from OpenSpec with `/irf-from-openspec`
+2. Review generated tickets in `tk`
+3. Implement with `/irf <ticket>`
+4. (Optional) Run autonomously with `/ralph-start`
+
+**Setup:** Ensure OpenSpec change artifacts exist at `openspec/changes/{id}/tasks.md`
+
+---
+
+### 🔄 Review-Driven Improvements
+**When to use:** Addressing technical debt or improvements found during code review
+
+```
+┌────────────┐    ┌─────────────┐    ┌────────────────┐    ┌──────────┐
+│   /irf     │ →  │/irf-followups│ →  │     /irf       │ →  │  /ralph  │
+│  <ticket>  │    │  review.md   │    │   <followup>   │    │  -start  │
+└────────────┘    └─────────────┘    └────────────────┘    │(optional)│
+     ↓                                                      └──────────┘
+ review.md
+ (Warnings +
+Suggestions)
+```
+
+1. Run normal implementation with `/irf <ticket>`
+2. Create follow-up tickets from review warnings with `/irf-followups`
+3. Process follow-ups with `/irf <followup-ticket>`
+4. (Optional) Run autonomously with `/ralph-start`
+
+---
+
+### Quick Reference
+
+| Workflow | Use When | Key Commands |
+|----------|----------|--------------|
+| **Greenfield** | New projects/features | `/irf-seed` → `/irf-backlog` |
+| **Brownfield** | Existing code, refactoring | `/irf-baseline` → `/irf-backlog` |
+| **Structured Planning** | Complex features, high-risk | `/irf-plan` → consult → revise → review |
+| **Research First** | Unknown tech, architectural decisions | `/irf-spike` → `/irf-seed` |
+| **OpenSpec** | External specifications | `/irf-from-openspec` |
+| **Review-Driven** | Technical debt from reviews | `/irf-followups` |
 
 ---
 
 ## Commands Overview
 
-### Implementation
+### Core Implementation
 
 | Command | Purpose |
 |---------|---------|
-| `/irf <ticket>` | Execute IRF workflow on a ticket |
-| `/ralph-start` | Start autonomous processing loop |
+| `/irf <ticket>` | Execute IRF workflow (Implement → Review → Fix → Close) |
+| `/ralph-start` | Start autonomous ticket processing loop |
 
 ### Planning & Design
 
 | Command | Purpose |
 |---------|---------|
-| `/irf-plan <request>` | Create implementation plan |
-| `/irf-plan-consult <plan>` | Gap detection and edits |
-| `/irf-plan-revise <plan>` | Apply feedback to plan |
-| `/irf-plan-review <plan>` | Validate plan (high-accuracy) |
+| `/irf-plan <request>` | Create structured implementation plan |
+| `/irf-plan-consult <plan>` | Review plan for gaps and ambiguities |
+| `/irf-plan-revise <plan>` | Apply consultant/reviewer feedback |
+| `/irf-plan-review <plan>` | High-accuracy validation (PASS/FAIL) |
 
 ### Research & Discovery
 
 | Command | Purpose |
 |---------|---------|
-| `/irf-seed <idea>` | Capture idea into structured artifacts |
-| `/irf-spike <topic>` | Research spike (sequential or parallel) |
-| `/irf-baseline [focus]` | Capture project baseline/status-quo |
+| `/irf-seed <idea>` | Capture greenfield idea with MVP scope, constraints, metrics |
+| `/irf-spike <topic>` | Research technical topic (sequential or `--parallel`) |
+| `/irf-baseline [focus]` | Document brownfield codebase (risks, tests, dependencies) |
 
 ### Ticket Creation
 
 | Command | Purpose |
 |---------|---------|
-| `/irf-backlog <topic>` | Create tickets from seed/baseline/plan |
-| `/irf-backlog-ls [topic]` | List backlog status and tickets |
-| `/irf-followups <review>` | Create tickets from review warnings |
-| `/irf-from-openspec <change>` | Create tickets from OpenSpec |
+| `/irf-backlog <topic>` | Generate tickets from seed/baseline/plan |
+| `/irf-backlog-ls [topic]` | List backlog status and ticket counts |
+| `/irf-followups <review>` | Create tickets from review Warnings/Suggestions |
+| `/irf-from-openspec <change>` | Import tickets from OpenSpec changes |
 
 ### Configuration
 
 | Command | Purpose |
 |---------|---------|
-| `/irf-sync` | Sync models from config to agents |
+| `/irf-sync` | Sync models from config.json to all agents |
 
-See [docs/commands.md](docs/commands.md) for complete reference with all flags.
+See [docs/commands.md](docs/commands.md) for complete reference with all flags and options.
 
 ---
 
