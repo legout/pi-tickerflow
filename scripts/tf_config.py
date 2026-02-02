@@ -27,14 +27,14 @@ def merge(a, b):
 
 
 def resolve_project_config(base: Path) -> Path:
-    project_config = Path(".pi/workflows/irf/config.json")
+    project_config = Path(".pi/workflows/tf/config.json")
     if str(base).endswith("/.pi"):
-        project_config = base / "workflows/irf/config.json"
+        project_config = base / "workflows/tf/config.json"
     return project_config
 
 
 def load_workflow_config(base: Path, ignore_project: bool) -> dict:
-    global_config = Path.home() / ".pi/agent/workflows/irf/config.json"
+    global_config = Path.home() / ".pi/agent/workflows/tf/config.json"
     project_config = resolve_project_config(base)
 
     if ignore_project:
@@ -320,7 +320,7 @@ def sync_models(config: dict, base: Path) -> dict:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="IRF config helper")
+    parser = argparse.ArgumentParser(description="TF config helper")
     parser.add_argument("--base", default=os.environ.get("TARGET_BASE", ""))
     parser.add_argument(
         "--ignore-project",
