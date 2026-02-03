@@ -2647,13 +2647,30 @@ PY
 }
 
 sync_models() {
-  require_project_tf
-
   local python_cmd=()
   if resolve_python_cmd; then
     python_cmd=("${PYTHON_CMD[@]}")
   else
     echo "Python not found; cannot sync models." >&2
+    exit 1
+  fi
+
+  # In global mode, use ~/.tf/scripts/tf_config.py or fall back to embedded
+  if [ "$IS_GLOBAL" = true ]; then
+    local global_tf_config="$HOME/.tf/scripts/tf_config.py"
+    if [ -f "$global_tf_config" ]; then
+      CONFIG_HELPER="$global_tf_config"
+      CONFIG_HELPER_SUPPORTS_FLAGS=false
+      if grep -q 'add_argument("--base"' "$CONFIG_HELPER" 2>/dev/null; then
+        CONFIG_HELPER_SUPPORTS_FLAGS=true
+      fi
+    fi
+  else
+    require_project_tf
+  fi
+
+  if [ -z "$CONFIG_HELPER" ]; then
+    echo "Cannot find tf_config.py. Run 'tf init' in a project or 'tf setup --global' first." >&2
     exit 1
   fi
 
