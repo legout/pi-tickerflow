@@ -15,6 +15,7 @@ Ticketflow CLI
 
 Usage:
   tf setup [--global|--project <path>]
+  tf login [--global|--project <path>]
   tf sync [--global|--project <path>]
   tf doctor [--global|--project <path>]
   tf backlog-ls [topic-id-or-path] [--global|--project <path>]
@@ -23,6 +24,7 @@ Usage:
 
 Commands:
   setup       Interactive install + optional dependencies + MCP config
+  login       Configure API keys (Perplexity, Context7, Exa, ZAI)
   sync        Sync agent models from workflow config into agent files
   doctor      Preflight checks for tk/pi/extensions/checkers
   backlog-ls  List backlog status and tickets for seed/baseline topics
@@ -50,7 +52,7 @@ Options:
   --help                   Show this help
 
 Environment (for setup MCP):
-  ZAI_API_KEY, CONTEXT7_API_KEY, EXA_API_KEY
+  ZAI_API_KEY, CONTEXT7_API_KEY, EXA_API_KEY, PERPLEXITY_API_KEY
 
 Environment (for track):
   TF_FILES_CHANGED, TF_CHAIN_DIR
@@ -151,9 +153,57 @@ fi
 install_files() {
   local manifest="$ROOT_DIR/config/install-manifest.txt"
 
-  if [ ! -f "$manifest" ]; then
-    echo "Install manifest not found: $manifest" >&2
-    exit 1
+  # NOTE: When running `tf setup` from an already-installed workflow (e.g. `.pi/bin/tf`),
+  # older installs may not have shipped the install manifest.
+  # In that case, fall back to a baked-in manifest so setup still works.
+  local manifest_content=""
+  if [ -f "$manifest" ]; then
+    manifest_content="$(cat "$manifest")"
+  else
+    echo "[warn] Install manifest not found: $manifest" >&2
+    echo "[warn] Falling back to built-in manifest (please re-install/upgrade for full fidelity)." >&2
+    manifest_content="$(cat <<'EOF'
+# CLI tool (will be installed to bin/tf)
+bin/tf
+
+# Helper scripts for CLI
+scripts/tf_config.py
+
+agents/implementer.md
+agents/reviewer-general.md
+agents/reviewer-spec-audit.md
+agents/reviewer-second-opinion.md
+agents/review-merge.md
+agents/researcher.md
+agents/researcher-fetch.md
+agents/fixer.md
+agents/closer.md
+
+skills/tf-workflow/SKILL.md
+skills/tf-planning/SKILL.md
+skills/tf-config/SKILL.md
+skills/ralph/SKILL.md
+
+prompts/tf.md
+prompts/tf-lite.md
+prompts/tf-plan.md
+prompts/tf-plan-consult.md
+prompts/tf-plan-revise.md
+prompts/tf-plan-review.md
+prompts/tf-seed.md
+prompts/tf-backlog.md
+prompts/tf-backlog-ls.md
+prompts/tf-spike.md
+prompts/tf-backlog-from-openspec.md
+prompts/tf-baseline.md
+prompts/tf-followups.md
+prompts/tf-sync.md
+prompts/ralph-start.md
+
+workflows/tf/config.json
+workflows/tf/README.md
+EOF
+)"
   fi
 
   local count=0
@@ -169,7 +219,7 @@ install_files() {
     mkdir -p "$TARGET_BASE/$(dirname "$line")"
     cp "$ROOT_DIR/$line" "$TARGET_BASE/$line"
     count=$((count + 1))
-  done < "$manifest"
+  done <<< "$manifest_content"
 
   echo "Installed Ticketflow workflow to: $TARGET_BASE"
   echo "Installed files: $count"
@@ -190,6 +240,7 @@ install_extensions() {
   if [ "$install_optional" = "true" ]; then
     pi install $SCOPE_FLAG npm:pi-review-loop
     pi install $SCOPE_FLAG npm:pi-mcp-adapter
+    pi install $SCOPE_FLAG npm:pi-web-access
   fi
 }
 
@@ -308,8 +359,24 @@ doctor() {
     fi
   }
 
+  local PI_LIST_CACHE=""
+  get_pi_list() {
+    if [ -n "$PI_LIST_CACHE" ]; then
+      printf '%s' "$PI_LIST_CACHE"
+      return 0
+    fi
+    if ! command -v pi >/dev/null 2>&1; then
+      return 1
+    fi
+    # `pi list` can be a bit slow; cache the result.
+    PI_LIST_CACHE="$(pi list 2>/dev/null || true)"
+    printf '%s' "$PI_LIST_CACHE"
+  }
+
   check_extension() {
     local name="$1"
+
+    # Legacy extension install locations (older Pi versions / local installs)
     local global_path="$HOME/.pi/agent/extensions/$name"
     local project_path=""
     if [[ "$TARGET_BASE" == */.pi ]]; then
@@ -322,10 +389,47 @@ doctor() {
       else
         echo "[ok] extension $name (global)"
       fi
-    else
-      echo "[missing] extension $name"
-      failed=1
+      return 0
     fi
+
+    # Current preferred install location: Pi user packages (visible via `pi list`)
+    local list_out
+    list_out="$(get_pi_list || true)"
+    if [ -n "$list_out" ] && echo "$list_out" | grep -q "npm:$name"; then
+      echo "[ok] extension $name (pi user package)"
+      return 0
+    fi
+
+    echo "[missing] extension $name"
+    failed=1
+  }
+
+  check_extension_optional() {
+    local name="$1"
+
+    local global_path="$HOME/.pi/agent/extensions/$name"
+    local project_path=""
+    if [[ "$TARGET_BASE" == */.pi ]]; then
+      project_path="$TARGET_BASE/extensions/$name"
+    fi
+
+    if [ -d "$global_path" ] || { [ -n "$project_path" ] && [ -d "$project_path" ]; }; then
+      if [ -n "$project_path" ] && [ -d "$project_path" ]; then
+        echo "[ok] extension $name (project, optional)"
+      else
+        echo "[ok] extension $name (global, optional)"
+      fi
+      return 0
+    fi
+
+    local list_out
+    list_out="$(get_pi_list || true)"
+    if [ -n "$list_out" ] && echo "$list_out" | grep -q "npm:$name"; then
+      echo "[ok] extension $name (pi user package, optional)"
+      return 0
+    fi
+
+    echo "[info] extension $name (optional, not installed)"
   }
 
   check_cmd "tk"
@@ -334,6 +438,11 @@ doctor() {
   check_extension "pi-subagents"
   check_extension "pi-model-switch"
   check_extension "pi-prompt-template-model"
+
+  # Optional but recommended (research + post-chain review)
+  check_extension_optional "pi-mcp-adapter"
+  check_extension_optional "pi-review-loop"
+  check_extension_optional "pi-web-access"
 
   local python_cmd=()
   if resolve_python_cmd; then
@@ -362,6 +471,46 @@ doctor() {
       done <<< "$cmds"
     else
       echo "[info] No checkers configured"
+    fi
+
+    # MCP configuration (optional; only required for MCP-backed research)
+    local mcp_file="$TARGET_BASE/mcp.json"
+    local mcp_servers=""
+    local mcp_args=("$CONFIG_HELPER")
+    if [ "$CONFIG_HELPER_SUPPORTS_FLAGS" = true ]; then
+      mcp_args+=(--base "$TARGET_BASE")
+      if [ "$ignore_project" = "true" ]; then
+        mcp_args+=(--ignore-project)
+      fi
+    fi
+    mcp_args+=(mcp-servers)
+    mcp_servers=$(TARGET_BASE="$TARGET_BASE" IGNORE_PROJECT_CONFIG="$ignore_project" "${python_cmd[@]}" "${mcp_args[@]}" 2>/dev/null || true)
+
+    if [ -n "$mcp_servers" ]; then
+      if [ -f "$mcp_file" ]; then
+        local expected_csv
+        expected_csv="$(echo "$mcp_servers" | tr '\n' ',' | sed 's/,$//')"
+        local missing
+        missing=$("${python_cmd[@]}" -c 'import json,sys
+p=sys.argv[1]
+expected=[s for s in sys.argv[2].split(",") if s]
+try:
+  cfg=json.load(open(p, "r", encoding="utf-8"))
+except Exception:
+  cfg={}
+servers=set((cfg.get("mcpServers") or {}).keys())
+missing=[s for s in expected if s not in servers]
+print("\n".join(missing))
+' "$mcp_file" "$expected_csv" 2>/dev/null || true)
+
+        if [ -z "$missing" ]; then
+          echo "[ok] mcp.json ($mcp_file)"
+        else
+          echo "[warn] mcp.json ($mcp_file) missing servers: $(echo "$missing" | tr '\n' ' ')"
+        fi
+      else
+        echo "[info] mcp.json not found at $mcp_file (MCP research optional; run 'tf setup' to generate)"
+      fi
     fi
   else
     echo "[missing] python (required to read checkers config)"
@@ -1513,6 +1662,146 @@ sync_models() {
   TARGET_BASE="$TARGET_BASE" IGNORE_PROJECT_CONFIG="$ignore_project" "${python_cmd[@]}" "${args[@]}"
 }
 
+login() {
+  echo "Ticketflow Login"
+  echo ""
+  echo "Configure API keys for external services."
+  echo "Leave blank to skip a service."
+  echo ""
+
+  # Determine target location
+  if [ -z "$TARGET_BASE" ]; then
+    if [ -d ".pi" ]; then
+      TARGET_BASE="$(pwd)/.pi"
+      SCOPE_FLAG="-l"
+      IS_GLOBAL=false
+      echo "Using project config: $TARGET_BASE"
+    else
+      TARGET_BASE="$HOME/.pi/agent"
+      SCOPE_FLAG=""
+      IS_GLOBAL=true
+      echo "Using global config: $TARGET_BASE"
+    fi
+  fi
+
+  echo ""
+  echo "=== Web Search (pi-web-access) ==="
+  echo "Required for web search functionality."
+  echo "Get a key at: https://perplexity.ai/settings/api"
+  read -r -p "Perplexity API key: " perplexity_key
+  perplexity_key="${perplexity_key:-${PERPLEXITY_API_KEY:-}}"
+
+  echo ""
+  echo "=== MCP Servers ==="
+  echo "Context7: Works without API key (rate limited)"
+  echo "Get a key at: https://context7.com/ (optional)"
+  read -r -p "Context7 API key (optional): " ctx7_key
+  ctx7_key="${ctx7_key:-${CONTEXT7_API_KEY:-}}"
+
+  echo ""
+  echo "Exa: Works without API key (rate limited)"
+  echo "Get a key at: https://exa.ai/ (optional)"
+  read -r -p "Exa API key (optional): " exa_key
+  exa_key="${exa_key:-${EXA_API_KEY:-}}"
+
+  echo ""
+  echo "ZAI: Required for ZAI MCP servers (web-search, web-reader, vision)"
+  read -r -p "ZAI API key (optional): " zai_key
+  zai_key="${zai_key:-${ZAI_API_KEY:-}}"
+
+  # Configure web-search.json for pi-web-access
+  if [ -n "$perplexity_key" ]; then
+    local web_search_json="$TARGET_BASE/web-search.json"
+    mkdir -p "$TARGET_BASE"
+    if [ ! -f "$web_search_json" ]; then
+      echo ""
+      echo "Creating $web_search_json..."
+      echo "{\"perplexityApiKey\": \"$perplexity_key\"}" > "$web_search_json"
+      chmod 600 "$web_search_json"
+      echo "✓ Configured pi-web-access"
+    else
+      echo ""
+      echo "Updating $web_search_json..."
+      if command -v python3 >/dev/null 2>&1; then
+        python3 - "$perplexity_key" "$web_search_json" <<'PY'
+import json
+import sys
+import os
+key = sys.argv[1]
+path = sys.argv[2]
+config = {}
+if os.path.exists(path):
+    try:
+        with open(path) as f:
+            config = json.load(f)
+    except:
+        pass
+config["perplexityApiKey"] = key
+with open(path, "w") as f:
+    json.dump(config, f, indent=2)
+PY
+      else
+        # Fallback: just write the key
+        echo "{\"perplexityApiKey\": \"$perplexity_key\"}" > "$web_search_json"
+      fi
+      echo "✓ Updated pi-web-access configuration"
+    fi
+  else
+    echo ""
+    echo "Note: Perplexity API key not provided. To enable web search later:"
+    echo "  tf login"
+  fi
+
+  # Configure mcp.json for MCP servers
+  local has_mcp_keys=false
+  [ -n "$zai_key" ] || [ -n "$ctx7_key" ] || [ -n "$exa_key" ] && has_mcp_keys=true
+
+  if [ "$has_mcp_keys" = true ]; then
+    local mcp_file="$TARGET_BASE/mcp.json"
+    echo ""
+    echo "Configuring MCP servers..."
+
+    local python_cmd=()
+    if resolve_python_cmd; then
+      python_cmd=("${PYTHON_CMD[@]}")
+    else
+      echo "Python not found; cannot configure MCP." >&2
+      return 1
+    fi
+
+    local ignore_project="false"
+    if [ "$IS_GLOBAL" = "true" ]; then
+      ignore_project="true"
+    fi
+
+    local args=("$CONFIG_HELPER")
+    if [ "$CONFIG_HELPER_SUPPORTS_FLAGS" = true ]; then
+      args+=(--base "$TARGET_BASE")
+      if [ "$ignore_project" = "true" ]; then
+        args+=(--ignore-project)
+      fi
+    fi
+    args+=(
+      configure-mcp
+      --mcp-file "$mcp_file"
+      --zai-key "$zai_key"
+      --ctx7-key "$ctx7_key"
+      --exa-key "$exa_key"
+    )
+
+    TARGET_BASE="$TARGET_BASE" IGNORE_PROJECT_CONFIG="$ignore_project" "${python_cmd[@]}" "${args[@]}"
+  else
+    echo ""
+    echo "Note: No MCP API keys provided. To configure MCP servers later:"
+    echo "  tf login"
+  fi
+
+  echo ""
+  echo "Login complete. API keys saved to:"
+  [ -n "$perplexity_key" ] && echo "  - $TARGET_BASE/web-search.json"
+  [ "$has_mcp_keys" = true ] && echo "  - $TARGET_BASE/mcp.json"
+}
+
 case "$COMMAND" in
   setup)
     echo "Ticketflow setup"
@@ -1538,26 +1827,18 @@ case "$COMMAND" in
     install_deps=true
     case "$yn" in [Nn]*) install_deps=false ;; esac
 
-    read -r -p "Install optional Pi extensions (review-loop, mcp-adapter)? (y/N) " yn
+    read -r -p "Install optional Pi extensions (review-loop, mcp-adapter, web-access)? (y/N) " yn
     install_optional=false
     case "$yn" in [Yy]*) install_optional=true ;; esac
 
-    read -r -p "Configure MCP servers? (y/N) " yn
-    configure_mcp=false
-    case "$yn" in [Yy]*) configure_mcp=true ;; esac
+    read -r -p "Configure API keys for MCP servers and web search? (y/N) " yn
+    case "$yn" in [Yy]*) login ;; esac
 
     install_files
     install_extensions "$install_deps" "$install_optional"
-
-    if [ "$configure_mcp" = true ]; then
-      read -r -p "ZAI API key (required for ZAI servers, blank to skip): " zai_key
-      read -r -p "Context7 API key (optional): " ctx7_key
-      read -r -p "Exa API key (optional): " exa_key
-      zai_key="${zai_key:-${ZAI_API_KEY:-}}"
-      ctx7_key="${ctx7_key:-${CONTEXT7_API_KEY:-}}"
-      exa_key="${exa_key:-${EXA_API_KEY:-}}"
-      configure_mcp "$zai_key" "$ctx7_key" "$exa_key"
-    fi
+    ;;
+  login)
+    login
     ;;
   sync)
     sync_models
