@@ -394,7 +394,6 @@ prompts/             # Command entry points (thin wrappers)
   ...
 
 agents/              # Subagent execution units
-  implementer.md
   reviewer-*.md
   fixer.md
   closer.md

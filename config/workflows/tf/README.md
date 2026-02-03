@@ -26,7 +26,6 @@ The chain is triggered by:
 - `~/.pi/agent/prompts/tf.md`
 
 **Agent files:**
-- `~/.pi/agent/agents/implementer.md`
 - `~/.pi/agent/agents/reviewer-general.md`
 - `~/.pi/agent/agents/reviewer-spec-audit.md`
 - `~/.pi/agent/agents/reviewer-second-opinion.md`

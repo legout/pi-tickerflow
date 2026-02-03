@@ -37,7 +37,6 @@ Follow the **IRF Config Skill** procedures:
 ### Agent Models Updated
 
 Config key → Agent file mapping:
-- `models.implementer` → `agents/implementer.md`
 - `models.reviewer-general` → `agents/reviewer-general.md`
 - `models.reviewer-spec-audit` → `agents/reviewer-spec-audit.md`
 - `models.reviewer-second-opinion` → `agents/reviewer-second-opinion.md`
@@ -50,7 +49,6 @@ Config key → Agent file mapping:
 ### Prompt Models Updated
 
 Config key → Prompt file mapping:
-- `models.implementer` → `prompts/tf.md`, `prompts/tf-lite.md`
 - `models.planning` → `prompts/tf-plan.md`, `prompts/tf-plan-consult.md`, `prompts/tf-plan-revise.md`, `prompts/tf-plan-review.md`, `prompts/tf-seed.md`, `prompts/tf-backlog.md`, `prompts/tf-backlog-ls.md`, `prompts/tf-spike.md`, `prompts/tf-backlog-from-openspec.md`, `prompts/tf-baseline.md`, `prompts/tf-followups.md`
 - `models.config` → `prompts/tf-sync.md`
 
@@ -68,7 +66,6 @@ Read project config:
 ○ pi-mcp-adapter (optional, not installed)
 
 ## Agent Models Updated
-- implementer: anthropic/claude-sonnet-4 → chutes/moonshotai/Kimi-K2.5-TEE:high
 - fixer: (unchanged) zai/glm-4.7:high
 
 ## Agent Models Unchanged

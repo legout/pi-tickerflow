@@ -226,7 +226,6 @@ config/install-manifest.txt
 # Helper scripts for CLI
 scripts/tf_config.py
 
-agents/implementer.md
 agents/reviewer-general.md
 agents/reviewer-spec-audit.md
 agents/reviewer-second-opinion.md

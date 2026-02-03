@@ -41,7 +41,6 @@ Structure:
 ```json
 {
   "models": {
-    "implementer": "chutes/moonshotai/Kimi-K2.5-TEE:high",
     "reviewer-general": "openai-codex/gpt-5.1-codex-mini:high",
     "review-merge": "zai/glm-4.7:medium",
     "fixer": "zai/glm-4.7:high",
@@ -74,10 +73,10 @@ Located at (project overrides global):
 Each agent file has frontmatter:
 ```yaml
 ---
-name: implementer
-description: Implements tickets
-model: chutes/moonshotai/Kimi-K2.5-TEE:high
-tools: read, edit, write, bash
+name: reviewer-general
+description: General code review for tickets
+model: openai-codex/gpt-5.1-codex-mini:high
+tools: read, bash
 ---
 ```
 
@@ -90,7 +89,6 @@ Check complete installation status:
 1. **Check extensions** (see Prerequisites Check above)
 
 2. **Check agent files exist**:
-   - `agents/implementer.md`
    - `agents/reviewer-general.md`
    - `agents/reviewer-spec-audit.md`
    - `agents/reviewer-second-opinion.md`
@@ -117,7 +115,6 @@ Update agent **and prompt** files from config:
 **Agent mapping (config key → agent file)**:
 | Config Key | Agent File |
 |------------|------------|
-| `models.implementer` | `agents/implementer.md` |
 | `models.reviewer-general` | `agents/reviewer-general.md` |
 | `models.reviewer-spec-audit` | `agents/reviewer-spec-audit.md` |
 | `models.reviewer-second-opinion` | `agents/reviewer-second-opinion.md` |
@@ -130,7 +127,6 @@ Update agent **and prompt** files from config:
 **Prompt mapping (config key → prompt file)**:
 | Config Key | Prompt File |
 |------------|-------------|
-| `models.implementer` | `prompts/tf.md`, `prompts/tf-lite.md` |
 | `models.planning` | `prompts/tf-plan.md`, `prompts/tf-plan-consult.md`, `prompts/tf-plan-revise.md`, `prompts/tf-plan-review.md`, `prompts/tf-seed.md`, `prompts/tf-backlog.md`, `prompts/tf-backlog-ls.md`, `prompts/tf-spike.md`, `prompts/tf-backlog-from-openspec.md`, `prompts/tf-baseline.md`, `prompts/tf-followups.md` |
 | `models.config` | `prompts/tf-sync.md` |
 
@@ -239,7 +235,6 @@ Always provide clear status report:
 ○ pi-mcp-adapter (optional, not installed)
 
 ## Agent Models Updated
-- implementer: anthropic/claude-sonnet-4 → chutes/moonshotai/Kimi-K2.5-TEE:high
 - fixer: (unchanged) zai/glm-4.7:high
 
 ## Agent Models Unchanged
