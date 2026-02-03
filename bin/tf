@@ -2578,39 +2578,9 @@ PY
   [ -n "$zai_key" ] || [ -n "$ctx7_key" ] || [ -n "$exa_key" ] && has_mcp_keys=true
 
   if [ "$has_mcp_keys" = true ]; then
-    local mcp_file="$TARGET_BASE/mcp.json"
     echo ""
     echo "Configuring MCP servers..."
-
-    local python_cmd=()
-    if resolve_python_cmd; then
-      python_cmd=("${PYTHON_CMD[@]}")
-    else
-      echo "Python not found; cannot configure MCP." >&2
-      return 1
-    fi
-
-    local ignore_project="false"
-    if [ "$IS_GLOBAL" = "true" ]; then
-      ignore_project="true"
-    fi
-
-    local args=("$CONFIG_HELPER")
-    if [ "$CONFIG_HELPER_SUPPORTS_FLAGS" = true ]; then
-      args+=(--base "$TARGET_BASE")
-      if [ "$ignore_project" = "true" ]; then
-        args+=(--ignore-project)
-      fi
-    fi
-    args+=(
-      configure-mcp
-      --mcp-file "$mcp_file"
-      --zai-key "$zai_key"
-      --ctx7-key "$ctx7_key"
-      --exa-key "$exa_key"
-    )
-
-    TARGET_BASE="$TARGET_BASE" IGNORE_PROJECT_CONFIG="$ignore_project" "${python_cmd[@]}" "${args[@]}"
+    configure_mcp "$zai_key" "$ctx7_key" "$exa_key"
   else
     echo ""
     echo "Note: No MCP API keys provided. To configure MCP servers later:"
