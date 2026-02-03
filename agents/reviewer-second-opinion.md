@@ -4,7 +4,6 @@ description: Second-opinion code review using a different model
 tools: read, bash, write
 model: google-antigravity/claude-opus-4-5-thinking:high
 output: review-second.md
-defaultReads: implementation.md
 defaultProgress: false
 ---
 
@@ -18,7 +17,7 @@ Review the implementation for the ticket ID provided in the Task input.
 
 ## Required Steps
 
-1. **Read implementation.md**: Understand what was implemented
+1. **Locate implementation.md**: If `.tf/config/settings.json` exists, read it to get `workflow.knowledgeDir` (default `.tf/knowledge`); then read `{knowledgeDir}/tickets/<ticket-id>/implementation.md`
 2. **Read actual files**: Use `read` on all files mentioned in implementation
 3. **Check patterns**: Verify against existing codebase conventions
 4. **Find issues**: Look for bugs, logic flaws, security problems, performance issues

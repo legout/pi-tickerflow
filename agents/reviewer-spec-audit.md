@@ -4,7 +4,6 @@ description: Spec audit review - checks implementation against ticket/spec requi
 tools: read, bash, write
 model: github-copilot/gpt-5.2-codex:high
 output: review-spec.md
-defaultReads: implementation.md
 defaultProgress: false
 ---
 
@@ -19,8 +18,8 @@ Audit the implementation for the ticket ID provided in the Task input.
 ## Required Steps
 
 1. **Get ticket details**: Run `tk show <ticket-id>` using bash to gather requirements
-2. **Find spec/plan docs**: Search the repo for referenced specs/plans (docs/, README, or ticket links)
-3. **Read implementation.md**: Understand what was implemented
+2. **Locate implementation.md**: If `.tf/config/settings.json` exists, read it to get `workflow.knowledgeDir` (default `.tf/knowledge`); then read `{knowledgeDir}/tickets/<ticket-id>/implementation.md`
+3. **Find spec/plan docs**: Search the repo for referenced specs/plans (docs/, README, or ticket links)
 4. **Audit**: Compare implementation vs requirements; identify missing/incorrect behavior
 5. **Document findings**: Write structured review to the output file specified in the write instructions
 

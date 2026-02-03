@@ -211,17 +211,22 @@ Each reviewer uses a different meta-model:
 - `reviewer-spec-audit` → `metaModels.review-spec.model`  
 - `reviewer-second-opinion` → `metaModels.review-secop.model`
 
-**Execute parallel subagents**:
+**Resolve repo root for reviewer cwd**:
+- Run `git rev-parse --show-toplevel` to get `{repoRoot}`
+- If it fails (non-git), use the current working directory
+
+**Execute parallel subagents** (run from repo root so `src/...` and `tk show` work):
 ```json
 {
   "tasks": [
-    {"agent": "reviewer-general", "task": "{ticket}", "cwd": "{artifactDir}"},
-    {"agent": "reviewer-spec-audit", "task": "{ticket}", "cwd": "{artifactDir}"},
-    {"agent": "reviewer-second-opinion", "task": "{ticket}", "cwd": "{artifactDir}"}
+    {"agent": "reviewer-general", "task": "{ticket}", "cwd": "{repoRoot}"},
+    {"agent": "reviewer-spec-audit", "task": "{ticket}", "cwd": "{repoRoot}"},
+    {"agent": "reviewer-second-opinion", "task": "{ticket}", "cwd": "{repoRoot}"}
   ]
 }
 ```
 
+Ensure reviewers read `{artifactDir}/implementation.md` (derive `artifactDir` from config or default `.tf/knowledge`).
 Store returned paths for next step.
 
 ### Procedure: Merge Reviews
