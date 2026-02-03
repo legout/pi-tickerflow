@@ -50,6 +50,19 @@ def load_workflow_config(base: Path, ignore_project: bool) -> dict:
     return merge(read_json(global_config), read_json(project_config))
 
 
+def resolve_sync_base(base: Path) -> Path:
+    agents_dir = base / "agents"
+    prompts_dir = base / "prompts"
+    if agents_dir.exists() or prompts_dir.exists():
+        return base
+
+    global_base = Path.home() / ".pi/agent"
+    if (global_base / "agents").exists() or (global_base / "prompts").exists():
+        return global_base
+
+    return base
+
+
 def resolve_knowledge_dir(config: dict, base: Path) -> Path:
     knowledge_dir = config.get("workflow", {}).get("knowledgeDir", ".tf/knowledge")
     knowledge_path = Path(str(knowledge_dir)).expanduser()
@@ -294,9 +307,10 @@ def update_prompt_frontmatter(prompt_path: Path, config: dict, prompt_name: str)
 def sync_models(config: dict, base: Path) -> dict:
     """Sync models from config to all agents and prompts."""
     results = {"agents": [], "prompts": [], "errors": []}
-    
+    sync_base = resolve_sync_base(base)
+
     # Sync agents
-    agents_dir = base / "agents"
+    agents_dir = sync_base / "agents"
     if agents_dir.exists():
         for agent_file in agents_dir.glob("*.md"):
             agent_name = agent_file.stem
@@ -305,9 +319,9 @@ def sync_models(config: dict, base: Path) -> dict:
                     results["agents"].append(agent_name)
             except Exception as e:
                 results["errors"].append(f"agents/{agent_file.name}: {e}")
-    
+
     # Sync prompts
-    prompts_dir = base / "prompts"
+    prompts_dir = sync_base / "prompts"
     if prompts_dir.exists():
         for prompt_file in prompts_dir.glob("*.md"):
             prompt_name = prompt_file.stem
@@ -316,7 +330,7 @@ def sync_models(config: dict, base: Path) -> dict:
                     results["prompts"].append(prompt_name)
             except Exception as e:
                 results["errors"].append(f"prompts/{prompt_file.name}: {e}")
-    
+
     return results
 
 

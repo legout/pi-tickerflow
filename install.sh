@@ -22,7 +22,7 @@ Usage:
 
 Options:
   --global              Install Pi assets into ~/.pi/agent and the tf CLI into ~/.local/bin/tf.
-                        (No global .tf directory is created.)
+                        Creates ~/.tf/config/settings.json for global defaults if missing.
   --project <path>      Install Pi assets into <path>/.pi and TF runtime/state into <path>/.tf.
                         Installs the tf CLI to <path>/.tf/bin/tf.
   --remote              Force remote mode (download from GitHub)
@@ -31,6 +31,7 @@ Options:
 Notes:
   - Pi-discoverable files (agents, prompts, skills) remain under .pi/ or ~/.pi/agent/.
   - TF-owned state always lives under .tf/ in the project (knowledge, ralph, config, scripts).
+  - Global defaults live in ~/.tf/config/settings.json when installed globally.
   - After a global install, run 'tf init' in each project to scaffold .tf/.
 EOF
 }
@@ -235,6 +236,38 @@ install_local() {
   log "Installed $count files (excluding CLI)"
 }
 
+ensure_global_config() {
+  local use_remote="$1"
+  local dest="$HOME/.tf/config/settings.json"
+
+  if [ -f "$dest" ]; then
+    return 0
+  fi
+
+  if ! mkdir -p "$(dirname "$dest")" 2>/dev/null; then
+    log "WARNING: Cannot create $dest"
+    return 0
+  fi
+
+  if [ "$use_remote" = true ]; then
+    if download_file "$REPO_URL/config/settings.json" "$dest"; then
+      log "Created global config at: $dest"
+    else
+      log "WARNING: Failed to download global config"
+    fi
+    return 0
+  fi
+
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [ -f "$script_dir/config/settings.json" ]; then
+    cp "$script_dir/config/settings.json" "$dest"
+    log "Created global config at: $dest"
+  else
+    log "WARNING: Missing config/settings.json; global config not created"
+  fi
+}
+
 main() {
   PI_BASE=""
   TF_BASE=""
@@ -307,7 +340,9 @@ main() {
     install_local
   fi
 
-  if [ "$IS_GLOBAL" = false ]; then
+  if [ "$IS_GLOBAL" = true ]; then
+    ensure_global_config "$use_remote"
+  else
     mkdir -p "$TF_BASE/knowledge" "$TF_BASE/ralph"
   fi
 
