@@ -20,7 +20,7 @@ Apply the workflow configuration and verify required extensions.
 Follow the **IRF Config Skill** procedures:
 
 1. **Verify Setup** - Check extensions and agent files
-2. **Sync Models** - Update agent and prompt files from config.json
+2. **Sync Models** - Update agent and prompt files from config/settings.json
 3. **Report Status** - Show what's installed and updated
 
 ## What Gets Synced
@@ -56,9 +56,8 @@ Config key → Prompt file mapping:
 
 ## Configuration Sources
 
-Read and merge (project overrides global):
-- `.tf/config/settings.json` (project)
-- `~/.tf/config/settings.json` (global)
+Read project config:
+- `.tf/config/settings.json`
 
 ## Output Example
 
@@ -85,7 +84,7 @@ Read and merge (project overrides global):
 
 ## When to Run
 
-- After editing `config.json`
+- After editing `config/settings.json`
 - When setting up a new project
 - After updating the pi-tk-workflow package
 - When troubleshooting model-related issues

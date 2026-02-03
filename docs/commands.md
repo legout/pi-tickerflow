@@ -328,7 +328,7 @@ Creates tickets tagged with `openspec`, linked via `external-ref`, and applies d
 
 ### `/tf-sync`
 
-Sync configuration from `config.json` to agent and prompt files.
+Sync configuration from `config/settings.json` to agent and prompt files.
 
 ```
 /tf-sync
@@ -347,6 +347,9 @@ The `tf` CLI is installed during setup and provides utilities for workflow manag
 ```bash
 # Setup
 tf setup                          # Interactive install + extensions + MCP
+
+# Project scaffolding
+tf init                           # Create .tf/ directories in the project
 
 # Sync
 tf sync                           # Sync models from config
@@ -377,10 +380,11 @@ tf agentsmd fix                   # Auto-fix common issues
 
 ### Project Install (CLI at `.tf/bin/tf`)
 
-Use `./.tf/bin/tf` instead of `irf` for project installs.
+Use `./.tf/bin/tf` for project installs (or the global `tf`).
 
 ```bash
 ./.tf/bin/tf setup
+./.tf/bin/tf init
 ./.tf/bin/tf sync
 ./.tf/bin/tf ralph init
 ```

@@ -33,9 +33,8 @@ pi list | grep -q "pi-review-loop" && echo "✓ pi-review-loop" || echo "○ pi-
 
 ### Workflow Config
 
-Location (project overrides global):
-- `.tf/config/settings.json` (project)
-- `~/.tf/config/settings.json` (global)
+Location (project):
+- `.tf/config/settings.json`
 
 Structure:
 ```json

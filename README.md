@@ -49,11 +49,15 @@ After global install, the `tf` CLI is available:
 # Interactive setup (installs extensions, configures MCP)
 tf setup
 
-# Sync models from config
+# In each project, scaffold .tf/ state
+cd /path/to/project
+tf init
+
+# Sync models from project config
 tf sync
 ```
 
-For project installs, use `./.tf/bin/tf` instead.
+For project installs, use `./.tf/bin/tf` instead (or the global `tf`).
 
 ### Manual Install (from cloned repo)
 
@@ -75,7 +79,7 @@ cd pi-ticketflow
 |-----------|---------------|-----------------|
 | Agents, Skills, Prompts | `~/.pi/agent/` | `.pi/` |
 | tf CLI | `~/.local/bin/tf` | `.tf/bin/tf` |
-| Config | `~/.tf/config/` | `.tf/config/` |
+| Config | _project-only_ | `.tf/config/` |
 
 ---
 
@@ -367,7 +371,7 @@ Suggestions)
 
 | Command | Purpose |
 |---------|---------|
-| `/tf-sync` | Sync models from config.json to all agents |
+| `/tf-sync` | Sync models from config/settings.json to all agents |
 
 See [docs/commands.md](docs/commands.md) for complete reference with all flags and options.
 

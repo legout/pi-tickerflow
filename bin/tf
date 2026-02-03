@@ -3,20 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-CONFIG_HELPER="$ROOT_DIR/scripts/tf_config.py"
-
-# If tf is installed to ~/.local/bin as a copy (not a symlink), ROOT_DIR won't
-# contain the bundled scripts/config. Fall back to ~/.tf, which is where the
-# installer places the TF runtime files.
-if [ ! -f "$CONFIG_HELPER" ] && [ -f "$HOME/.tf/scripts/tf_config.py" ]; then
-  ROOT_DIR="$HOME/.tf"
-  CONFIG_HELPER="$ROOT_DIR/scripts/tf_config.py"
-fi
-
+CONFIG_HELPER=""
 CONFIG_HELPER_SUPPORTS_FLAGS=false
-if [ -f "$CONFIG_HELPER" ] && grep -q 'add_argument("--base"' "$CONFIG_HELPER"; then
-  CONFIG_HELPER_SUPPORTS_FLAGS=true
-fi
 
 usage() {
   cat <<'EOF'
@@ -24,15 +12,17 @@ Ticketflow CLI
 
 Usage:
   tf setup [--global|--project <path>]
+  tf init [--project <path>]
   tf login [--global|--project <path>]
-  tf sync [--global|--project <path>]
-  tf doctor [--global|--project <path>]
-  tf backlog-ls [topic-id-or-path] [--global|--project <path>]
+  tf sync [--project <path>]
+  tf doctor [--project <path>]
+  tf backlog-ls [topic-id-or-path] [--project <path>]
   tf track <path> [--file <files_changed_path>]
   tf ralph <subcommand> [options]
 
 Commands:
-  setup       Interactive install + optional dependencies + MCP config
+  setup       Install Pi assets + optional dependencies + MCP config
+  init        Scaffold .tf/ directories (config, knowledge, ralph)
   login       Configure API keys (Perplexity, Context7, Exa, ZAI)
   sync        Sync agent models from workflow config into agent files
   doctor      Preflight checks for tk/pi/extensions/checkers
@@ -54,8 +44,8 @@ Agentsmd Subcommands:
   agentsmd fix [path]      Auto-fix common issues (backup created)
 
 Options:
-  --global                 Install/sync Pi files in ~/.pi/agent and TF files in ~/.tf (default for setup)
-  --project <path>         Install/sync Pi files in <path>/.pi and TF files in <path>/.tf
+  --global                 Install/sync Pi files in ~/.pi/agent (setup/login only)
+  --project <path>         Operate on project at <path> (uses <path>/.pi + <path>/.tf)
   --file <path>            Output files_changed.txt path (track only)
   --keep-lessons           Keep lessons when resetting (ralph reset only)
   --help                   Show this help
@@ -77,7 +67,7 @@ COMMAND="$1"
 shift
 
 TARGET_BASE=""   # Pi base (global: ~/.pi/agent, project: <root>/.pi)
-TF_BASE=""       # TF base (global: ~/.tf, project: <root>/.tf)
+TF_BASE=""       # TF base (project: <root>/.tf)
 SCOPE_FLAG=""
 TRACK_FILE=""
 ARGS=()
@@ -87,7 +77,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --global)
       TARGET_BASE="$HOME/.pi/agent"
-      TF_BASE="$HOME/.tf"
+      TF_BASE=""
       SCOPE_FLAG=""
       IS_GLOBAL=true
       shift
@@ -146,27 +136,45 @@ while [ "$#" -gt 0 ]; do
  done
 
 if [ -z "$TARGET_BASE" ] && [ "$COMMAND" != "track" ]; then
-  if [ "$COMMAND" = "setup" ]; then
-    # setup defaults to global unless the user selects project during the prompt below
-    TARGET_BASE="$HOME/.pi/agent"
-    TF_BASE="$HOME/.tf"
-    IS_GLOBAL=true
-  else
-    # sync/doctor/login default: prefer project if .tf or .pi exists in cwd
-    if [ -d ".tf" ] || [ -d ".pi" ]; then
+  case "$COMMAND" in
+    setup)
+      # setup defaults to global unless the user selects project during the prompt below
+      TARGET_BASE="$HOME/.pi/agent"
+      IS_GLOBAL=true
+      ;;
+    init)
       TARGET_BASE="$(pwd)/.pi"
       TF_BASE="$(pwd)/.tf"
       SCOPE_FLAG="-l"
       IS_GLOBAL=false
-    else
-      TARGET_BASE="$HOME/.pi/agent"
-      TF_BASE="$HOME/.tf"
-      IS_GLOBAL=true
-    fi
-  fi
+      ;;
+    login)
+      if [ -d ".pi" ]; then
+        TARGET_BASE="$(pwd)/.pi"
+        SCOPE_FLAG="-l"
+        IS_GLOBAL=false
+      else
+        TARGET_BASE="$HOME/.pi/agent"
+        IS_GLOBAL=true
+      fi
+      ;;
+    *)
+      if [ -d ".tf" ]; then
+        TARGET_BASE="$(pwd)/.pi"
+        TF_BASE="$(pwd)/.tf"
+        SCOPE_FLAG="-l"
+        IS_GLOBAL=false
+      fi
+      ;;
+  esac
 fi
 
 install_files() {
+  if [ ! -f "$ROOT_DIR/config/install-manifest.txt" ] && [ ! -d "$ROOT_DIR/agents" ]; then
+    echo "[info] Install sources not found under $ROOT_DIR; skipping file install." >&2
+    return 0
+  fi
+
   local manifest="$ROOT_DIR/config/install-manifest.txt"
 
   # NOTE: When running `tf setup` from an already-installed workflow,
@@ -225,7 +233,7 @@ EOF
 )"
   fi
 
-  if [ -z "$TF_BASE" ]; then
+  if [ -z "$TF_BASE" ] && [ "$IS_GLOBAL" = false ]; then
     echo "TF_BASE not set; cannot install." >&2
     exit 1
   fi
@@ -240,7 +248,11 @@ EOF
         echo "$TARGET_BASE"
         ;;
       *)
-        echo "$TF_BASE"
+        if [ "$IS_GLOBAL" = true ]; then
+          echo ""
+        else
+          echo "$TF_BASE"
+        fi
         ;;
     esac
   }
@@ -258,6 +270,10 @@ EOF
     local dest_base
     dest_base="$(route_dest_base "$line")"
 
+    if [ -z "$dest_base" ]; then
+      continue
+    fi
+
     mkdir -p "$dest_base/$(dirname "$line")"
     cp "$ROOT_DIR/$line" "$dest_base/$line"
 
@@ -269,8 +285,12 @@ EOF
   done <<< "$manifest_content"
 
   echo "Installed Pi workflow files to: $TARGET_BASE"
-  echo "Installed TF runtime/config files to: $TF_BASE"
-  echo "Installed files: $((pi_count + tf_count)) (pi: $pi_count, tf: $tf_count)"
+  if [ "$IS_GLOBAL" = true ]; then
+    echo "Installed files: $pi_count (pi assets)"
+  else
+    echo "Installed TF runtime/config files to: $TF_BASE"
+    echo "Installed files: $((pi_count + tf_count)) (pi: $pi_count, tf: $tf_count)"
+  fi
 }
 
 install_extensions() {
@@ -319,17 +339,736 @@ resolve_python_cmd() {
   return 1
 }
 
+set_config_helper() {
+  CONFIG_HELPER="$TF_BASE/scripts/tf_config.py"
+  CONFIG_HELPER_SUPPORTS_FLAGS=false
+  if [ -f "$CONFIG_HELPER" ] && grep -q 'add_argument("--base"' "$CONFIG_HELPER"; then
+    CONFIG_HELPER_SUPPORTS_FLAGS=true
+  fi
+}
+
+require_project_tf() {
+  if [ "$IS_GLOBAL" = true ]; then
+    echo "This command requires a project-local .tf directory." >&2
+    echo "Run 'tf init' in your project or use --project <path>." >&2
+    exit 1
+  fi
+
+  if [ -z "$TF_BASE" ]; then
+    if [ -d ".tf" ]; then
+      TF_BASE="$(pwd)/.tf"
+      TARGET_BASE="$(pwd)/.pi"
+      SCOPE_FLAG="-l"
+      IS_GLOBAL=false
+    else
+      echo "No .tf directory found in $(pwd)." >&2
+      echo "Run 'tf init' to scaffold project files." >&2
+      exit 1
+    fi
+  fi
+
+  if [ ! -d "$TF_BASE" ]; then
+    echo "Project .tf directory not found: $TF_BASE" >&2
+    echo "Run 'tf init' to scaffold project files." >&2
+    exit 1
+  fi
+
+  RALPH_DIR="$TF_BASE/ralph"
+
+  set_config_helper
+
+  if [ ! -f "$CONFIG_HELPER" ]; then
+    echo "Missing tf_config.py at $CONFIG_HELPER" >&2
+    echo "Run 'tf init' to scaffold project files." >&2
+    exit 1
+  fi
+}
+
+write_default_settings_json() {
+  local dest="$1"
+  cat <<'JSON' > "$dest"
+{
+  "metaModels": {
+    "planning": {
+      "model": "openai-codex/gpt-5.2",
+      "thinking": "medium",
+      "description": "Fast, capable model for planning and specification"
+    },
+    "worker": {
+      "model": "kimi-coding/k2p5",
+      "thinking": "high",
+      "description": "Strong model for implementation and complex reasoning"
+    },
+    "research": {
+      "model": "minimax/MiniMax-M2.1",
+      "thinking": "medium",
+      "description": "Fast model for research and information gathering"
+    },
+    "fast": {
+      "model": "zai/glm-4.7-flash",
+      "thinking": "medium",
+      "description": "Cheapest model for quick tasks, fixes, and summaries"
+    },
+    "general": {
+      "model": "zai/glm-4.7",
+      "thinking": "medium",
+      "description": "General-purpose model for admin tasks"
+    },
+    "review-general": {
+      "model": "openai-codex/gpt-5.1-codex-mini",
+      "thinking": "high",
+      "description": "Capable model for general code review"
+    },
+    "review-spec": {
+      "model": "openai-codex/gpt-5.2-codex",
+      "thinking": "high",
+      "description": "Strong model for specification compliance audit"
+    },
+    "review-secop": {
+      "model": "github-copilot/grok-code-fast-1",
+      "thinking": "high",
+      "description": "Fast model for second-opinion review"
+    }
+  },
+  "agents": {
+    "implementer": "worker",
+    "reviewer-general": "review-general",
+    "reviewer-spec-audit": "review-spec",
+    "reviewer-second-opinion": "review-secop",
+    "review-merge": "fast",
+    "fixer": "fast",
+    "closer": "fast",
+    "researcher": "research",
+    "researcher-fetch": "research"
+  },
+  "prompts": {
+    "tf": "worker",
+    "tf-lite": "worker",
+    "tf-plan": "planning",
+    "tf-plan-consult": "planning",
+    "tf-plan-revise": "planning",
+    "tf-plan-review": "planning",
+    "tf-seed": "planning",
+    "tf-backlog": "planning",
+    "tf-backlog-ls": "planning",
+    "tf-spike": "planning",
+    "tf-baseline": "planning",
+    "tf-followups": "planning",
+    "tf-backlog-from-openspec": "planning",
+    "tf-sync": "general",
+    "ralph-start": "worker"
+  },
+  "checkers": {
+    "python": {
+      "files": "\\.(py|pyi)$",
+      "lint": "ruff check {files} --fix",
+      "format": "ruff format {files}",
+      "typecheck": "mypy ."
+    },
+    "typescript": {
+      "files": "\\.(js|jsx|ts|tsx)$",
+      "lint": "eslint {files} --fix",
+      "format": "prettier --write {files}",
+      "typecheck": "tsc --noEmit"
+    },
+    "rust": {
+      "files": "\\.rs$",
+      "lint": "cargo clippy --fix -- -W clippy::all",
+      "format": "cargo fmt",
+      "typecheck": "cargo check"
+    },
+    "go": {
+      "files": "\\.go$",
+      "format": "gofmt -w {files}",
+      "typecheck": "go test ./..."
+    },
+    "markdown": {
+      "files": "\\.(md|mdx)$",
+      "format": "prettier --write {files}",
+      "lint": "markdownlint {files}"
+    },
+    "json": {
+      "files": "\\.json$",
+      "format": "prettier --write {files}"
+    },
+    "yaml": {
+      "files": "\\.(yml|yaml)$",
+      "format": "prettier --write {files}"
+    },
+    "html": {
+      "files": "\\.html?$",
+      "format": "prettier --write {files}"
+    },
+    "css": {
+      "files": "\\.(css|scss|sass|less)$",
+      "format": "prettier --write {files}"
+    },
+    "shell": {
+      "files": "\\.(sh|bash|zsh)$",
+      "format": "shfmt -w -s {files}"
+    }
+  },
+  "workflow": {
+    "clarifyDefault": true,
+    "enableResearcher": true,
+    "knowledgeDir": ".tf/knowledge",
+    "mcpServers": [
+      "context7",
+      "exa",
+      "grep_app",
+      "zai-web-search",
+      "zai-web-reader",
+      "zai-vision"
+    ],
+    "researchParallelAgents": 3,
+    "enableReviewers": [
+      "reviewer-general",
+      "reviewer-spec-audit",
+      "reviewer-second-opinion"
+    ],
+    "enableFixer": true,
+    "enableCloser": true,
+    "enableQualityGate": false,
+    "failOn": [],
+    "exclude": [
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      "coverage/**",
+      ".venv/**",
+      "vendor/**"
+    ]
+  }
+}
+JSON
+}
+
+write_default_tf_config_py() {
+  local dest="$1"
+  cat <<'PY' > "$dest"
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import re
+import shlex
+import sys
+from pathlib import Path
+
+def read_json(path: Path):
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def merge(a, b):
+    out = dict(a)
+    for k, v in b.items():
+        if isinstance(v, dict) and isinstance(out.get(k), dict):
+            out[k] = merge(out[k], v)
+        else:
+            out[k] = v
+    return out
+
+
+def resolve_project_root(base: Path) -> Path:
+    # Project installs pass base=<project>/.pi
+    if str(base).endswith("/.pi"):
+        return base.parent
+    # Global installs pass base=~/.pi/agent, but the active project is cwd
+    return Path.cwd()
+
+
+def resolve_project_config(base: Path) -> Path:
+    # TF workflow config lives in .tf/config (project-local override)
+    return resolve_project_root(base) / ".tf/config/settings.json"
+
+
+def load_workflow_config(base: Path, ignore_project: bool) -> dict:
+    # Optional global TF config (if present)
+    global_config = Path.home() / ".tf/config/settings.json"
+    project_config = resolve_project_config(base)
+
+    if ignore_project:
+        return read_json(global_config)
+
+    return merge(read_json(global_config), read_json(project_config))
+
+
+def resolve_knowledge_dir(config: dict, base: Path) -> Path:
+    knowledge_dir = config.get("workflow", {}).get("knowledgeDir", ".tf/knowledge")
+    knowledge_path = Path(str(knowledge_dir)).expanduser()
+    if not knowledge_path.is_absolute():
+        knowledge_path = resolve_project_root(base) / knowledge_dir
+    return knowledge_path
+
+
+def get_checker_tools(config: dict):
+    checkers = config.get("checkers", {}) or {}
+    cmds = set()
+    for spec in checkers.values():
+        for key in ("lint", "format", "typecheck"):
+            cmd = spec.get(key)
+            if not cmd:
+                continue
+            try:
+                parts = shlex.split(cmd)
+            except ValueError:
+                parts = cmd.split()
+            if parts:
+                cmds.add(parts[0])
+    return sorted(cmds)
+
+
+def get_mcp_servers(config: dict):
+    mcp_servers = config.get("workflow", {}).get("mcpServers")
+    if mcp_servers is None:
+        return [
+            "context7",
+            "exa",
+            "grep_app",
+            "zai-web-search",
+            "zai-web-reader",
+            "zai-vision",
+        ]
+    if isinstance(mcp_servers, list):
+        return [str(s) for s in mcp_servers]
+    return [str(mcp_servers)]
+
+
+def configure_mcp(config: dict, mcp_file: Path, zai_key: str, ctx7_key: str, exa_key: str):
+    allowed = set(get_mcp_servers(config))
+
+    if mcp_file.exists():
+        try:
+            mcp_config = json.loads(mcp_file.read_text(encoding="utf-8"))
+        except Exception:
+            mcp_config = {}
+    else:
+        mcp_config = {}
+
+    if not isinstance(mcp_config, dict):
+        mcp_config = {}
+
+    mcp_config.setdefault("settings", {})
+    mcp_config["settings"].setdefault("toolPrefix", "short")
+    mcp_config["mcpServers"] = {}
+
+    servers = mcp_config["mcpServers"]
+
+    def set_server(name, url, headers=None, auth=None):
+        if name not in allowed:
+            return
+        srv = {"url": url}
+        if auth:
+            srv["auth"] = auth
+        if headers:
+            srv["headers"] = headers
+        servers[name] = srv
+
+    ctx7_key = ctx7_key.strip()
+    exa_key = exa_key.strip()
+    zai_key = zai_key.strip()
+
+    set_server(
+        "context7",
+        "https://mcp.context7.com/mcp",
+        headers={"CONTEXT7_API_KEY": ctx7_key} if ctx7_key else None,
+    )
+    set_server(
+        "exa",
+        "https://mcp.exa.ai/mcp",
+        headers={"EXA_API_KEY": exa_key} if exa_key else None,
+    )
+    set_server("grep_app", "https://mcp.grep.app")
+
+    if zai_key:
+        headers = {"Authorization": f"Bearer {zai_key}"}
+        set_server(
+            "zai-web-search",
+            "https://api.z.ai/api/mcp/web_search_prime/mcp",
+            headers=headers,
+            auth="bearer",
+        )
+        set_server(
+            "zai-web-reader",
+            "https://api.z.ai/api/mcp/web_reader/mcp",
+            headers=headers,
+            auth="bearer",
+        )
+        set_server(
+            "zai-vision",
+            "https://api.z.ai/api/mcp/vision/mcp",
+            headers=headers,
+            auth="bearer",
+        )
+    else:
+        if allowed.intersection({"zai-web-search", "zai-web-reader", "zai-vision"}):
+            print("ZAI_API_KEY not provided; skipping ZAI MCP servers.", file=sys.stderr)
+
+    if not allowed:
+        print("workflow.mcpServers is empty; no MCP servers configured.", file=sys.stderr)
+
+    mcp_file.parent.mkdir(parents=True, exist_ok=True)
+    mcp_file.write_text(json.dumps(mcp_config, indent=2) + "\n", encoding="utf-8")
+    print(f"Configured MCP servers in {mcp_file}")
+
+
+def resolve_meta_model(config: dict, name: str) -> dict:
+    """Resolve a meta-model reference to actual model + thinking."""
+    meta_models = config.get("metaModels", {})
+    
+    # If name is already a meta-model key, resolve it
+    if name in meta_models:
+        return meta_models[name]
+    
+    # Check if it's an agent reference
+    agents = config.get("agents", {})
+    if name in agents:
+        meta_key = agents[name]
+        return meta_models.get(meta_key, {"model": name, "thinking": "medium"})
+    
+    # Check if it's a prompt reference
+    prompts = config.get("prompts", {})
+    if name in prompts:
+        meta_key = prompts[name]
+        return meta_models.get(meta_key, {"model": name, "thinking": "medium"})
+    
+    # Fallback: treat as direct model reference
+    return {"model": name, "thinking": "medium"}
+
+
+def update_agent_frontmatter(agent_path: Path, config: dict, agent_name: str) -> bool:
+    """Update agent file with resolved meta-model."""
+    content = agent_path.read_text(encoding="utf-8")
+    
+    # Resolve the meta-model for this agent
+    resolved = resolve_meta_model(config, agent_name)
+    model = resolved.get("model", "openai-codex/gpt-5.1-codex-mini")
+    thinking = resolved.get("thinking", "medium")
+    
+    # Pattern to match frontmatter
+    frontmatter_pattern = r'^(---\s*\n)(.*?)(\n---\s*\n)'
+    
+    def replace_frontmatter(match):
+        prefix = match.group(1)
+        frontmatter = match.group(2)
+        suffix = match.group(3)
+        
+        # Update or add model
+        if re.search(r'^model:\s*', frontmatter, re.MULTILINE):
+            frontmatter = re.sub(
+                r'^model:\s*.*$', 
+                f'model: {model}', 
+                frontmatter, 
+                flags=re.MULTILINE
+            )
+        else:
+            frontmatter += f'\nmodel: {model}'
+        
+        # Update or add thinking
+        if re.search(r'^thinking:\s*', frontmatter, re.MULTILINE):
+            frontmatter = re.sub(
+                r'^thinking:\s*.*$', 
+                f'thinking: {thinking}', 
+                frontmatter, 
+                flags=re.MULTILINE
+            )
+        else:
+            frontmatter += f'\nthinking: {thinking}'
+        
+        return prefix + frontmatter + suffix
+    
+    new_content = re.sub(frontmatter_pattern, replace_frontmatter, content, flags=re.DOTALL)
+    
+    if new_content != content:
+        agent_path.write_text(new_content, encoding="utf-8")
+        return True
+    return False
+
+
+def update_prompt_frontmatter(prompt_path: Path, config: dict, prompt_name: str) -> bool:
+    """Update prompt file with resolved meta-model."""
+    content = prompt_path.read_text(encoding="utf-8")
+    
+    # Resolve the meta-model for this prompt
+    resolved = resolve_meta_model(config, prompt_name)
+    model = resolved.get("model", "openai-codex/gpt-5.1-codex-mini")
+    thinking = resolved.get("thinking", "medium")
+    
+    # Pattern to match frontmatter
+    frontmatter_pattern = r'^(---\s*\n)(.*?)(\n---\s*\n)'
+    
+    def replace_frontmatter(match):
+        prefix = match.group(1)
+        frontmatter = match.group(2)
+        suffix = match.group(3)
+        
+        # Update or add model
+        if re.search(r'^model:\s*', frontmatter, re.MULTILINE):
+            frontmatter = re.sub(
+                r'^model:\s*.*$', 
+                f'model: {model}', 
+                frontmatter, 
+                flags=re.MULTILINE
+            )
+        else:
+            frontmatter += f'\nmodel: {model}'
+        
+        # Update or add thinking
+        if re.search(r'^thinking:\s*', frontmatter, re.MULTILINE):
+            frontmatter = re.sub(
+                r'^thinking:\s*.*$', 
+                f'thinking: {thinking}', 
+                frontmatter, 
+                flags=re.MULTILINE
+            )
+        else:
+            frontmatter += f'\nthinking: {thinking}'
+        
+        return prefix + frontmatter + suffix
+    
+    new_content = re.sub(frontmatter_pattern, replace_frontmatter, content, flags=re.DOTALL)
+    
+    if new_content != content:
+        prompt_path.write_text(new_content, encoding="utf-8")
+        return True
+    return False
+
+
+def sync_models(config: dict, base: Path) -> dict:
+    """Sync models from config to all agents and prompts."""
+    results = {"agents": [], "prompts": [], "errors": []}
+    
+    # Sync agents
+    agents_dir = base / "agents"
+    if agents_dir.exists():
+        for agent_file in agents_dir.glob("*.md"):
+            agent_name = agent_file.stem
+            try:
+                if update_agent_frontmatter(agent_file, config, agent_name):
+                    results["agents"].append(agent_name)
+            except Exception as e:
+                results["errors"].append(f"agents/{agent_file.name}: {e}")
+    
+    # Sync prompts
+    prompts_dir = base / "prompts"
+    if prompts_dir.exists():
+        for prompt_file in prompts_dir.glob("*.md"):
+            prompt_name = prompt_file.stem
+            try:
+                if update_prompt_frontmatter(prompt_file, config, prompt_name):
+                    results["prompts"].append(prompt_name)
+            except Exception as e:
+                results["errors"].append(f"prompts/{prompt_file.name}: {e}")
+    
+    return results
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="TF config helper")
+    parser.add_argument("--base", default=os.environ.get("TARGET_BASE", ""))
+    parser.add_argument(
+        "--ignore-project",
+        action="store_true",
+        default=os.environ.get("IGNORE_PROJECT_CONFIG", "").lower() == "true",
+    )
+
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    subparsers.add_parser("print-config")
+    subparsers.add_parser("checker-tools")
+    subparsers.add_parser("knowledge-dir")
+    subparsers.add_parser("mcp-servers")
+    subparsers.add_parser("sync-models", help="Sync meta-models to agents and prompts")
+
+    mcp_parser = subparsers.add_parser("configure-mcp")
+    mcp_parser.add_argument("--mcp-file", required=True)
+    mcp_parser.add_argument("--zai-key", default=os.environ.get("ZAI_API_KEY", ""))
+    mcp_parser.add_argument("--ctx7-key", default=os.environ.get("CONTEXT7_API_KEY", ""))
+    mcp_parser.add_argument("--exa-key", default=os.environ.get("EXA_API_KEY", ""))
+
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    base = Path(args.base).expanduser() if args.base else Path.cwd()
+
+    config = load_workflow_config(base, args.ignore_project)
+
+    if args.command == "print-config":
+        print(json.dumps(config))
+        return
+    if args.command == "checker-tools":
+        print("\n".join(get_checker_tools(config)))
+        return
+    if args.command == "knowledge-dir":
+        print(resolve_knowledge_dir(config, base))
+        return
+    if args.command == "mcp-servers":
+        print("\n".join(get_mcp_servers(config)))
+        return
+    if args.command == "sync-models":
+        results = sync_models(config, base)
+        if results["agents"]:
+            print(f"Updated agents: {', '.join(results['agents'])}")
+        if results["prompts"]:
+            print(f"Updated prompts: {', '.join(results['prompts'])}")
+        if results["errors"]:
+            print("Errors:", file=sys.stderr)
+            for err in results["errors"]:
+                print(f"  {err}", file=sys.stderr)
+        return
+    if args.command == "configure-mcp":
+        configure_mcp(
+            config,
+            Path(args.mcp_file).expanduser(),
+            args.zai_key or "",
+            args.ctx7_key or "",
+            args.exa_key or "",
+        )
+        return
+
+    raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()
+PY
+}
+
+write_settings_file() {
+  local dest="$1"
+  if [ -f "$ROOT_DIR/config/settings.json" ]; then
+    cp "$ROOT_DIR/config/settings.json" "$dest"
+  else
+    write_default_settings_json "$dest"
+  fi
+}
+
+write_tf_config_file() {
+  local dest="$1"
+  if [ -f "$ROOT_DIR/scripts/tf_config.py" ]; then
+    cp "$ROOT_DIR/scripts/tf_config.py" "$dest"
+  else
+    write_default_tf_config_py "$dest"
+  fi
+  chmod +x "$dest"
+}
+
+tf_init() {
+  if [ "$IS_GLOBAL" = true ]; then
+    echo "tf init is project-local; do not use --global." >&2
+    exit 1
+  fi
+
+  local project_root=""
+
+  if [ -n "$TF_BASE" ]; then
+    project_root="$(cd "$(dirname "$TF_BASE")" && pwd)"
+  else
+    project_root="$(pwd)"
+    TF_BASE="$project_root/.tf"
+    TARGET_BASE="$project_root/.pi"
+    SCOPE_FLAG="-l"
+    IS_GLOBAL=false
+  fi
+
+  mkdir -p "$TF_BASE/config" "$TF_BASE/scripts" "$TF_BASE/knowledge" "$TF_BASE/ralph"
+
+  if [ ! -f "$TF_BASE/config/settings.json" ]; then
+    write_settings_file "$TF_BASE/config/settings.json"
+  fi
+
+  if [ ! -f "$TF_BASE/scripts/tf_config.py" ]; then
+    write_tf_config_file "$TF_BASE/scripts/tf_config.py"
+  fi
+
+  echo "Initialized .tf directory at: $TF_BASE"
+}
+
 configure_mcp() {
   local mcp_file="$TARGET_BASE/mcp.json"
   local zai_key="$1"
   local ctx7_key="$2"
   local exa_key="$3"
 
+  mkdir -p "$(dirname "$mcp_file")"
+
   local python_cmd=()
   if resolve_python_cmd; then
     python_cmd=("${PYTHON_CMD[@]}")
   else
     echo "Python not found; skipping MCP config." >&2
+    return 0
+  fi
+
+  if [ -z "$CONFIG_HELPER" ] || [ ! -f "$CONFIG_HELPER" ]; then
+    "${python_cmd[@]}" - "$mcp_file" "$zai_key" "$ctx7_key" "$exa_key" <<'PY'
+import json
+import sys
+
+mcp_file = sys.argv[1]
+zai_key = sys.argv[2].strip()
+ctx7_key = sys.argv[3].strip()
+exa_key = sys.argv[4].strip()
+
+cfg = {
+    "settings": {"toolPrefix": "short"},
+    "mcpServers": {}
+}
+
+def set_server(name, url, headers=None, auth=None):
+    srv = {"url": url}
+    if auth:
+        srv["auth"] = auth
+    if headers:
+        srv["headers"] = headers
+    cfg["mcpServers"][name] = srv
+
+set_server(
+    "context7",
+    "https://mcp.context7.com/mcp",
+    headers={"CONTEXT7_API_KEY": ctx7_key} if ctx7_key else None,
+)
+set_server(
+    "exa",
+    "https://mcp.exa.ai/mcp",
+    headers={"EXA_API_KEY": exa_key} if exa_key else None,
+)
+set_server("grep_app", "https://mcp.grep.app")
+
+if zai_key:
+    headers = {"Authorization": f"Bearer {zai_key}"}
+    set_server(
+        "zai-web-search",
+        "https://api.z.ai/api/mcp/web_search_prime/mcp",
+        headers=headers,
+        auth="bearer",
+    )
+    set_server(
+        "zai-web-reader",
+        "https://api.z.ai/api/mcp/web_reader/mcp",
+        headers=headers,
+        auth="bearer",
+    )
+    set_server(
+        "zai-vision",
+        "https://api.z.ai/api/mcp/vision/mcp",
+        headers=headers,
+        auth="bearer",
+    )
+
+with open(mcp_file, "w", encoding="utf-8") as f:
+    json.dump(cfg, f, indent=2)
+    f.write("\n")
+
+print(f"Configured MCP servers in {mcp_file}")
+PY
     return 0
   fi
 
@@ -393,6 +1132,8 @@ track_file() {
 }
 
 doctor() {
+  require_project_tf
+
   local failed=0
 
   echo "Ticketflow doctor"
@@ -917,6 +1658,8 @@ PY
 }
 
 ralph_cmd() {
+  require_project_tf
+
   local subcmd="${1:-}"
   shift || true
   
@@ -1526,6 +2269,8 @@ agentsmd_cmd() {
 }
 
 backlog_ls() {
+  require_project_tf
+
   local topic="${1:-}"
   local python_bin=""
   if command -v python3 >/dev/null 2>&1; then
@@ -1685,6 +2430,8 @@ PY
 }
 
 sync_models() {
+  require_project_tf
+
   local python_cmd=()
   if resolve_python_cmd; then
     python_cmd=("${PYTHON_CMD[@]}")
@@ -1730,6 +2477,13 @@ login() {
       IS_GLOBAL=true
       echo "Using global config: $TARGET_BASE"
     fi
+  fi
+
+  if [ -n "$TF_BASE" ] && [ -d "$TF_BASE" ]; then
+    set_config_helper
+  elif [ -z "$TF_BASE" ] && [ -d ".tf" ]; then
+    TF_BASE="$(pwd)/.tf"
+    set_config_helper
   fi
 
   echo ""
@@ -1854,7 +2608,7 @@ case "$COMMAND" in
   setup)
     echo "Ticketflow setup"
     if [ -z "$TARGET_BASE" ]; then
-      read -r -p "Install globally? (Y/n) " yn
+      read -r -p "Install Pi assets globally? (Y/n) " yn
       case "$yn" in
         [Nn]*)
           read -r -p "Project path (default: current dir): " project_path
@@ -1866,7 +2620,7 @@ case "$COMMAND" in
           ;;
         *)
           TARGET_BASE="$HOME/.pi/agent"
-          TF_BASE="$HOME/.tf"
+          TF_BASE=""
           SCOPE_FLAG=""
           IS_GLOBAL=true
           ;;
@@ -1885,7 +2639,18 @@ case "$COMMAND" in
     case "$yn" in [Yy]*) login ;; esac
 
     install_files
+
+    if [ "$IS_GLOBAL" = false ]; then
+      tf_init
+    else
+      echo ""
+      echo "Next: run 'tf init' in each project to scaffold .tf/."
+    fi
+
     install_extensions "$install_deps" "$install_optional"
+    ;;
+  init)
+    tf_init
     ;;
   login)
     login

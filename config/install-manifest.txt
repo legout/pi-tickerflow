@@ -2,7 +2,7 @@
 #
 # Routing:
 # - agents/*, skills/*, prompts/*  → Pi base (global: ~/.pi/agent, project: <root>/.pi)
-# - everything else (bin/*, scripts/*, config/*) → TF base (global: ~/.tf, project: <root>/.tf)
+# - everything else (bin/*, scripts/*, config/*) → TF base (project: <root>/.tf only)
 
 # CLI tool (will be installed to bin/tf)
 bin/tf

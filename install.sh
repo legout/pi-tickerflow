@@ -21,8 +21,8 @@ Usage:
   curl -fsSL https://raw.githubusercontent.com/legout/pi-ticketflow/main/install.sh | bash -s -- --project /path/to/project
 
 Options:
-  --global              Install Pi assets into ~/.pi/agent and TF runtime/state into ~/.tf.
-                        Installs the tf CLI to ~/.local/bin/tf.
+  --global              Install Pi assets into ~/.pi/agent and the tf CLI into ~/.local/bin/tf.
+                        (No global .tf directory is created.)
   --project <path>      Install Pi assets into <path>/.pi and TF runtime/state into <path>/.tf.
                         Installs the tf CLI to <path>/.tf/bin/tf.
   --remote              Force remote mode (download from GitHub)
@@ -30,8 +30,8 @@ Options:
 
 Notes:
   - Pi-discoverable files (agents, prompts, skills) remain under .pi/ or ~/.pi/agent/.
-  - TF-owned state lives under .tf/ (knowledge, ralph) and TF config/scripts under .tf/ as well.
-  - After install, run 'tf setup' (global) or './.tf/bin/tf setup' (project).
+  - TF-owned state always lives under .tf/ in the project (knowledge, ralph, config, scripts).
+  - After a global install, run 'tf init' in each project to scaffold .tf/.
 EOF
 }
 
@@ -67,7 +67,11 @@ route_dest_base() {
       echo "$PI_BASE"
       ;;
     *)
-      echo "$TF_BASE"
+      if [ "$IS_GLOBAL" = true ]; then
+        echo ""
+      else
+        echo "$TF_BASE"
+      fi
       ;;
   esac
 }
@@ -76,30 +80,21 @@ install_cli() {
   local source_file="$1"
   chmod +x "$source_file"
 
-  mkdir -p "$TF_BASE/bin"
-  cp "$source_file" "$TF_BASE/bin/tf"
-  chmod +x "$TF_BASE/bin/tf"
-
   if [ "$IS_GLOBAL" = true ]; then
     local global_bin="${HOME}/.local/bin/tf"
 
     if ! mkdir -p "${HOME}/.local/bin" 2>/dev/null; then
       log "WARNING: Cannot create ${HOME}/.local/bin"
-      log "          CLI is installed at: $TF_BASE/bin/tf"
+      log "          CLI could not be installed."
       return 0
     fi
 
-    # Prefer symlink so tf can find its sibling scripts/config in ~/.tf
-    if ln -sf "$TF_BASE/bin/tf" "$global_bin" 2>/dev/null; then
-      log "Installed CLI symlink to: $global_bin -> $TF_BASE/bin/tf"
-    else
-      cp "$TF_BASE/bin/tf" "$global_bin" 2>/dev/null || {
-        log "WARNING: Cannot write $global_bin (permission denied?)"
-        log "          CLI is installed at: $TF_BASE/bin/tf"
-        return 0
-      }
-      log "Installed CLI to: $global_bin"
-    fi
+    cp "$source_file" "$global_bin" 2>/dev/null || {
+      log "WARNING: Cannot write $global_bin (permission denied?)"
+      return 0
+    }
+    chmod +x "$global_bin"
+    log "Installed CLI to: $global_bin"
 
     if [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
       echo ""
@@ -108,6 +103,9 @@ install_cli() {
       echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
     fi
   else
+    mkdir -p "$TF_BASE/bin"
+    cp "$source_file" "$TF_BASE/bin/tf"
+    chmod +x "$TF_BASE/bin/tf"
     log "Installed CLI to: $TF_BASE/bin/tf"
   fi
 }
@@ -152,6 +150,10 @@ install_remote() {
 
     local dest_base
     dest_base="$(route_dest_base "$line")"
+
+    if [ -z "$dest_base" ]; then
+      continue
+    fi
 
     local file_url="$REPO_URL/$line"
     local output_file="$dest_base/$line"
@@ -211,6 +213,10 @@ install_local() {
     local dest_base
     dest_base="$(route_dest_base "$line")"
 
+    if [ -z "$dest_base" ]; then
+      continue
+    fi
+
     mkdir -p "$dest_base/$(dirname "$line")"
     cp "$script_dir/$line" "$dest_base/$line"
     count=$((count + 1))
@@ -243,7 +249,7 @@ main() {
     case "$1" in
       --global)
         PI_BASE="$HOME/.pi/agent"
-        TF_BASE="$HOME/.tf"
+        TF_BASE=""
         IS_GLOBAL=true
         shift
         ;;
@@ -274,18 +280,26 @@ main() {
   done
 
   # Default: project install into current directory
-  if [ -z "$PI_BASE" ] || [ -z "$TF_BASE" ]; then
+  if [ -z "$PI_BASE" ]; then
     PI_BASE="$(pwd)/.pi"
     TF_BASE="$(pwd)/.tf"
     IS_GLOBAL=false
   fi
 
-  mkdir -p "$PI_BASE" "$TF_BASE" 2>/dev/null || {
-    log "ERROR: Cannot create install directories"
-    log "  PI_BASE: $PI_BASE"
-    log "  TF_BASE: $TF_BASE"
-    exit 1
-  }
+  if [ "$IS_GLOBAL" = true ]; then
+    mkdir -p "$PI_BASE" 2>/dev/null || {
+      log "ERROR: Cannot create install directory"
+      log "  PI_BASE: $PI_BASE"
+      exit 1
+    }
+  else
+    mkdir -p "$PI_BASE" "$TF_BASE" 2>/dev/null || {
+      log "ERROR: Cannot create install directories"
+      log "  PI_BASE: $PI_BASE"
+      log "  TF_BASE: $TF_BASE"
+      exit 1
+    }
+  fi
 
   if [ "$use_remote" = true ]; then
     install_remote
@@ -293,19 +307,21 @@ main() {
     install_local
   fi
 
+  if [ "$IS_GLOBAL" = false ]; then
+    mkdir -p "$TF_BASE/knowledge" "$TF_BASE/ralph"
+  fi
+
   echo ""
   if [ "$IS_GLOBAL" = true ]; then
     echo "Installed Pi assets to: $PI_BASE"
-    echo "Installed TF runtime/state to: $TF_BASE"
+    echo "Installed CLI to: $HOME/.local/bin/tf"
     echo ""
     echo "Next steps:"
-    echo "  1. Run interactive setup:"
+    echo "  1. Run interactive setup (extensions + API keys):"
     echo "     tf setup"
-    echo "  2. Sync configuration to agents/prompts:"
-    echo "     tf sync"
-    echo "  3. Initialize Ralph (per-project, in the repo you work on):"
-    echo "     tf ralph init"
-    echo "  4. Start working:"
+    echo "  2. In each project, scaffold TF state:"
+    echo "     tf init"
+    echo "  3. Start working:"
     echo "     /tf <ticket>"
   else
     echo "Installed Pi assets to: $PI_BASE"

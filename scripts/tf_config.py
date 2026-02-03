@@ -40,7 +40,7 @@ def resolve_project_config(base: Path) -> Path:
 
 
 def load_workflow_config(base: Path, ignore_project: bool) -> dict:
-    # Global TF workflow config lives in ~/.tf/config
+    # Optional global TF config (if present)
     global_config = Path.home() / ".tf/config/settings.json"
     project_config = resolve_project_config(base)
 

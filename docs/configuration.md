@@ -9,13 +9,20 @@ Setting up pi-ticketflow, models, extensions, and MCP servers.
 ### Interactive Setup (Recommended)
 
 ```bash
-./.tf/bin/tf setup
+# Global install
+tf setup
+
+# In each project
+tf init
+tf sync
 ```
 
+If you installed per-project, use `./.tf/bin/tf` instead of `tf`.
+
 Guides you through:
-- Global vs project install
-- Optional extensions
+- Installing required/optional Pi extensions
 - MCP server configuration + API keys
+- Project scaffolding via `tf init`
 
 ### Manual Install
 
@@ -26,6 +33,8 @@ Guides you through:
 # Project install
 ./install.sh --project /path/to/project
 ```
+
+After a global install, run `tf init` in each project to scaffold `.tf/`.
 
 ---
 
@@ -83,9 +92,11 @@ Models are configured in `config/settings.json`:
 
 ### Applying Changes
 
-After editing `config.json`:
+After editing `config/settings.json`:
 
 ```bash
+tf sync
+# or
 ./.tf/bin/tf sync
 # or
 /tf-sync
@@ -97,7 +108,7 @@ This updates `model:` frontmatter in all agent and prompt files.
 
 ## Workflow Configuration
 
-Additional workflow settings in `config.json`:
+Additional workflow settings in `config/settings.json`:
 
 ```json
 {
@@ -170,7 +181,7 @@ pi install npm:pi-mcp-adapter
 
 ### MCP Config Location
 
-MCP config is written to `<target>/.pi/mcp.json` when you run `./.tf/bin/tf setup`.
+MCP config is written to `<target>/.pi/mcp.json` when you run `tf setup` (or `./.tf/bin/tf setup` for project installs).
 
 Example structure:
 
@@ -254,23 +265,15 @@ Runs preflight checks for:
 After installation:
 
 ```
-# Global install
+# Global install (Pi assets + CLI)
 ~/.pi/agent/
 ├── agents/
 ├── skills/
 └── prompts/
 
-~/.tf/
-├── bin/
-│   └── tf
-├── scripts/
-│   └── tf_config.py
-└── config/
-    └── workflows/
-        └── tf/
-            └── config.json
+~/.local/bin/tf
 
-# Project install
+# Project (after `tf init` or project install)
 .pi/
 ├── agents/
 ├── skills/
@@ -281,13 +284,11 @@ After installation:
 
 .tf/
 ├── bin/
-│   └── tf
+│   └── tf                # (if installed locally)
+├── config/
+│   └── settings.json
 ├── scripts/
 │   └── tf_config.py
-├── config/
-│   └── workflows/
-│       └── tf/
-│           └── config.json
 ├── ralph/
 │   ├── AGENTS.md
 │   ├── progress.md
@@ -312,7 +313,7 @@ pi install npm:pi-prompt-template-model
 
 - Verify `pi-prompt-template-model` installed (for entry switch)
 - Verify `pi-model-switch` installed (for runtime switches)
-- Check model ID is valid in config.json
+- Check model ID is valid in config/settings.json
 - Run `/tf-sync` after config changes
 
 ### Skill not loading
@@ -329,6 +330,6 @@ pi install npm:pi-prompt-template-model
 
 ### Knowledge base not created
 
-- Check `workflow.knowledgeDir` in config.json
+- Check `workflow.knowledgeDir` in config/settings.json
 - Ensure write permissions in project directory
 - Knowledge base is auto-created on first use

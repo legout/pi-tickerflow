@@ -19,10 +19,7 @@ The chain is triggered by:
 
 ## Files & Locations
 
-**Config (global):**
-- `~/.tf/config/settings.json`
-
-**Config (project override):**
+**Config (project):**
 - `<project>/.tf/config/settings.json`
 
 **Prompt template:**

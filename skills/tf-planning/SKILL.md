@@ -26,9 +26,8 @@ All ticket creation in this skill follows these rules:
 
 ## Configuration
 
-Read workflow config (project overrides global):
+Read workflow config (project):
 - `.tf/config/settings.json`
-- `~/.tf/config/settings.json`
 
 Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
 
