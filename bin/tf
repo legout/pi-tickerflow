@@ -1026,7 +1026,7 @@ configure_mcp() {
     return 0
   fi
 
-  if [ -z "$CONFIG_HELPER" ] || [ ! -f "$CONFIG_HELPER" ]; then
+  if [ "$IS_GLOBAL" = true ] || [ -z "$CONFIG_HELPER" ] || [ ! -f "$CONFIG_HELPER" ]; then
     "${python_cmd[@]}" - "$mcp_file" "$zai_key" "$ctx7_key" "$exa_key" <<'PY'
 import json
 import sys
