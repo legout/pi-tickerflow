@@ -9,6 +9,10 @@ skill: tf-workflow
 
 Execute the standard Implement → Review → Fix → Close workflow for a ticket.
 
+## Task Input
+- Ticket ID: $1
+- Args: $@
+
 ## Usage
 
 ```

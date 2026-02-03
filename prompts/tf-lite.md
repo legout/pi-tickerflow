@@ -9,6 +9,10 @@ skill: tf-workflow
 
 Deprecated alias for `/tf`. Please use `/tf` instead.
 
+## Task Input
+- Ticket ID: $1
+- Args: $@
+
 ## Usage
 
 ```
