@@ -82,29 +82,93 @@ Models are configured in `config/settings.json`:
 
 ```json
 {
-  "models": {
-    "worker": "chutes/moonshotai/Kimi-K2.5-TEE:high",
-    "reviewer": "openai-codex/gpt-5.1-codex-mini",
-    "review-merge": "openai-codex/gpt-5.1-codex-mini",
-    "fixer": "zai/glm-4.7",
-    "closer": "zai/glm-4.7",
-    "planning": "openai-codex/gpt-5.1-codex-mini",
-    "config": "zai/glm-4.7"
+  "metaModels": {
+    "planning": {
+      "model": "openai-codex/gpt-5.2",
+      "thinking": "medium",
+      "description": "Fast, capable model for planning and specification"
+    },
+    "worker": {
+      "model": "kimi-coding/k2p5",
+      "thinking": "high",
+      "description": "Strong model for implementation and complex reasoning"
+    },
+    "research": {
+      "model": "minimax/MiniMax-M2.1",
+      "thinking": "medium",
+      "description": "Fast model for research and information gathering"
+    },
+    "fast": {
+      "model": "zai/glm-4.7-flash",
+      "thinking": "medium",
+      "description": "Cheapest model for quick tasks, fixes, and summaries"
+    },
+    "general": {
+      "model": "zai/glm-4.7",
+      "thinking": "medium",
+      "description": "General-purpose model for admin tasks"
+    },
+    "review-general": {
+      "model": "openai-codex/gpt-5.1-codex-mini",
+      "thinking": "high",
+      "description": "Capable model for general code review"
+    },
+    "review-spec": {
+      "model": "openai-codex/gpt-5.2-codex",
+      "thinking": "high",
+      "description": "Strong model for specification compliance audit"
+    },
+    "review-secop": {
+      "model": "github-copilot/grok-code-fast-1",
+      "thinking": "high",
+      "description": "Fast model for second-opinion review"
+    }
+  },
+  "agents": {
+    "reviewer-general": "review-general",
+    "reviewer-spec-audit": "review-spec",
+    "reviewer-second-opinion": "review-secop",
+    "review-merge": "general",
+    "fixer": "general",
+    "closer": "fast",
+    "researcher": "research",
+    "researcher-fetch": "research"
+  },
+  "prompts": {
+    "tf": "worker",
+    "tf-next": "general",
+    "tf-plan": "planning",
+    "tf-plan-consult": "planning",
+    "tf-plan-revise": "planning",
+    "tf-plan-review": "planning",
+    "tf-seed": "planning",
+    "tf-backlog": "planning",
+    "tf-backlog-ls": "fast",
+    "tf-spike": "planning",
+    "tf-baseline": "planning",
+    "tf-followups": "planning",
+    "tf-tags-suggest": "planning",
+    "tf-deps-sync": "planning",
+    "tf-dedup": "planning",
+    "tf-backlog-from-openspec": "planning",
+    "tf-sync": "general",
+    "ralph-start": "general"
   }
 }
 ```
 
 ### Model Strategy
 
-| Role | Recommended Model Type | Purpose |
-|------|------------------------|---------|
-| worker | Strong (Kimi-K2.5, Sonnet) | Deep reasoning for implementation |
-| reviewer-* | Fast, capable (GPT-5.1-mini) | Code review |
-| review-merge | Cheap (GPT-5.1-mini) | Deduplication |
-| fixer | Cheapest (GLM-4.7) | Apply fixes |
-| closer | Cheapest (GLM-4.7) | Summarization |
-| planning | Cheap, fast (GPT-5.1-mini) | Planning tasks |
-| config | Cheapest (GLM-4.7) | Admin tasks |
+| Role | Default Model | Purpose |
+|------|---------------|---------|
+| worker | kimi-coding/k2p5 | Deep reasoning for implementation |
+| researcher | minimax/MiniMax-M2.1 | Fast research and information gathering |
+| fast | zai/glm-4.7-flash | Cheapest model for quick tasks |
+| general | zai/glm-4.7 | General-purpose admin tasks |
+| review-general | openai-codex/gpt-5.1-codex-mini | General code review |
+| review-spec | openai-codex/gpt-5.2-codex | Specification compliance audit |
+| review-secop | github-copilot/grok-code-fast-1 | Second-opinion review |
+| planning | openai-codex/gpt-5.2 | Planning and specification |
 
 ### Applying Changes
 

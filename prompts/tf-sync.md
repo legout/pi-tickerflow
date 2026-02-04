@@ -67,14 +67,14 @@ Read project config:
 ○ pi-mcp-adapter (optional, not installed)
 
 ## Agent Models Updated
-- fixer: (unchanged) zai/glm-4.7:high
+- fixer: general (zai/glm-4.7) - updated from fast
 
 ## Agent Models Unchanged
-- reviewer-general: openai-codex/gpt-5.1-codex-mini:high
+- reviewer-general: review-general (openai-codex/gpt-5.1-codex-mini)
 - ...
 
 ## Prompt Models Updated
-- tf-plan.md: openai-codex/gpt-5.1-codex-mini → openai-codex/gpt-5.1-codex-mini:medium
+- tf-plan.md: planning (openai-codex/gpt-5.2)
 
 ## Recommendations
 - Consider installing pi-mcp-adapter for research capabilities

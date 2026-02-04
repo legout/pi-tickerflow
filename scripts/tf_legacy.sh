@@ -635,8 +635,8 @@ write_default_settings_json() {
     "reviewer-general": "review-general",
     "reviewer-spec-audit": "review-spec",
     "reviewer-second-opinion": "review-secop",
-    "review-merge": "fast",
-    "fixer": "fast",
+    "review-merge": "general",
+    "fixer": "general",
     "closer": "fast",
     "researcher": "research",
     "researcher-fetch": "research"
@@ -650,13 +650,16 @@ write_default_settings_json() {
     "tf-plan-review": "planning",
     "tf-seed": "planning",
     "tf-backlog": "planning",
-    "tf-backlog-ls": "planning",
+    "tf-backlog-ls": "fast",
     "tf-spike": "planning",
     "tf-baseline": "planning",
     "tf-followups": "planning",
+    "tf-tags-suggest": "planning",
+    "tf-deps-sync": "planning",
+    "tf-dedup": "planning",
     "tf-backlog-from-openspec": "planning",
     "tf-sync": "general",
-    "ralph-start": "worker"
+    "ralph-start": "general"
   },
   "checkers": {
     "python": {

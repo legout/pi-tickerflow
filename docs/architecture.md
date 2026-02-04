@@ -23,14 +23,14 @@ User types: /tf ABC-123
          ▼
 ┌─────────────────┐
 │  Extension      │  Reads frontmatter:
-│  (pi-prompt-    │    model: chutes/moonshotai/Kimi-K2.5-TEE:high
+│  (pi-prompt-    │    model: kimi-coding/k2p5
 │   template-     │    skill: tf-workflow
 │   model)        │
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  Model Switch   │  Switches to Kimi-K2.5
+│  Model Switch   │  Switches to kimi-coding/k2p5
 └────────┬────────┘
          │
          ▼
@@ -114,8 +114,8 @@ Commands are thin wrappers in `prompts/*.md`. They specify:
 
 ```markdown
 ---
-description: Implement ticket [tf-workflow +Kimi-K2.5]
-model: chutes/moonshotai/Kimi-K2.5-TEE:high
+description: Implement ticket [tf-workflow]
+model: kimi-coding/k2p5
 skill: tf-workflow
 ---
 
@@ -350,13 +350,14 @@ Models are configured in `config/settings.json`:
 
 | Role | Default Model | Purpose |
 |------|---------------|---------|
-| worker | Kimi-K2.5 / Sonnet | Deep reasoning for implementation |
-| reviewer-* | GPT-5.1-mini | Fast, capable review |
-| review-merge | GPT-5.1-mini | Deduplication and consolidation |
-| fixer | GLM-4.7 | Cheap fixes |
-| closer | GLM-4.7 | Cheap summarization |
-| planning | GPT-5.1-mini | Planning workflows |
-| config | GLM-4.7 | Setup and sync |
+| worker | kimi-coding/k2p5 | Deep reasoning for implementation |
+| researcher | minimax/MiniMax-M2.1 | Fast research and information gathering |
+| fast | zai/glm-4.7-flash | Cheapest model for quick tasks |
+| general | zai/glm-4.7 | General-purpose admin tasks |
+| review-general | openai-codex/gpt-5.1-codex-mini | General code review |
+| review-spec | openai-codex/gpt-5.2-codex | Specification compliance audit |
+| review-secop | github-copilot/grok-code-fast-1 | Second-opinion review |
+| planning | openai-codex/gpt-5.2 | Planning and specification |
 
 Run `/tf-sync` after editing config to apply changes.
 

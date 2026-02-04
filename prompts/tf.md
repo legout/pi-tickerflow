@@ -1,6 +1,6 @@
 ---
-description: Implement ticket with IRF workflow [tf-workflow +Kimi-K2.5]
-model: chutes/moonshotai/Kimi-K2.5-TEE
+description: Implement ticket with IRF workflow [tf-workflow]
+model: kimi-coding/k2p5
 thinking: high
 skill: tf-workflow
 ---

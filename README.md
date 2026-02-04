@@ -475,10 +475,42 @@ Models are configured in `config/settings.json`:
 
 ```json
 {
-  "models": {
-    "worker": "chutes/moonshotai/Kimi-K2.5-TEE:high",
-    "reviewer": "openai-codex/gpt-5.1-codex-mini",
-    "fixer": "zai/glm-4.7"
+  "metaModels": {
+    "worker": {
+      "model": "kimi-coding/k2p5",
+      "thinking": "high",
+      "description": "Strong model for implementation"
+    },
+    "planning": {
+      "model": "openai-codex/gpt-5.2",
+      "thinking": "medium",
+      "description": "Fast model for planning"
+    },
+    "research": {
+      "model": "minimax/MiniMax-M2.1",
+      "thinking": "medium",
+      "description": "Fast model for research"
+    },
+    "fast": {
+      "model": "zai/glm-4.7-flash",
+      "thinking": "medium",
+      "description": "Cheapest model for quick tasks"
+    },
+    "general": {
+      "model": "zai/glm-4.7",
+      "thinking": "medium",
+      "description": "General-purpose model"
+    }
+  },
+  "agents": {
+    "reviewer-general": "review-general",
+    "fixer": "general",
+    "researcher": "research"
+  },
+  "prompts": {
+    "tf": "worker",
+    "tf-plan": "planning",
+    "tf-backlog": "planning"
   }
 }
 ```

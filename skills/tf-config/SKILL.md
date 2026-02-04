@@ -40,13 +40,48 @@ Location (project):
 Structure:
 ```json
 {
-  "models": {
-    "reviewer-general": "openai-codex/gpt-5.1-codex-mini:high",
-    "review-merge": "zai/glm-4.7:medium",
-    "fixer": "zai/glm-4.7:high",
-    "closer": "zai/glm-4.7:medium",
-    "planning": "openai-codex/gpt-5.1-codex-mini:medium",
-    "config": "zai/glm-4.7:medium"
+  "metaModels": {
+    "worker": {
+      "model": "kimi-coding/k2p5",
+      "thinking": "high"
+    },
+    "planning": {
+      "model": "openai-codex/gpt-5.2",
+      "thinking": "medium"
+    },
+    "research": {
+      "model": "minimax/MiniMax-M2.1",
+      "thinking": "medium"
+    },
+    "fast": {
+      "model": "zai/glm-4.7-flash",
+      "thinking": "medium"
+    },
+    "general": {
+      "model": "zai/glm-4.7",
+      "thinking": "medium"
+    },
+    "review-general": {
+      "model": "openai-codex/gpt-5.1-codex-mini",
+      "thinking": "high"
+    },
+    "review-spec": {
+      "model": "openai-codex/gpt-5.2-codex",
+      "thinking": "high"
+    },
+    "review-secop": {
+      "model": "github-copilot/grok-code-fast-1",
+      "thinking": "high"
+    }
+  },
+  "agents": {
+    "reviewer-general": "review-general",
+    "reviewer-spec-audit": "review-spec",
+    "reviewer-second-opinion": "review-secop",
+    "review-merge": "general",
+    "fixer": "general",
+    "closer": "fast",
+    "researcher": "research"
   },
   "checkers": {
     "typescript": {
@@ -147,7 +182,7 @@ Update agent **and prompt** files from config:
 model: anthropic/claude-sonnet-4
 
 # After  
-model: chutes/moonshotai/Kimi-K2.5-TEE:high
+model: kimi-coding/k2p5:high
 ```
 
 ---
@@ -162,21 +197,21 @@ If `pi-model-switch` is installed, suggest useful aliases:
 ```json
 {
   "tf-worker": [
-    "chutes/moonshotai/Kimi-K2.5-TEE",
+    "kimi-coding/k2p5",
     "anthropic/claude-sonnet-4",
     "openai-codex/gpt-5.2"
   ],
   "tf-reviewer": [
     "openai-codex/gpt-5.1-codex-mini",
-    "anthropic/claude-sonnet-4",
+    "openai-codex/gpt-5.2-codex",
     "zai/glm-4.7"
   ],
-  "tf-cheap": [
-    "zai/glm-4.7",
+  "tf-fast": [
+    "zai/glm-4.7-flash",
     "google/gemini-2.5-flash"
   ],
   "tf-planning": [
-    "openai-codex/gpt-5.1-codex-mini",
+    "openai-codex/gpt-5.2",
     "zai/glm-4.7"
   ],
   "tf-config": [
@@ -239,14 +274,14 @@ Always provide clear status report:
 - fixer: (unchanged) zai/glm-4.7:high
 
 ## Agent Models Unchanged
-- reviewer-general: openai-codex/gpt-5.1-codex-mini:high
+- reviewer-general: review-general (openai-codex/gpt-5.1-codex-mini)
 - ...
 
 ## Prompt Models Updated
-- tf-plan.md: openai-codex/gpt-5.1-codex-mini → openai-codex/gpt-5.1-codex-mini:medium
+- tf-plan.md: planning (openai-codex/gpt-5.2)
 
 ## Prompt Models Unchanged
-- tf.md: chutes/moonshotai/Kimi-K2.5-TEE:high
+- tf.md: worker (kimi-coding/k2p5)
 
 ## Recommendations
 - Consider installing pi-mcp-adapter for research capabilities

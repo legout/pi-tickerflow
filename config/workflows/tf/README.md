@@ -127,11 +127,24 @@ Edit the config file to customize:
 Example (partial):
 ```json
 {
-  "models": {
-    "worker": "chutes/moonshotai/Kimi-K2.5-TEE:high",
-    "reviewer-general": "openai-codex/gpt-5.1-codex-mini:high",
-    "planning": "openai-codex/gpt-5.1-codex-mini:medium",
-    "config": "zai/glm-4.7:medium"
+  "metaModels": {
+    "worker": {
+      "model": "kimi-coding/k2p5",
+      "thinking": "high"
+    },
+    "planning": {
+      "model": "openai-codex/gpt-5.2",
+      "thinking": "medium"
+    },
+    "fast": {
+      "model": "zai/glm-4.7-flash",
+      "thinking": "medium"
+    }
+  },
+  "agents": {
+    "reviewer-general": "review-general",
+    "reviewer-spec-audit": "review-spec",
+    "fixer": "general"
   },
   "checkers": {
     "python": {

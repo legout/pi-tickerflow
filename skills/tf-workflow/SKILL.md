@@ -234,10 +234,10 @@ Store returned paths for next step.
    - If no reviewer outputs exist (reviews disabled), write a stub `{artifactDir}/review.md` with "No reviews run" in Critical and zero counts, then return.
 
 2. **Switch to review-merge model**:
-   - Look up `agents.review-merge` in config → get meta-model key ("fast")
-   - Look up `metaModels.fast.model` → get actual model ID
+   - Look up `agents.review-merge` in config → get meta-model key ("general")
+   - Look up `metaModels.general.model` → get actual model ID
    - ```
-     switch_model action="switch" search="{metaModels.fast.model}"
+     switch_model action="switch" search="{metaModels.general.model}"
      ```
 
 3. **Read available review outputs** from `{artifactDir}/review-general.md`, `{artifactDir}/review-spec.md`, `{artifactDir}/review-second.md` when present
@@ -280,10 +280,10 @@ Store returned paths for next step.
    - If `workflow.enableFixer` is false, write `{artifactDir}/fixes.md` noting the fixer is disabled and skip this step.
 
 2. **Switch to fixer model** (if different):
-   - Look up `agents.fixer` in config → get meta-model key ("fast")
-   - Look up `metaModels.fast.model` → get actual model ID
+   - Look up `agents.fixer` in config → get meta-model key ("general")
+   - Look up `metaModels.general.model` → get actual model ID
    - ```
-     switch_model action="switch" search="{metaModels.fast.model}"
+     switch_model action="switch" search="{metaModels.general.model}"
      ```
 
 3. **Check review issues**:

@@ -60,7 +60,7 @@
     "tf-plan-review": "planning",
     "tf-seed": "planning",
     "tf-backlog": "planning",
-    "tf-backlog-ls": "planning",
+    "tf-backlog-ls": "fast",
     "tf-spike": "planning",
     "tf-baseline": "planning",
     "tf-followups": "planning",
@@ -69,7 +69,7 @@
     "tf-dedup": "planning",
     "tf-backlog-from-openspec": "planning",
     "tf-sync": "general",
-    "ralph-start": "worker"
+    "ralph-start": "general"
   },
   "checkers": {
     "python": {
