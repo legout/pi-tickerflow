@@ -75,4 +75,3 @@ Ralph files (if `.tf/ralph/` exists):
 - This is the standard workflow (model-switch for sequential phases)
 - Only the parallel review step spawns subagents
 - The close step stages/commits only paths from `files_changed.txt` plus the ticket artifact directory
-- `/tf-lite` is a deprecated alias that runs the same workflow

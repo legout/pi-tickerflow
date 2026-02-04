@@ -2,7 +2,7 @@
   "metaModels": {
     "planning": {
       "model": "openai-codex/gpt-5.2",
-      "thinking": "medium",
+      "thinking": "high",
       "description": "Fast, capable model for planning and specification"
     },
     "worker": {
@@ -45,8 +45,8 @@
     "reviewer-general": "review-general",
     "reviewer-spec-audit": "review-spec",
     "reviewer-second-opinion": "review-secop",
-    "review-merge": "fast",
-    "fixer": "fast",
+    "review-merge": "general",
+    "fixer": "general",
     "closer": "fast",
     "researcher": "research",
     "researcher-fetch": "research"
@@ -54,7 +54,6 @@
   "prompts": {
     "tf": "worker",
     "tf-next": "general",
-    "tf-lite": "worker",
     "tf-plan": "planning",
     "tf-plan-consult": "planning",
     "tf-plan-revise": "planning",

@@ -404,10 +404,6 @@ Only if `.tf/ralph/` directory exists:
 11. Ralph Integration (if active)
 ```
 
-### /tf-lite (Deprecated Alias)
-
-`/tf-lite` runs the same workflow as `/tf` and will be removed in a future release.
-
 ## Error Handling
 
 - **switch_model fails**: Report error, continue with current model

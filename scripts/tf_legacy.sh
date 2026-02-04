@@ -252,7 +252,6 @@ skills/ralph/SKILL.md
 
 prompts/tf.md
 prompts/tf-next.md
-prompts/tf-lite.md
 prompts/tf-plan.md
 prompts/tf-plan-consult.md
 prompts/tf-plan-revise.md
@@ -645,7 +644,6 @@ write_default_settings_json() {
   "prompts": {
     "tf": "worker",
     "tf-next": "general",
-    "tf-lite": "worker",
     "tf-plan": "planning",
     "tf-plan-consult": "planning",
     "tf-plan-revise": "planning",
