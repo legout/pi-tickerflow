@@ -1678,7 +1678,7 @@ PROGRESS_EOF
   "parallelAllowUntagged": false,
   "componentTagPrefix": "component:",
   "parallelKeepWorktrees": false,
-  "parallelAutoMerge": false
+  "parallelAutoMerge": true
 }
 CONFIG_EOF
     echo "Created $RALPH_DIR/config.json"
