@@ -25,6 +25,7 @@ agents/closer.md
 skills/tf-workflow/SKILL.md
 skills/tf-planning/SKILL.md
 skills/tf-config/SKILL.md
+skills/tf-tickets/SKILL.md
 skills/ralph/SKILL.md
 
 prompts/tf.md
@@ -41,6 +42,9 @@ prompts/tf-spike.md
 prompts/tf-backlog-from-openspec.md
 prompts/tf-baseline.md
 prompts/tf-followups.md
+prompts/tf-tags-suggest.md
+prompts/tf-deps-sync.md
+prompts/tf-dedup.md
 prompts/tf-sync.md
 prompts/ralph-start.md
 
