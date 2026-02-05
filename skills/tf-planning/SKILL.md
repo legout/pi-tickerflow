@@ -284,6 +284,9 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
 
 **Input**: Seed, baseline, or plan topic-id or path
 
+**Flags**:
+- `--no-deps` - Skip automatic dependency inference (default: dependencies are inferred)
+
 **Steps**:
 
 1. **Locate topic directory**:
@@ -297,6 +300,7 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
    - If `seed.md` exists or topic-id starts with `seed-` → **seed mode**
    - If both/neither, ask user to clarify
    - If plan mode: read frontmatter `status`; if not `approved`, **warn** but continue
+   - Note: Use `--no-deps` flag to skip automatic dependency inference (see step 9)
 
 3. **Load existing tickets to avoid duplicates**:
    - Read `backlog.md` if it exists (capture existing IDs + titles)
