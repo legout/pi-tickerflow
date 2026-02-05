@@ -12,3 +12,11 @@
   - Issues: Critical(0)/Major(0)/Minor(0)
   - Status: FAILED
   - Error: pi -p failed (exit 1)
+- ptw-ffbq: COMPLETE (2026-02-05T16:00:46Z)
+  - Summary: Add tf --version CLI flag to expose version
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- ptw-g8z8: COMPLETE (2026-02-05T16:00:55Z)
+  - Summary: Add error handling for VERSION file read errors in doctor command
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
