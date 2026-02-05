@@ -7,6 +7,8 @@ from unittest import mock
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from tf_cli import track_new
 
 
@@ -111,6 +113,7 @@ class TestMain:
         assert files_changed.exists()
 
 
+@pytest.mark.integration
 class TestIntegration:
     """Integration tests."""
 

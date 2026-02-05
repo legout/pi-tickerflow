@@ -18,6 +18,8 @@ from unittest import mock
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from tf_cli.doctor_new import (
     check_version_consistency,
     detect_manifest_versions,

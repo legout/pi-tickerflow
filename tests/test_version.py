@@ -6,6 +6,8 @@ from unittest import mock
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from tf_cli import version, _version
 
 

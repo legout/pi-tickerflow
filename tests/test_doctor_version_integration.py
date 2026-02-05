@@ -13,6 +13,8 @@ from unittest import mock
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 from tf_cli.doctor_new import (
     build_parser,
     check_extension,
@@ -339,6 +341,7 @@ version = "1.0.0"
         assert "Package manifest(s) found but no valid version field" in captured.out
 
 
+@pytest.mark.e2e
 class TestRunDoctorEndToEnd:
     """End-to-end integration tests for run_doctor with real dependencies."""
 

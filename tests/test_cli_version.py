@@ -11,6 +11,8 @@ from unittest import mock
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from tf_cli.cli import main
 from tf_cli.version import get_version
 

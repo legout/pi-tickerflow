@@ -29,6 +29,9 @@ addopts = [
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
+    "unit: fast unit tests with no external dependencies",
+    "e2e: end-to-end tests that exercise full workflows",
+    "smoke: quick smoke tests to verify basic functionality",
 ]
 
 [tool.coverage.run]
