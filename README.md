@@ -575,6 +575,29 @@ pi-ticketflow/
 
 ---
 
+## Versioning and Releases
+
+This project follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html):
+
+| Bump | When |
+|------|------|
+| **MAJOR** | Breaking changes (removed commands, config format changes) |
+| **MINOR** | New features, backward compatible (new commands, workflows) |
+| **PATCH** | Bug fixes, docs improvements |
+
+**Release checklist:**
+1. Update `VERSION` file
+2. Update `CHANGELOG.md`
+3. Sync `package.json` version
+4. Run tests (`pytest`)
+5. Commit: `git add VERSION package.json CHANGELOG.md`
+6. Tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+7. Push: `git push origin main && git push origin vX.Y.Z`
+
+See [VERSIONING.md](VERSIONING.md) for the full policy and detailed release process.
+
+---
+
 ## Development
 
 ### Running Tests
