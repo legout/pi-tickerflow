@@ -198,6 +198,20 @@ def get_version_file_version(project_root: Path) -> Optional[str]:
         return None
 
 
+def normalize_version(version: str) -> str:
+    """Normalize a version string by stripping leading 'v' or 'V' prefix.
+    
+    Args:
+        version: The version string to normalize
+        
+    Returns:
+        Normalized version string (no v prefix)
+    """
+    if version.lower().startswith('v'):
+        return version[1:]
+    return version
+
+
 def check_version_consistency(project_root: Path) -> None:
     """Check that version is consistent across version sources.
     
@@ -205,6 +219,7 @@ def check_version_consistency(project_root: Path) -> None:
     - package.json (canonical source)
     - VERSION file (optional, should match if present)
     
+    Version strings are normalized (v prefix stripped) before comparison.
     Prints warnings on mismatch. Safe to run offline.
     """
     package_file = project_root / "package.json"
@@ -225,7 +240,11 @@ def check_version_consistency(project_root: Path) -> None:
     
     # Check VERSION file consistency if it exists
     if version_file_version is not None:
-        if version_file_version != package_version:
+        # Normalize versions for comparison (strip v prefix)
+        normalized_package = normalize_version(package_version)
+        normalized_file = normalize_version(version_file_version)
+        
+        if normalized_file != normalized_package:
             print(f"[warn] VERSION file ({version_file_version}) does not match package.json ({package_version})")
             print("       To fix: update VERSION file to match package.json, or remove VERSION file")
         else:
