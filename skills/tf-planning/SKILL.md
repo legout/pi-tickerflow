@@ -464,7 +464,24 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
    - Skip dependencies unless explicitly stated in source docs
    - Apply with `tk dep <id> <dep-id>` (one command per dependency)
 
-10. **Write backlog.md**:
+10. **Link related tickets** (unless `--no-links` flag provided):
+
+    Link tickets that are tightly related for discoverability/grouping. Links are symmetric and advisory (not blocking like dependencies).
+
+    **Linking criteria** (conservative - prefer under-linking):
+    - **Same component + adjacent**: Tickets with identical component tags created consecutively
+    - **Title similarity**: Tickets sharing significant words (e.g., "component classifier" and "component tags" share "component")
+    - **Max 2-3 links per ticket** to avoid noise
+
+    **Apply links**:
+    ```bash
+    tk link <id1> <id2>
+    ```
+    Links are symmetric, so `tk link A B` links both directions.
+
+    **Record links**: Track which tickets are linked for the backlog.md table.
+
+11. **Write backlog.md**:
 
 ```markdown
 # Backlog: {topic-id}
@@ -477,7 +494,7 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
 Where:
 - `{deps}`: Comma-separated dependency IDs, or `-` if none
 - `{tags}`: Comma-separated component tags (e.g., `tf, backlog, frontend`), or `-` if none
-- `{links}`: Comma-separated linked ticket IDs, or `-` if none
+- `{links}`: Comma-separated linked ticket IDs (symmetric relationships for discoverability), or `-` if none
 
 ---
 

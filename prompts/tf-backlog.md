@@ -12,7 +12,7 @@ Generate small, actionable implementation tickets from seed (greenfield), baseli
 ## Usage
 
 ```
-/tf-backlog <seed-baseline-or-plan-path-or-topic-id> [--no-deps]
+/tf-backlog <seed-baseline-or-plan-path-or-topic-id> [--no-deps] [--no-links]
 ```
 
 ## Arguments
@@ -23,6 +23,7 @@ Generate small, actionable implementation tickets from seed (greenfield), baseli
 ## Options
 
 - `--no-deps` - Skip automatic dependency inference for seed/baseline backlogs
+- `--no-links` - Skip automatic linking of related tickets
 
 ## Examples
 
@@ -103,7 +104,15 @@ Follow the **TF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)" 
    - Skip dependencies unless explicitly stated in source docs
    - Apply with `tk dep <id> <dep-id>`
 
-8. Write `backlog.md` with ticket summary (include dependencies)
+8. Link related tickets (if `--no-links` NOT provided):
+   - Link tickets that are tightly related for discoverability
+   - **Criteria** (conservative - under-linking preferred):
+     - Same component tags + adjacent in creation order
+     - Title similarity (significant shared words)
+   - Apply with `tk link <id1> <id2>` (symmetric links)
+   - Max 2-3 links per ticket to avoid noise
+
+9. Write `backlog.md` with ticket summary (include dependencies and links)
 
 ## Ticket Templates
 
@@ -190,6 +199,7 @@ Follow the **TF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)" 
 
 - Tickets created in `tk` (with external-ref linking to source)
 - Dependencies applied via `tk dep` when inferred
+- Related tickets linked via `tk link` when applicable
 - `backlog.md` written to topic directory
 
 ## Next Steps
