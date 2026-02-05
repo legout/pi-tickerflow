@@ -62,3 +62,15 @@
   - Summary: Document --no-deps flag in Backlog Generation procedure
   - Issues: Critical(0)/Major(0)/Minor(0)
   - Status: COMPLETE
+- ptw-f1: COMPLETE (2026-02-05T16:49:09Z)
+  - Summary: Document --no-deps flag in procedure introduction
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- ptw-f2: COMPLETE (2026-02-05T16:50:39Z)
+  - Summary: Standardize tk create command template formatting
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- ptw-f3: COMPLETE (2026-02-05T16:52:00Z)
+  - Summary: Add keyword scoring system for smarter ticket ordering in backlog generation
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
