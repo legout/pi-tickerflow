@@ -24,6 +24,7 @@ addopts = [
     "--strict-markers",
     "--disable-warnings",
     "-v",
+    "--cov-fail-under=4",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
