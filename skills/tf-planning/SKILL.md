@@ -416,7 +416,7 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
    ```bash
    tk create "<title>" \
      --description "<description>" \
-      --tags tf,backlog \
+     --tags tf,backlog \
      --type task \
      --priority 2 \
      --external-ref "{topic-id}"
@@ -427,7 +427,7 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
    ```bash
    tk create "<title>" \
      --description "<description>" \
-      --tags tf,backlog,baseline \
+     --tags tf,backlog,baseline \
      --type task \
      --priority 2 \
      --external-ref "{topic-id}"
@@ -438,7 +438,7 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
    ```bash
    tk create "<title>" \
      --description "<description>" \
-      --tags tf,backlog,plan \
+     --tags tf,backlog,plan \
      --type task \
      --priority 2 \
      --external-ref "{topic-id}"
@@ -654,7 +654,7 @@ Where:
    ```bash
    tk create "<title>" \
      --description "## Origin\nFrom review of: {ticket}\nFile: {file}\nLine: {line}\n\n## Issue\n{description}" \
-      --tags tf,followup \
+     --tags tf,followup \
      --priority 3
    ```
 
@@ -717,7 +717,7 @@ Where:
    ```bash
    tk create "<title>" \
      --description "<description>" \
-      --tags tf,openspec \
+     --tags tf,openspec \
      --type task \
      --priority 2 \
      --external-ref "openspec-{change_id}"
@@ -756,7 +756,7 @@ For example, for `/tf-plan`:
 ```bash
 tk create "<title>" \
   --description "<markdown description>" \
-   --tags tf,<tag> \
+  --tags tf,<tag> \
   --type task \
   --priority <1-5> \
   --external-ref "<source-id>"   # e.g., plan-foo, seed-bar, openspec-baz
