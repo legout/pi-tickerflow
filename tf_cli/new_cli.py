@@ -1,7 +1,7 @@
 import sys
 from typing import Optional, List
 
-from . import ralph_new, sync_new, update_new
+from . import init_new, ralph_new, sync_new, update_new
 
 
 def usage() -> None:
@@ -9,11 +9,13 @@ def usage() -> None:
         """Ticketflow (new Python CLI)
 
 Usage:
+  tf new init [--project <path>]
   tf new ralph <subcommand> [options]
   tf new sync [--project <path>] [--global]
   tf new update [--project <path>] [--global]
 
 Commands:
+  init    Create .tf project scaffolding
   ralph   Python implementation of Ralph loop (start/run)
   sync    Sync model frontmatter from config
   update  Download latest agents/skills/prompts
@@ -32,6 +34,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     command = argv[0]
     rest = argv[1:]
 
+    if command == "init":
+        return init_new.main(rest)
     if command == "ralph":
         return ralph_new.main(rest)
     if command == "sync":
