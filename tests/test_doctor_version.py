@@ -147,6 +147,31 @@ class TestGetVersionFileVersion:
         
         assert result is None
 
+    def test_prints_warning_on_permission_error(self, tmp_path: Path, capsys) -> None:
+        """Should print warning when VERSION file cannot be read due to permissions."""
+        version_file = tmp_path / "VERSION"
+        version_file.write_text("1.2.3")
+        
+        with mock.patch.object(Path, "read_text", side_effect=PermissionError("Permission denied")):
+            get_version_file_version(tmp_path)
+        
+        captured = capsys.readouterr()
+        assert "[warn] VERSION file exists but cannot be read" in captured.out
+        assert "Permission denied" in captured.out
+
+    def test_prints_warning_on_encoding_error(self, tmp_path: Path, capsys) -> None:
+        """Should print warning when VERSION file has encoding issues."""
+        version_file = tmp_path / "VERSION"
+        version_file.write_text("1.2.3")
+        
+        with mock.patch.object(Path, "read_text", side_effect=UnicodeDecodeError(
+            'utf-8', b'invalid', 0, 1, 'invalid start byte'
+        )):
+            get_version_file_version(tmp_path)
+        
+        captured = capsys.readouterr()
+        assert "[warn] VERSION file has encoding issues" in captured.out
+
 
 class TestNormalizeVersion:
     """Tests for normalize_version function."""

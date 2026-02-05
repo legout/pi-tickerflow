@@ -192,6 +192,8 @@ def get_version_file_version(project_root: Path) -> Optional[str]:
     """Read version from VERSION file if it exists.
 
     Returns the version string if found and non-empty, None otherwise.
+    Prints a warning if the file exists but cannot be read (e.g., due to
+    permission errors or encoding issues).
     """
     version_file = project_root / "VERSION"
     if not version_file.exists():
@@ -199,7 +201,17 @@ def get_version_file_version(project_root: Path) -> Optional[str]:
     try:
         content = version_file.read_text(encoding="utf-8").strip()
         return content if content else None
-    except Exception:
+    except PermissionError as e:
+        print(f"[warn] VERSION file exists but cannot be read: {e}")
+        return None
+    except UnicodeDecodeError as e:
+        print(f"[warn] VERSION file has encoding issues: {e}")
+        return None
+    except OSError as e:
+        print(f"[warn] VERSION file exists but cannot be read: {e}")
+        return None
+    except Exception as e:
+        print(f"[warn] VERSION file exists but cannot be read: {e}")
         return None
 
 
