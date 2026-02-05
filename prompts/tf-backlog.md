@@ -12,7 +12,7 @@ Generate small, actionable implementation tickets from seed (greenfield), baseli
 ## Usage
 
 ```
-/tf-backlog <seed-baseline-or-plan-path-or-topic-id> [--no-deps] [--no-links]
+/tf-backlog <seed-baseline-or-plan-path-or-topic-id> [--no-deps] [--no-component-tags] [--no-links]
 ```
 
 ## Arguments
@@ -23,6 +23,7 @@ Generate small, actionable implementation tickets from seed (greenfield), baseli
 ## Options
 
 - `--no-deps` - Skip automatic dependency inference for seed/baseline backlogs
+- `--no-component-tags` - Skip automatic component tag suggestion during ticket creation
 - `--no-links` - Skip automatic linking of related tickets
 
 ## Examples
@@ -32,6 +33,8 @@ Generate small, actionable implementation tickets from seed (greenfield), baseli
 /tf-backlog baseline-myapp
 /tf-backlog plan-auth-rewrite
 /tf-backlog .tf/knowledge/topics/baseline-myapp/
+/tf-backlog seed-build-a-cli --no-component-tags
+/tf-backlog baseline-myapp --no-deps --no-component-tags --no-links
 ```
 
 ## Execution
@@ -104,7 +107,13 @@ Follow the **TF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)" 
    - Skip dependencies unless explicitly stated in source docs
    - Apply with `tk dep <id> <dep-id>`
 
-8. Link related tickets (if `--no-links` NOT provided):
+8. Suggest component tags (if `--no-component-tags` NOT provided):
+   - Analyze each ticket's title and description
+   - Suggest `component:*` tags for parallel scheduling safety
+   - Apply to ticket tags during creation
+   - If skipped, users can run `/tf-tags-suggest --apply` later
+
+9. Link related tickets (if `--no-links` NOT provided):
    - Link tickets that are tightly related for discoverability
    - **Criteria** (conservative - under-linking preferred):
      - Same component tags + adjacent in creation order
@@ -112,7 +121,7 @@ Follow the **TF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)" 
    - Apply with `tk link <id1> <id2>` (symmetric links)
    - Max 2-3 links per ticket to avoid noise
 
-9. Write `backlog.md` with ticket summary (include dependencies and links)
+10. Write `backlog.md` with ticket summary (include dependencies, component tags, and links)
 
 ## Ticket Templates
 

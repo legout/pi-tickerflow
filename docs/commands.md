@@ -250,8 +250,15 @@ Capture status-quo of an existing project.
 Create tickets from seeds, baselines, or plans.
 
 ```
-/tf-backlog <seed|baseline|plan>
+/tf-backlog <seed|baseline|plan> [--no-deps] [--no-component-tags] [--no-links]
 ```
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--no-deps` | Skip automatic dependency inference |
+| `--no-component-tags` | Skip automatic component tag suggestion |
+| `--no-links` | Skip automatic linking of related tickets |
 
 Generates 5-15 small tickets (skipping duplicates already listed in `backlog.md` or `existing-tickets.md`):
 - **30 lines or less** in description
@@ -269,6 +276,8 @@ Generates 5-15 small tickets (skipping duplicates already listed in `backlog.md`
 /tf-backlog seed-build-a-cli
 /tf-backlog baseline-myapp
 /tf-backlog plan-auth-rewrite
+/tf-backlog seed-build-a-cli --no-component-tags
+/tf-backlog baseline-myapp --no-deps --no-component-tags --no-links
 ```
 
 **Output:**
@@ -277,11 +286,11 @@ Generates 5-15 small tickets (skipping duplicates already listed in `backlog.md`
 - `backlog.md` written to topic directory
 
 **Fallback Workflow:**
-When inference is incomplete, correct with:
+When inference is incomplete or you used opt-out flags, correct with:
 ```
-/tf-tags-suggest --apply    # Add missing component tags
-/tf-deps-sync --apply       # Sync parent/child dependencies
-tk link CHILD PARENT        # Manual linking if needed
+/tf-tags-suggest --apply    # Add missing component tags (if --no-component-tags used)
+/tf-deps-sync --apply       # Sync parent/child dependencies (if --no-deps used)
+tk link CHILD PARENT        # Manual linking if needed (if --no-links used)
 ```
 
 ---

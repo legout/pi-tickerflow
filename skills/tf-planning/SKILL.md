@@ -464,7 +464,14 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
    - Skip dependencies unless explicitly stated in source docs
    - Apply with `tk dep <id> <dep-id>` (one command per dependency)
 
-10. **Link related tickets** (unless `--no-links` flag provided):
+10. **Suggest component tags** (unless `--no-component-tags` flag provided):
+    - Analyze each ticket's title and description for component indicators
+    - Suggest `component:*` tags (e.g., `component:ui`, `component:api`, `component:db`)
+    - Apply tags to ticket frontmatter during creation
+    - Purpose: Enable safe parallel scheduling in Ralph
+    - If skipped, users can run `/tf-tags-suggest --apply` later to add component tags
+
+11. **Link related tickets** (unless `--no-links` flag provided):
 
     Link tickets that are tightly related for discoverability/grouping. Links are symmetric and advisory (not blocking like dependencies).
 
@@ -481,7 +488,7 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
 
     **Record links**: Track which tickets are linked for the backlog.md table.
 
-11. **Write backlog.md**:
+12. **Write backlog.md**:
 
 ```markdown
 # Backlog: {topic-id}
@@ -493,7 +500,7 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
 
 Where:
 - `{deps}`: Comma-separated dependency IDs, or `-` if none
-- `{tags}`: Comma-separated component tags (e.g., `tf, backlog, frontend`), or `-` if none
+- `{tags}`: Comma-separated component tags (e.g., `component:ui, component:api`), or `-` if none (populated unless `--no-component-tags` used)
 - `{links}`: Comma-separated linked ticket IDs (symmetric relationships for discoverability), or `-` if none
 
 ---
