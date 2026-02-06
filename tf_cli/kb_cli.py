@@ -9,101 +9,31 @@ Implements the tf kb command for managing the knowledge base:
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Optional
 
-
-def resolve_knowledge_dir(project_path: Optional[Path] = None) -> Path:
-    """Resolve the knowledge directory from config or default.
-    
-    Resolution order:
-    1. Explicit project_path/.tf/knowledge
-    2. TF_KNOWLEDGE_DIR environment variable
-    3. workflow.knowledgeDir from local .tf/config/settings.json
-    4. Default: .tf/knowledge (relative to repo root or cwd)
-    """
-    # 1. Explicit project path
-    if project_path:
-        return project_path / ".tf" / "knowledge"
-    
-    # 2. Environment variable
-    env_dir = os.environ.get("TF_KNOWLEDGE_DIR", "").strip()
-    if env_dir:
-        path = Path(env_dir).expanduser()
-        return path
-    
-    # 3. Find repo root first, then check for local config
-    repo_root = _find_repo_root()
-    if repo_root:
-        # Check for local config in repo
-        local_config = repo_root / ".tf" / "config" / "settings.json"
-        if local_config.is_file():
-            try:
-                with open(local_config, "r", encoding="utf-8") as f:
-                    config = json.load(f)
-                knowledge_dir = config.get("workflow", {}).get("knowledgeDir")
-                if knowledge_dir:
-                    path = Path(knowledge_dir).expanduser()
-                    if path.is_absolute():
-                        return path
-                    # Relative to repo root
-                    return repo_root / path
-            except (json.JSONDecodeError, IOError):
-                pass
-        # Default to .tf/knowledge in repo root
-        return repo_root / ".tf" / "knowledge"
-    
-    # 4. Fallback: .tf/knowledge in current directory
-    return Path.cwd() / ".tf" / "knowledge"
-
-
-def _find_repo_root() -> Optional[Path]:
-    """Find the repository root by looking for .tf directory with project markers."""
-    cwd = Path.cwd()
-    for parent in [cwd, *cwd.parents]:
-        tf_dir = parent / ".tf"
-        if tf_dir.is_dir():
-            # Verify this looks like a ticketflow project
-            # Check for project-specific markers (not just any .tf directory)
-            has_tickets = (tf_dir / "tickets").is_dir()
-            has_ralph = (tf_dir / "ralph").is_dir()
-            has_bin = (tf_dir / "bin").is_dir()
-            # Also check for pyproject.toml or AGENTS.md in parent
-            has_pyproject = (parent / "pyproject.toml").is_file()
-            has_agents = (parent / "AGENTS.md").is_file()
-            
-            # Must have at least one strong marker
-            if has_tickets or has_ralph or has_bin or (has_pyproject and has_agents):
-                return parent
-    return None
+from tf_cli.kb_helpers import (
+    atomic_read_index,
+    atomic_write_index,
+    resolve_knowledge_dir,
+)
 
 
 def cmd_ls(knowledge_dir: Path, format_json: bool = False) -> int:
     """List knowledge base entries from index.json."""
-    index_path = knowledge_dir / "index.json"
-    
-    if not index_path.exists():
+    data = atomic_read_index(knowledge_dir)
+
+    if data is None:
         if format_json:
             print(json.dumps({"entries": []}))
         else:
             print("No knowledge base index found.")
-            print(f"Expected: {index_path}")
+            print(f"Expected: {knowledge_dir / 'index.json'}")
         return 0
-    
-    try:
-        with open(index_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in {index_path}: {e}", file=sys.stderr)
-        return 1
-    except IOError as e:
-        print(f"Error: Cannot read {index_path}: {e}", file=sys.stderr)
-        return 1
-    
-    entries = data.get("entries", []) if isinstance(data, dict) else data
-    
+
+    entries = data.get("entries", [])
+
     if format_json:
         print(json.dumps({"entries": entries}, indent=2))
     else:
@@ -120,38 +50,31 @@ def cmd_ls(knowledge_dir: Path, format_json: bool = False) -> int:
                     print(f"  {entry_id} [{entry_type}] - {title}")
                 else:
                     print(f"  {entry}")
-    
+
     return 0
 
 
 def cmd_show(knowledge_dir: Path, entry_id: str, format_json: bool = False) -> int:
     """Show a specific knowledge base entry."""
-    index_path = knowledge_dir / "index.json"
-    
-    if not index_path.exists():
-        print(f"Error: Knowledge base index not found at {index_path}", file=sys.stderr)
+    data = atomic_read_index(knowledge_dir)
+
+    if data is None:
+        print(f"Error: Knowledge base index not found at {knowledge_dir / 'index.json'}", file=sys.stderr)
         return 1
-    
-    try:
-        with open(index_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except (json.JSONDecodeError, IOError) as e:
-        print(f"Error: Cannot read index: {e}", file=sys.stderr)
-        return 1
-    
-    entries = data.get("entries", []) if isinstance(data, dict) else data
-    
+
+    entries = data.get("entries", [])
+
     # Find entry by id
     entry = None
     for e in entries:
         if isinstance(e, dict) and e.get("id") == entry_id:
             entry = e
             break
-    
+
     if entry is None:
         print(f"Error: Entry '{entry_id}' not found in knowledge base.", file=sys.stderr)
         return 1
-    
+
     if format_json:
         print(json.dumps(entry, indent=2))
     else:
@@ -166,43 +89,33 @@ def cmd_show(knowledge_dir: Path, entry_id: str, format_json: bool = False) -> i
             print(f"Updated: {entry['updated']}")
         if "tags" in entry:
             print(f"Tags: {', '.join(entry['tags'])}")
-    
+
     return 0
 
 
 def cmd_index_status(knowledge_dir: Path, format_json: bool = False) -> int:
     """Show knowledge base index status."""
     index_path = knowledge_dir / "index.json"
-    
-    if not index_path.exists():
+    data = atomic_read_index(knowledge_dir)
+
+    if data is None:
         if format_json:
             print(json.dumps({"status": "not_found", "path": str(index_path), "entries": 0}))
         else:
             print(f"Knowledge base index: NOT FOUND")
             print(f"Expected path: {index_path}")
         return 1
-    
-    try:
-        with open(index_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        entries = data.get("entries", []) if isinstance(data, dict) else data
-        entry_count = len(entries)
-        
-        if format_json:
-            print(json.dumps({"status": "ok", "path": str(index_path), "entries": entry_count}))
-        else:
-            print(f"Knowledge base index: OK")
-            print(f"Path: {index_path}")
-            print(f"Entries: {entry_count}")
-        return 0
-    except (json.JSONDecodeError, IOError) as e:
-        if format_json:
-            print(json.dumps({"status": "error", "path": str(index_path), "error": str(e)}))
-        else:
-            print(f"Knowledge base index: ERROR")
-            print(f"Path: {index_path}")
-            print(f"Error: {e}")
-        return 1
+
+    entries = data.get("entries", [])
+    entry_count = len(entries)
+
+    if format_json:
+        print(json.dumps({"status": "ok", "path": str(index_path), "entries": entry_count}))
+    else:
+        print(f"Knowledge base index: OK")
+        print(f"Path: {index_path}")
+        print(f"Entries: {entry_count}")
+    return 0
 
 
 def usage() -> None:
@@ -263,11 +176,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     command = filtered_argv[0]
     rest = filtered_argv[1:]
     
-    # Resolve knowledge directory
-    if knowledge_dir_override:
-        knowledge_dir = knowledge_dir_override
-    else:
-        knowledge_dir = resolve_knowledge_dir()
+    # Resolve knowledge directory with CLI override support
+    knowledge_dir = resolve_knowledge_dir(knowledge_dir_override=knowledge_dir_override)
     
     # Dispatch commands
     if command == "ls":
