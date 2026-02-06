@@ -456,6 +456,15 @@ from tf_cli.session_store import (
    - Split large phases into 1-2 hour chunks
 
 7. **Create tickets** (1-2 hours each, 30 lines max):
+   - **PREFERRED**: Use `tf_cli.ticket_factory` module (see "Ticket Creation with ticket_factory Module" in Common Tool Usage) instead of writing inline scripts
+   - If using the module:
+     ```python
+     from tf_cli.ticket_factory import TicketDef, create_tickets, score_tickets
+     tickets = [TicketDef(title="...", description="..."), ...]
+     scored = score_tickets(tickets)
+     created = create_tickets(scored, topic_id=TOPIC_ID, mode="seed")
+     ```
+   - If writing inline script, follow these steps:
    - Skip any ticket whose normalized title matches an existing ticket from backlog/existing list
    - If a ticket overlaps an existing one, note it in backlog.md as skipped (do not create)
 
@@ -539,6 +548,8 @@ from tf_cli.session_store import (
    ```
 
 8. **Create via `tk`**:
+   - **If using ticket_factory**: Already handled by `create_tickets()` function
+   - If using inline script:
 
    **Seed:**
 
@@ -574,6 +585,8 @@ from tf_cli.session_store import (
    ```
 
 9. **Infer dependencies**:
+   - **If using ticket_factory**: Already handled by `apply_dependencies(created, mode='chain' or mode='phases')`
+   - If using inline script, follow these steps:
 
    **Plan mode:**
    - Track created ticket IDs with their phase/order
@@ -599,6 +612,8 @@ from tf_cli.session_store import (
    - Apply with `tk dep <id> <dep-id>` (one command per dependency)
 
 10. **Suggest component tags** (unless `--no-component-tags` flag provided):
+    - **If using ticket_factory**: Already handled by `create_tickets(..., component_tags=True)`
+    - If using inline script:
     - Analyze each ticket's title and description for component indicators
     - Suggest `component:*` tags (e.g., `component:ui`, `component:api`, `component:db`)
     - Apply tags to ticket frontmatter during creation
@@ -606,6 +621,8 @@ from tf_cli.session_store import (
     - If skipped, users can run `/tf-tags-suggest --apply` later to add component tags
 
 11. **Link related tickets** (unless `--no-links` flag provided):
+    - **If using ticket_factory**: Already handled by `apply_links(created)`
+    - If using inline script:
 
     Link tickets that are tightly related for discoverability/grouping. Links are symmetric and advisory (not blocking like dependencies).
 
@@ -623,6 +640,8 @@ from tf_cli.session_store import (
     **Record links**: Track which tickets are linked for the backlog.md table.
 
 12. **Write backlog.md**:
+    - **If using ticket_factory**: Already handled by `write_backlog_md(created, topic_id=TOPIC_ID)`
+    - If using inline script, write the markdown table directly:
 
 ```markdown
 # Backlog: {topic-id}
@@ -920,6 +939,99 @@ tk create "<title>" \
   --priority <1-5> \
   --external-ref "<source-id>"   # e.g., plan-foo, seed-bar, openspec-baz
 ```
+
+### Ticket Creation with ticket_factory Module
+
+**Instead of writing inline Python scripts for ticket creation, use the `tf_cli.ticket_factory` module.** This module provides reusable functions for scoring, creating, and managing tickets during backlog generation.
+
+**Usage Pattern:**
+
+```python
+from __future__ import annotations
+
+from tf_cli.ticket_factory import (
+    TicketDef,
+    create_tickets,
+    write_backlog_md,
+    score_tickets,
+    apply_dependencies,
+    apply_links,
+    print_created_summary,
+)
+
+# Define tickets
+tickets = [
+    TicketDef(
+        title='Define Ralph logging spec',
+        description=md([
+            '## Task',
+            'Define what Ralph should log...',
+            '',
+            '## Acceptance Criteria',
+            '- [ ] Log format is defined',
+            '- [ ] Redaction rules defined',
+        ]),
+    ),
+    TicketDef(
+        title='Implement Ralph logger helper',
+        description=md([
+            '## Task',
+            'Implement logging helper with level filtering...',
+            '',
+            '## Acceptance Criteria',
+            '- [ ] Helper supports levels (info/warn/error/debug)',
+            '- [ ] Output goes to stderr',
+        ]),
+    ),
+]
+
+# Score tickets (higher score = higher priority)
+scored = score_tickets(tickets)
+
+# Create tickets
+TOPIC_ID = 'seed-add-more-logging'
+created = create_tickets(
+    scored,
+    topic_id=TOPIC_ID,
+    mode='seed',
+    component_tags=True,  # Auto-assign component:cli, etc.
+    existing_titles=existing_titles_set,  # For de-duplication
+    priority=2,
+)
+
+# Apply dependencies (chain mode by default)
+created = apply_dependencies(created, mode='chain')
+
+# Apply links between related tickets
+created = apply_links(created)
+
+# Write backlog.md
+write_backlog_md(created, topic_id=TOPIC_ID)
+
+# Print summary
+print_created_summary(created)
+```
+
+**Key Functions:**
+
+| Function | Purpose |
+|----------|---------|
+| `TicketDef(title, description, optional_tags)` | Define a ticket to create |
+| `score_tickets(tickets, weights)` | Score tickets by keyword (setup→10, implement→3, test→1) |
+| `create_tickets(scored_tickets, topic_id, mode, ...)` | Create tickets via `tk create` with auto-component-tags |
+| `apply_dependencies(tickets, mode)` | Apply `tk dep` for ticket dependencies |
+| `apply_links(tickets)` | Link related tickets via `tk link` |
+| `write_backlog_md(tickets, topic_id)` | Write `backlog.md` file |
+| `print_created_summary(tickets)` | Print creation summary to stdout |
+
+**Benefits:**
+
+- **No inline scripts**: Import and call functions instead of writing bash/inline Python
+- **Consistent scoring**: Uses the same keyword weights across all backlogs
+- **Auto component tags**: Integrates with `component_classifier` automatically
+- **De-duplication**: Built-in duplicate detection by normalized title
+- **Testable**: Functions can be unit tested independently
+- **Reduced prompt size**: No need to repeat the scoring/creation logic in prompts
 
 ### Knowledge Base Structure
 
