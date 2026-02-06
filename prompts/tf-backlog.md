@@ -107,6 +107,50 @@ Follow the **TF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)" 
    - Run `tk list --help` (or `tk help`) to discover listing/search options
    - If `tk` supports listing/search, pull open tickets with tags like `tf`, `baseline`, or `backlog`
 5. Create the appropriate number of small tickets (1-2 hours each, 30 lines max) to cover the scope—this could be 1 ticket for a tiny fix or many for a large refactor. Skip duplicates (record skipped items in backlog.md). **Skip this step if `--links-only` provided.**
+   - **PREFERRED**: Use `tf_cli.ticket_factory` module instead of writing inline Python scripts:
+     ```python
+     from __future__ import annotations
+     from tf_cli.ticket_factory import (
+         TicketDef,
+         create_tickets,
+         write_backlog_md,
+         score_tickets,
+         apply_dependencies,
+         apply_links,
+         print_created_summary,
+     )
+
+     TOPIC_ID = 'seed-foo'  # or 'baseline-bar', 'plan-baz'
+
+     # Define tickets using templates from step 8
+     tickets = [
+         TicketDef(
+             title='Define something',
+             description='## Task\n...\n## Context\n...\n## Acceptance Criteria\n- [ ] ...',
+         ),
+         # ... more tickets
+     ]
+
+     # Score and create
+     scored = score_tickets(tickets)
+     created = create_tickets(
+         scored,
+         topic_id=TOPIC_ID,
+         mode='seed',  # or 'baseline', 'plan'
+         component_tags=True,
+         existing_titles=existing_titles_set,
+         priority=2,
+     )
+
+     # Apply dependencies and links
+     created = apply_dependencies(created, mode='chain')
+     created = apply_links(created)
+
+     # Write backlog.md and print summary
+     write_backlog_md(created, topic_id=TOPIC_ID)
+     print_created_summary(created)
+     ```
+
 6. Create via `tk create` (skip if `--links-only` provided):
 
    **Seed:**
@@ -143,6 +187,8 @@ Follow the **TF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)" 
    ```
 
 7. Infer dependencies (skip if `--links-only` provided):
+   - **If using ticket_factory**: Already handled by `apply_dependencies(created, mode='chain' or mode='phases')`
+   - If using inline script, follow these steps:
 
    **Plan mode:**
    - Use Work Plan phases or ordered steps to determine sequencing
@@ -166,6 +212,8 @@ Follow the **TF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)" 
    - Apply with `tk dep <id> <dep-id>`
 
 8. **Apply component tags by default** (skip if `--no-component-tags` or `--links-only` provided):
+   - **If using ticket_factory**: Already handled by `create_tickets(..., component_tags=True)`
+   - If using inline script:
    - For each ticket, analyze title and description using the shared component classifier
    - Import and use `tf_cli.component_classifier.classify_components()` - the same
      module used by `/tf-tags-suggest` to ensure consistent suggestions:
@@ -187,6 +235,8 @@ Follow the **TF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)" 
    - If skipped, users can re-run tagging later via `/tf-tags-suggest --apply`
 
 9. Link related tickets (if `--no-links` NOT provided):
+   - **If using ticket_factory**: Already handled by `apply_links(created)`
+   - If using inline script:
    - **If `--links-only`**: Load existing tickets from `backlog.md`, apply linking to those
    - **Otherwise**: Link newly created tickets that are tightly related for discoverability
    - **Criteria** (conservative - under-linking preferred):
@@ -196,6 +246,8 @@ Follow the **TF Planning Skill** "Backlog Generation (Seed, Baseline, or Plan)" 
    - Max 2-3 links per ticket to avoid noise
 
 10. Write `backlog.md` with ticket summary (include dependencies, component tags, and links)
+    - **If using ticket_factory**: Already handled by `write_backlog_md(created, topic_id=TOPIC_ID)`
+    - If using inline script, write the markdown table directly:
 
 11. **Session Finalization** (if an active session was found at start):
     - Ensure `sessions/` directory exists: `mkdir -p .tf/knowledge/sessions`
