@@ -74,3 +74,9 @@
   - Summary: Add keyword scoring system for smarter ticket ordering in backlog generation
   - Issues: Critical(0)/Major(0)/Minor(0)
   - Status: COMPLETE
+- pt-zoqp: COMPLETE (2026-02-06T14:02:00Z)
+  - Summary: Define priority rubric mapping (P0-P4 -> 0-4)
+  - Issues: Critical(0)/Major(0)/Minor(2)
+  - Status: COMPLETE
+  - Commit: 5b1c421
+  - Unblocks: pt-gn5z
