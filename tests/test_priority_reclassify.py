@@ -423,6 +423,147 @@ class TestAuditTrail:
         assert "DRY RUN" in content
 
 
+class TestJsonOutput:
+    """Test JSON output functionality."""
+
+    @patch("shutil.which")
+    @patch("tf_cli.priority_reclassify_new.find_project_root")
+    @patch("tf_cli.priority_reclassify_new.run_tk_command")
+    def test_json_output_format(self, mock_run, mock_find, mock_which, capsys):
+        """Test JSON output contains expected fields."""
+        mock_which.return_value = "/usr/bin/tk"
+        mock_find.return_value = Path("/tmp/project")
+
+        ticket_output = """---
+id: abc-1234
+priority: P2
+status: open
+type: task
+tags: [bug]
+---
+# Test bug ticket
+
+This is a security vulnerability."""
+        mock_run.return_value = (0, ticket_output, "")
+
+        result = pr.main(["--ids", "abc-1234", "--json"])
+        assert result == 0
+
+        captured = capsys.readouterr()
+        import json
+        output = json.loads(captured.out)
+
+        assert "mode" in output
+        assert "tickets" in output
+        assert "summary" in output
+        assert output["mode"] == "dry-run"
+        assert len(output["tickets"]) == 1
+
+        ticket = output["tickets"][0]
+        assert "id" in ticket
+        assert "title" in ticket
+        assert "current" in ticket
+        assert "proposed" in ticket
+        assert "bucket" in ticket
+        assert "reason" in ticket
+        assert "confidence" in ticket
+        assert "would_change" in ticket
+
+    @patch("shutil.which")
+    @patch("tf_cli.priority_reclassify_new.find_project_root")
+    @patch("tf_cli.priority_reclassify_new.run_tk_command")
+    def test_json_output_with_apply(self, mock_run, mock_find, mock_which, capsys):
+        """Test JSON output shows correct mode with --apply."""
+        mock_which.return_value = "/usr/bin/tk"
+        mock_find.return_value = Path("/tmp/project")
+
+        ticket_output = """---
+id: abc-1234
+priority: P2
+status: open
+type: task
+tags: []
+---
+# Test ticket"""
+        mock_run.return_value = (0, ticket_output, "")
+
+        result = pr.main(["--ids", "abc-1234", "--json", "--apply"])
+        assert result == 0
+
+        captured = capsys.readouterr()
+        import json
+        output = json.loads(captured.out)
+
+        assert output["mode"] == "apply"
+
+
+class TestReportFlag:
+    """Test --report flag for optional report generation."""
+
+    @patch("shutil.which")
+    @patch("tf_cli.priority_reclassify_new.find_project_root")
+    @patch("tf_cli.priority_reclassify_new.run_tk_command")
+    def test_no_report_by_default(self, mock_run, mock_find, mock_which, capsys, tmp_path):
+        """Test that report is not written without --report flag."""
+        mock_which.return_value = "/usr/bin/tk"
+        mock_find.return_value = tmp_path
+
+        ticket_output = """---
+id: abc-1234
+priority: P2
+status: open
+type: task
+tags: []
+---
+# Test ticket"""
+        mock_run.return_value = (0, ticket_output, "")
+
+        # Create .tf directory structure
+        (tmp_path / ".tf" / "knowledge").mkdir(parents=True, exist_ok=True)
+
+        result = pr.main(["--ids", "abc-1234"])
+        assert result == 0
+
+        # No report files should be created
+        knowledge_dir = tmp_path / ".tf" / "knowledge"
+        report_files = list(knowledge_dir.glob("priority-reclassify-*.md"))
+        assert len(report_files) == 0
+
+    @patch("shutil.which")
+    @patch("tf_cli.priority_reclassify_new.find_project_root")
+    @patch("tf_cli.priority_reclassify_new.run_tk_command")
+    def test_report_written_with_flag(self, mock_run, mock_find, mock_which, capsys, tmp_path):
+        """Test that report is written when --report flag is used."""
+        mock_which.return_value = "/usr/bin/tk"
+        mock_find.return_value = tmp_path
+
+        ticket_output = """---
+id: abc-1234
+priority: P2
+status: open
+type: task
+tags: [bug]
+---
+# Test bug ticket"""
+        mock_run.return_value = (0, ticket_output, "")
+
+        # Create .tf directory structure
+        (tmp_path / ".tf" / "knowledge").mkdir(parents=True, exist_ok=True)
+
+        result = pr.main(["--ids", "abc-1234", "--report"])
+        assert result == 0
+
+        # Report file should be created
+        knowledge_dir = tmp_path / ".tf" / "knowledge"
+        report_files = list(knowledge_dir.glob("priority-reclassify-*.md"))
+        assert len(report_files) == 1
+
+        # Verify report content
+        content = report_files[0].read_text()
+        assert "Priority Reclassification Audit" in content
+        assert "abc-1234" in content
+
+
 class TestIntegration:
     """Integration tests requiring actual tk."""
 
@@ -444,3 +585,5 @@ class TestIntegration:
         assert "--tag" in result.stdout
         assert "--include-closed" in result.stdout
         assert "--apply" in result.stdout
+        assert "--json" in result.stdout
+        assert "--report" in result.stdout

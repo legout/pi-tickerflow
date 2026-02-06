@@ -329,8 +329,37 @@ def format_priority(p: str) -> str:
     return p
 
 
-def print_results(results: List[dict], apply: bool, include_unknown: bool = False) -> None:
-    """Print classification results in a table format."""
+def print_results(results: List[dict], apply: bool, include_unknown: bool = False, json_output: bool = False) -> None:
+    """Print classification results in a table or JSON format."""
+    if json_output:
+        # JSON output for scripting
+        import json
+        output = {
+            "mode": "apply" if apply else "dry-run",
+            "tickets": [
+                {
+                    "id": r["id"],
+                    "title": r.get("ticket", {}).get("title", ""),
+                    "current": r["current"],
+                    "proposed": r["proposed"],
+                    "bucket": r.get("bucket", "-"),
+                    "reason": r["reason"],
+                    "confidence": r.get("confidence", "-"),
+                    "would_change": r["current"] != r["proposed"] and r["proposed"] != "unknown",
+                }
+                for r in results
+            ],
+            "summary": {
+                "total": len(results),
+                "would_change": sum(1 for r in results if r["current"] != r["proposed"] and r["proposed"] != "unknown"),
+                "unknown": sum(1 for r in results if r["proposed"] == "unknown"),
+                "unchanged": len(results) - sum(1 for r in results if r["current"] != r["proposed"] and r["proposed"] != "unknown") - sum(1 for r in results if r["proposed"] == "unknown"),
+            }
+        }
+        print(json.dumps(output, indent=2))
+        return
+    
+    # Human-readable table output
     print()
     if apply:
         print("Priority Reclassification Results (APPLIED):")
@@ -455,6 +484,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="Include tickets with unknown/ambiguous priority in output (default: skipped)",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output results as JSON for scripting",
+    )
+    parser.add_argument(
+        "--report",
+        action="store_true",
+        help="Write report file to .tf/knowledge/ (default: disabled)",
+    )
     
     args = parser.parse_args(argv)
     
@@ -551,10 +590,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     
     # Output results
     if display_results:
-        print_results(display_results, args.apply, args.include_unknown)
+        print_results(display_results, args.apply, args.include_unknown, args.json)
     
-    # Write audit trail (includes all results, even unknown)
-    write_audit_trail(project_root, results, args.apply)
+    # Write report file if requested (includes all results, even unknown)
+    if args.report:
+        write_audit_trail(project_root, results, args.apply)
     
     return 0
 
