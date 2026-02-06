@@ -8,8 +8,33 @@ import subprocess
 import sys
 import time
 from datetime import datetime, timezone
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+
+class LogLevel(Enum):
+    """Log verbosity levels for Ralph."""
+    QUIET = "quiet"
+    NORMAL = "normal"
+    VERBOSE = "verbose"
+    DEBUG = "debug"
+
+    @classmethod
+    def from_string(cls, value: str) -> LogLevel:
+        """Parse log level from string (case-insensitive)."""
+        mapping = {
+            "quiet": cls.QUIET,
+            "normal": cls.NORMAL,
+            "verbose": cls.VERBOSE,
+            "debug": cls.DEBUG,
+        }
+        return mapping.get(value.lower().strip(), cls.NORMAL)
+
+    def should_log(self, level: LogLevel) -> bool:
+        """Check if a message at `level` should be logged at current level."""
+        levels = [LogLevel.QUIET, LogLevel.NORMAL, LogLevel.VERBOSE, LogLevel.DEBUG]
+        return levels.index(level) <= levels.index(self)
 
 
 DEFAULTS: Dict[str, Any] = {
@@ -33,6 +58,7 @@ DEFAULTS: Dict[str, Any] = {
     "componentTagPrefix": "component:",
     "parallelKeepWorktrees": False,
     "parallelAutoMerge": True,
+    "logLevel": "normal",  # quiet, normal, verbose, debug
 }
 
 
@@ -41,10 +67,23 @@ def usage() -> None:
         """Ralph (new Python CLI)
 
 Usage:
-  tf new ralph run [ticket-id] [--dry-run] [--flags '...']
-  tf new ralph start [--max-iterations N] [--parallel N] [--no-parallel] [--dry-run] [--flags '...']
+  tf ralph run [ticket-id] [--dry-run] [--verbose|--debug|--quiet] [--flags '...']
+  tf ralph start [--max-iterations N] [--parallel N] [--no-parallel] [--dry-run] [--verbose|--debug|--quiet] [--flags '...']
+
+Verbosity Options:
+  --verbose         Enable verbose output (INFO + DEBUG events)
+  --debug           Alias for --verbose (maximum detail)
+  --quiet           Minimal output (errors only)
+  (default)         Normal output (INFO events only)
+
+Environment Variables:
+  RALPH_LOG_LEVEL   Set log level: quiet, normal, verbose, debug
+  RALPH_VERBOSE     Set to 1 to enable verbose mode
+  RALPH_DEBUG       Set to 1 to enable debug mode
+  RALPH_QUIET       Set to 1 to enable quiet mode
 
 Notes:
+  - CLI flags take precedence over environment variables
   - Parallel mode uses git worktrees + component tags (same as legacy).
 """
     )
@@ -135,7 +174,7 @@ def prompt_exists(project_root: Path) -> bool:
     global_prompt = Path.home() / ".pi/agent/prompts/tf.md"
     if local_prompt.is_file() or global_prompt.is_file():
         return True
-    print("Missing /tf prompt. Install via: tf setup --project <path> or tf setup --global", file=sys.stderr)
+    print("Missing /tf prompt. Run 'tf init' in the project to install prompts (or 'tf sync' to re-ensure).", file=sys.stderr)
     return False
 
 
@@ -243,6 +282,55 @@ def parse_bool(value: Any, default: bool = False) -> bool:
     if isinstance(value, str):
         return value.strip().lower() == "true"
     return default
+
+
+def resolve_log_level(
+    cli_level: Optional[LogLevel] = None,
+    config: Optional[Dict[str, Any]] = None,
+) -> LogLevel:
+    """Resolve log level from CLI flags, env vars, and config (in that priority order).
+
+    Priority:
+    1. CLI flags (--verbose, --debug, --quiet)
+    2. Environment variables (RALPH_LOG_LEVEL, RALPH_VERBOSE, RALPH_DEBUG, RALPH_QUIET)
+    3. Config file (logLevel setting)
+    4. Default (normal)
+    """
+    # CLI flags take highest priority
+    if cli_level is not None:
+        return cli_level
+
+    # Environment variables
+    env_level = os.environ.get("RALPH_LOG_LEVEL", "").strip().lower()
+    if env_level:
+        return LogLevel.from_string(env_level)
+
+    if os.environ.get("RALPH_DEBUG", "").strip() == "1":
+        return LogLevel.DEBUG
+    if os.environ.get("RALPH_VERBOSE", "").strip() == "1":
+        return LogLevel.VERBOSE
+    if os.environ.get("RALPH_QUIET", "").strip() == "1":
+        return LogLevel.QUIET
+
+    # Config file
+    if config is not None:
+        config_level = config.get("logLevel", DEFAULTS["logLevel"])
+        if isinstance(config_level, str):
+            return LogLevel.from_string(config_level)
+
+    # Default
+    return LogLevel.NORMAL
+
+
+def log_level_to_flag(level: LogLevel) -> str:
+    """Convert LogLevel to a workflow flag string."""
+    mapping = {
+        LogLevel.QUIET: "--quiet",
+        LogLevel.NORMAL: "",
+        LogLevel.VERBOSE: "--verbose",
+        LogLevel.DEBUG: "--debug",
+    }
+    return mapping.get(level, "")
 
 
 def resolve_session_dir(project_root: Path, config: Dict[str, Any]) -> Optional[Path]:
@@ -514,15 +602,25 @@ def update_state(
         agents_path.write_text(agents_path.read_text(encoding="utf-8") + header + lesson_block + "\n", encoding="utf-8")
 
 
-def parse_run_args(args: List[str]) -> Tuple[Optional[str], bool, Optional[str]]:
+def parse_run_args(args: List[str]) -> Tuple[Optional[str], bool, Optional[str], Optional[LogLevel]]:
     ticket_override: Optional[str] = None
     dry_run = False
     flags_override: Optional[str] = None
+    log_level: Optional[LogLevel] = None
     idx = 0
     while idx < len(args):
         arg = args[idx]
         if arg == "--dry-run":
             dry_run = True
+            idx += 1
+        elif arg == "--verbose":
+            log_level = LogLevel.VERBOSE
+            idx += 1
+        elif arg == "--debug":
+            log_level = LogLevel.DEBUG
+            idx += 1
+        elif arg == "--quiet":
+            log_level = LogLevel.QUIET
             idx += 1
         elif arg == "--flags":
             if idx + 1 >= len(args):
@@ -541,7 +639,7 @@ def parse_run_args(args: List[str]) -> Tuple[Optional[str], bool, Optional[str]]
                 idx += 1
             else:
                 raise ValueError("Too many arguments for ralph run")
-    return ticket_override, dry_run, flags_override
+    return ticket_override, dry_run, flags_override, log_level
 
 
 def parse_start_args(args: List[str]) -> Dict[str, Any]:
@@ -551,6 +649,7 @@ def parse_start_args(args: List[str]) -> Dict[str, Any]:
         "parallel_override": None,
         "no_parallel": False,
         "flags_override": None,
+        "log_level": None,
     }
     idx = 0
     while idx < len(args):
@@ -577,6 +676,15 @@ def parse_start_args(args: List[str]) -> Dict[str, Any]:
         elif arg == "--dry-run":
             options["dry_run"] = True
             idx += 1
+        elif arg == "--verbose":
+            options["log_level"] = LogLevel.VERBOSE
+            idx += 1
+        elif arg == "--debug":
+            options["log_level"] = LogLevel.DEBUG
+            idx += 1
+        elif arg == "--quiet":
+            options["log_level"] = LogLevel.QUIET
+            idx += 1
         elif arg == "--flags":
             if idx + 1 >= len(args):
                 raise ValueError("Missing value after --flags")
@@ -595,7 +703,7 @@ def parse_start_args(args: List[str]) -> Dict[str, Any]:
 
 def ralph_run(args: List[str]) -> int:
     try:
-        ticket_override, dry_run, flags_override = parse_run_args(args)
+        ticket_override, dry_run, flags_override, cli_log_level = parse_run_args(args)
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -611,9 +719,18 @@ def ralph_run(args: List[str]) -> int:
 
     config = load_config(ralph_dir)
 
+    # Resolve log level from CLI, env vars, and config
+    log_level = resolve_log_level(cli_log_level, config)
+
     ticket_query = sanitize_ticket_query(str(config.get("ticketQuery", DEFAULTS["ticketQuery"])))
     workflow = str(config.get("workflow", DEFAULTS["workflow"]))
     workflow_flags = str(config.get("workflowFlags", DEFAULTS["workflowFlags"]))
+
+    # Add verbosity flag to workflow flags if set
+    level_flag = log_level_to_flag(log_level)
+    if level_flag:
+        workflow_flags = f"{workflow_flags} {level_flag}".strip()
+
     if flags_override:
         workflow_flags = f"{workflow_flags} {flags_override}".strip()
 
@@ -665,6 +782,9 @@ def ralph_start(args: List[str]) -> int:
 
     config = load_config(ralph_dir)
 
+    # Resolve log level from CLI, env vars, and config
+    log_level = resolve_log_level(options.get("log_level"), config)
+
     max_iterations = options["max_iterations"] or int(config.get("maxIterations", DEFAULTS["maxIterations"]))
     sleep_between = int(config.get("sleepBetweenTickets", DEFAULTS["sleepBetweenTickets"]))
     sleep_retries = int(config.get("sleepBetweenRetries", DEFAULTS["sleepBetweenRetries"]))
@@ -676,6 +796,11 @@ def ralph_start(args: List[str]) -> int:
         config.get("promiseOnComplete", DEFAULTS["promiseOnComplete"]),
         DEFAULTS["promiseOnComplete"],
     )
+
+    # Add verbosity flag to workflow flags if set
+    level_flag = log_level_to_flag(log_level)
+    if level_flag:
+        workflow_flags = f"{workflow_flags} {level_flag}".strip()
 
     if options["flags_override"]:
         workflow_flags = f"{workflow_flags} {options['flags_override']}".strip()
