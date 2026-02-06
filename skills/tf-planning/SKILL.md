@@ -205,25 +205,56 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
 
 ### Procedure: Seed Capture
 
-**Purpose**: Capture a greenfield idea into structured artifacts.
+**Purpose**: Capture a greenfield idea into structured artifacts and optionally activate a planning session.
 
-**Input**: Idea description (from user)
+**Input**: Idea description (from user), optional flags
+
+**Flags**:
+- `--no-session` - Create seed without activating a planning session (legacy behavior)
+- `--active` - Print current active session and exit
+- `--sessions [seed-id]` - List archived sessions, optionally filtered by seed
+- `--resume <id>` - Resume an archived session by seed-id or session-id
 
 **Steps**:
 
-1. **Create topic ID**:
+1. **Parse flags** from input:
+   - Check for `--active`, `--sessions`, `--resume`, `--no-session`
+   - Handle query flags first (return early for `--active`, `--sessions`, `--resume`)
+
+2. **Handle `--active` query**:
+   - Load `.active-planning.json` from knowledge directory
+   - If exists: print session details (session_id, root_seed, state, spike_count, has_plan)
+   - If not exists: print "No active planning session"
+   - Return (no seed created)
+
+3. **Handle `--sessions [seed-id]` query**:
+   - List files in `sessions/` directory
+   - Filter by seed_id if provided
+   - Sort by created timestamp (newest first)
+   - Print table: Session ID | Root Seed | State | Created
+   - Return (no seed created)
+
+4. **Handle `--resume <id>` query**:
+   - If id contains `@`: treat as session_id, load directly
+   - Else: treat as seed_id, find latest session for that seed
+   - Archive any currently active session
+   - Activate the resumed session (write to `.active-planning.json`)
+   - Print: "Resumed session: {session_id}"
+   - Return (no new seed created)
+
+5. **Create topic ID** (for new seed):
    - Lowercase, replace spaces with dashes
    - Max 40 characters
    - Prefix with `seed-`
    - Example: "Build a CLI" → `seed-build-a-cli`
 
-2. **Create directory**:
+6. **Create directory**:
 
    ```bash
    mkdir -p "{knowledgeDir}/topics/{topic-id}"
    ```
 
-3. **Write artifacts**:
+7. **Write artifacts**:
 
    **overview.md**:
 
@@ -263,7 +294,7 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
 
    **success-metrics.md**, **assumptions.md**, **constraints.md**, **mvp-scope.md**, **sources.md**
 
-4. **Update index.json**:
+8. **Update index.json**:
    ```json
    {
      "id": "{topic-id}",
@@ -274,7 +305,58 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
    }
    ```
 
-**Output**: Topic directory with seed artifacts
+9. **Activate planning session** (unless `--no-session`):
+
+   **Check for existing active session**:
+   - Load `.active-planning.json`
+   - If exists: archive it to `sessions/{session_id}.json`
+
+   **Create and activate new session**:
+   - Generate session_id: `{topic-id}@{YYYY-MM-DDTHH-MM-SSZ}` (hyphens in timestamp for filename safety)
+   - Create session JSON:
+     ```json
+     {
+       "schema_version": 1,
+       "session_id": "{session-id}",
+       "state": "active",
+       "root_seed": "{topic-id}",
+       "spikes": [],
+       "plan": null,
+       "backlog": null,
+       "created": "ISO-8601-timestamp",
+       "updated": "ISO-8601-timestamp",
+       "completed_at": null
+     }
+     ```
+   - Atomic write to `.active-planning.json` (temp file + rename)
+
+   **Emit notice**:
+   ```
+   [tf] Activated planning session: {session_id} (root: {topic-id})
+   ```
+
+   If a session was archived:
+   ```
+   [tf] Archived previous session: {previous_session_id}
+   [tf] Activated planning session: {new_session_id} (root: {topic-id})
+   ```
+
+**Output**: 
+- Topic directory with seed artifacts
+- `.active-planning.json` (unless `--no-session`)
+- Archived session in `sessions/` (if switching from previous active session)
+
+**Session Store API** (for implementation):
+```python
+from tf_cli.session_store import (
+    load_active_session,
+    archive_and_create_session,
+    list_archived_sessions,
+    find_latest_session_for_seed,
+    resume_session,
+    get_active_session_info
+)
+```
 
 ---
 
@@ -553,7 +635,7 @@ Where:
 
 ### Procedure: Research Spike
 
-**Purpose**: Research a topic and store findings.
+**Purpose**: Research a topic and store findings, optionally auto-attaching to an active planning session.
 
 **Input**: Topic to research, optional `--parallel` flag
 
@@ -564,13 +646,18 @@ Where:
    - Max 40 characters
    - Prefix with `spike-`
 
-2. **Check MCP tools**:
+2. **Check for active planning session**:
+   - Load `{knowledgeDir}/.active-planning.json` if it exists
+   - If `state` is `"active"`, capture `session_id` and `root_seed`
+   - If no active session, proceed with normal flow (no session linking)
+
+3. **Check MCP tools**:
    - context7 (documentation)
    - exa (web search)
    - grep_app (code search)
    - zai-web-search (alternative search)
 
-3. **Research**:
+4. **Research**:
 
    **Sequential mode** (default):
    - Query each available tool one by one
@@ -588,11 +675,35 @@ Where:
    }
    ```
 
-4. **Write artifacts**:
+5. **Write artifacts**:
 
    **overview.md**: Summary + keywords
    **sources.md**: All URLs and tools used
    **spike.md**: Full analysis with findings, options, recommendation
+
+6. **Update active session (if applicable)**:
+   - If an active session was detected in step 2:
+     - Append `topic-id` to `spikes[]` array in `.active-planning.json` (dedup: skip if already present)
+     - Update `updated` timestamp in session file
+     - Emit notice: `[tf] Auto-attached spike to session: {session_id}`
+
+7. **Cross-link with root seed (if applicable)**:
+   - If an active session was detected:
+     - **Root seed `sources.md`**: Add or append to "Session Links" section:
+       ```markdown
+       ## Session Links
+
+       - Spike: [{topic-id}](topics/{topic-id}/spike.md)
+       ```
+       (dedup: skip if link already exists)
+     - **Spike `sources.md`**: Add link back to root seed:
+       ```markdown
+       ## Parent Session
+
+       - Root Seed: [{root_seed}](topics/{root_seed}/seed.md)
+       - Session: {session_id}
+       ```
+       (dedup: skip if already present)
 
 ---
 
