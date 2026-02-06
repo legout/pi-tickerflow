@@ -37,25 +37,30 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
 
 ### Procedure: Plan Interview (Planner)
 
-**Purpose**: Create a single plan document from a project/feature/refactor request.
+**Purpose**: Create a single plan document from a project/feature/refactor request, with optional session awareness.
 
 **Input**: Request description (from user)
 
 **Steps**:
 
-1. **Create topic ID**:
+1. **Check for active planning session**:
+   - Load `{knowledgeDir}/.active-planning.json` if it exists
+   - If `state` is `"active"`, capture `session_id`, `root_seed`, and `spikes` array
+   - If no active session, proceed with normal flow (no session linking)
+
+2. **Create topic ID**:
    - If input already starts with `plan-`, use it as topic-id
    - Otherwise slugify request (lowercase, spaces → dashes, max 40 chars)
    - Prefix with `plan-`
    - Example: "Refactor auth flow" → `plan-refactor-auth-flow`
 
-2. **Create directory**:
+3. **Create directory**:
 
    ```bash
    mkdir -p "{knowledgeDir}/topics/{topic-id}"
    ```
 
-3. **Write `plan.md`** (single source of truth):
+4. **Write `plan.md`** (single source of truth):
 
    ```markdown
    ---
@@ -69,6 +74,15 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
    ## Summary
 
    <1–2 paragraphs>
+
+   ## Inputs / Related Topics
+
+   <!-- Include this section if created during an active planning session -->
+   - Root Seed: [{root_seed}](topics/{root_seed}/seed.md)
+   - Session: {session_id}
+   - Related Spikes:
+     - [{spike-id}](topics/{spike-id}/spike.md)
+     - ... (list all spikes from session)
 
    ## Requirements
 
@@ -113,7 +127,13 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
        - ...
    ```
 
-4. **Update index.json**:
+   **Note on "Inputs / Related Topics" section**:
+   - Only include if an active session was detected in step 1
+   - List the root seed with a relative link
+   - List all spikes from the session's `spikes[]` array with relative links
+   - If no spikes exist yet, show "- (none yet)" or omit the spikes list
+
+5. **Update index.json**:
    ```json
    {
      "id": "{topic-id}",
@@ -124,7 +144,34 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
    }
    ```
 
-**Output**: `plan.md` stored in topic directory, status = `draft`
+6. **Update active session (if applicable)**:
+   - If an active session was detected in step 1:
+     - Set `plan` field in `.active-planning.json` to the new `{topic-id}` (overwrites any prior plan)
+     - Update `updated` timestamp in session file
+     - Emit notice: `[tf] Auto-attached plan to session: {session_id} (root: {root_seed})`
+
+7. **Cross-link with root seed (if applicable)**:
+   - If an active session was detected:
+     - **Root seed `sources.md`**: Add or append to "Session Links" section:
+       ```markdown
+       ## Session Links
+
+       - Plan: [{topic-id}](topics/{topic-id}/plan.md)
+       ```
+       (dedup: skip if link already exists)
+     - **Plan `sources.md`**: Add link back to root seed:
+       ```markdown
+       ## Parent Session
+
+       - Root Seed: [{root_seed}](topics/{root_seed}/seed.md)
+       - Session: {session_id}
+       ```
+       (dedup: skip if already present)
+
+**Output**:
+- `plan.md` stored in topic directory, status = `draft`
+- Session updated with `plan: {topic-id}` (if active session exists)
+- Cross-links in `sources.md` files (if active session exists)
 
 ---
 
