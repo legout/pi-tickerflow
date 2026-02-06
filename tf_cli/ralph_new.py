@@ -843,7 +843,7 @@ def ralph_start(args: List[str]) -> int:
 
     mode = "parallel" if use_parallel > 1 else "serial"
     logger = logger.with_context(mode=mode)
-    logger.info(f"Ralph loop starting (mode={mode}, max_iterations={max_iterations})")
+    logger.log_loop_start(mode=mode, max_iterations=max_iterations, parallel_workers=use_parallel if use_parallel > 1 else None)
 
     lock_acquired = False
     if not options["dry_run"]:
@@ -862,7 +862,7 @@ def ralph_start(args: List[str]) -> int:
         if use_parallel <= 1:
             while iteration < max_iterations:
                 if backlog_empty(completion_check):
-                    logger.info("No ready tickets. Ralph loop complete")
+                    logger.log_loop_complete(reason="backlog_empty", iterations_completed=iteration, mode=mode)
                     if not options["dry_run"]:
                         set_state(ralph_dir, "COMPLETE")
                     if promise_on_complete:
@@ -871,7 +871,9 @@ def ralph_start(args: List[str]) -> int:
 
                 ticket = select_ticket(ticket_query)
                 if not ticket:
-                    time.sleep(sleep_retries / 1000)
+                    sleep_sec = sleep_retries / 1000
+                    logger.log_no_ticket_selected(sleep_seconds=sleep_sec, reason="no_ready_tickets", mode=mode, iteration=iteration)
+                    time.sleep(sleep_sec)
                     continue
 
                 # Update logger with ticket context for this iteration
@@ -885,6 +887,7 @@ def ralph_start(args: List[str]) -> int:
                     else:
                         session_path = loop_session_path
 
+                cmd = build_cmd(workflow, ticket, workflow_flags)
                 rc = run_ticket(
                     ticket,
                     workflow,
@@ -894,10 +897,13 @@ def ralph_start(args: List[str]) -> int:
                     logger=ticket_logger,
                     mode="serial",
                 )
+                ticket_logger.log_command_executed(ticket, cmd, rc, mode="serial", iteration=iteration)
                 if not options["dry_run"]:
                     if rc != 0:
                         error_msg = f"pi -p failed (exit {rc})"
-                        ticket_logger.log_error_summary(ticket, error_msg, iteration=iteration)
+                        knowledge_dir = resolve_knowledge_dir(project_root)
+                        artifact_path = str(knowledge_dir / "tickets" / ticket)
+                        ticket_logger.log_error_summary(ticket, error_msg, artifact_path=artifact_path, iteration=iteration)
                         update_state(ralph_dir, project_root, ticket, "FAILED", error_msg)
                         return rc
                     ticket_logger.log_ticket_complete(ticket, "COMPLETE", mode="serial", iteration=iteration)
@@ -906,7 +912,7 @@ def ralph_start(args: List[str]) -> int:
                 iteration += 1
                 time.sleep(sleep_between / 1000)
 
-            logger.info(f"Max iterations reached ({max_iterations})")
+            logger.log_loop_complete(reason="max_iterations_reached", iterations_completed=iteration, mode=mode)
             if not options["dry_run"]:
                 set_state(ralph_dir, "COMPLETE")
             if promise_on_complete:
@@ -934,7 +940,7 @@ def ralph_start(args: List[str]) -> int:
 
         while iteration < max_iterations:
             if backlog_empty(completion_check):
-                logger.info("No ready tickets. Ralph loop complete")
+                logger.log_loop_complete(reason="backlog_empty", iterations_completed=iteration, mode=mode)
                 if not options["dry_run"]:
                     set_state(ralph_dir, "COMPLETE")
                 if promise_on_complete:
@@ -949,7 +955,9 @@ def ralph_start(args: List[str]) -> int:
             if not selected:
                 fallback_ticket = select_ticket(ticket_query)
                 if not fallback_ticket:
-                    time.sleep(sleep_retries / 1000)
+                    sleep_sec = sleep_retries / 1000
+                    logger.log_no_ticket_selected(sleep_seconds=sleep_sec, reason="no_ready_tickets", mode=mode, iteration=iteration)
+                    time.sleep(sleep_sec)
                     continue
                 selected = [fallback_ticket]
 
@@ -991,9 +999,12 @@ def ralph_start(args: List[str]) -> int:
 
             for proc, ticket, worktree_path in processes:
                 rc = proc.wait()
+                cmd = build_cmd(workflow, ticket, workflow_flags)
+                logger.log_command_executed(ticket, cmd, rc, mode="parallel", iteration=iteration)
                 if rc != 0:
                     error_msg = f"pi -p failed (exit {rc})"
-                    logger.log_error_summary(ticket, error_msg, artifact_path=str(worktree_path / ".tf/knowledge"), iteration=iteration)
+                    artifact_path = str(worktree_path / ".tf/knowledge" / "tickets" / ticket)
+                    logger.log_error_summary(ticket, error_msg, artifact_path=artifact_path, iteration=iteration)
                     update_state(
                         ralph_dir,
                         project_root,
@@ -1018,7 +1029,7 @@ def ralph_start(args: List[str]) -> int:
             iteration += len(selected)
             time.sleep(sleep_between / 1000)
 
-        logger.info(f"Max iterations reached ({max_iterations})")
+        logger.log_loop_complete(reason="max_iterations_reached", iterations_completed=iteration, mode=mode)
         if not options["dry_run"]:
             set_state(ralph_dir, "COMPLETE")
         if promise_on_complete:

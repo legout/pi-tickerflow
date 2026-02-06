@@ -347,12 +347,114 @@ class RalphLogger:
         error_msg: str,
         artifact_path: Optional[str] = None,
         mode: str = "serial",
+        iteration: Optional[int] = None,
     ) -> None:
         """Log an error summary with pointers to more info."""
         extra: Dict[str, Any] = {"ticket": ticket_id, "error": error_msg, "mode": mode}
         if artifact_path:
             extra["artifact_path"] = artifact_path
+        if iteration is not None:
+            extra["iteration"] = iteration
         self.error("Error summary", **extra)
+
+    def log_loop_start(
+        self,
+        mode: str = "serial",
+        max_iterations: Optional[int] = None,
+        parallel_workers: Optional[int] = None,
+    ) -> None:
+        """Log the start of the Ralph loop."""
+        extra: Dict[str, Any] = {"mode": mode, "event": "loop_start"}
+        if max_iterations is not None:
+            extra["max_iterations"] = max_iterations
+        if parallel_workers is not None:
+            extra["parallel_workers"] = parallel_workers
+        self.info(f"Ralph loop started (mode={mode})", **extra)
+
+    def log_loop_complete(
+        self,
+        reason: str,
+        iterations_completed: int,
+        mode: str = "serial",
+    ) -> None:
+        """Log the completion of the Ralph loop with reason."""
+        extra: Dict[str, Any] = {
+            "mode": mode,
+            "event": "loop_complete",
+            "reason": reason,
+            "iterations_completed": iterations_completed,
+        }
+        level = LogLevel.INFO if reason == "backlog_empty" else LogLevel.WARN
+        self._log(level, f"Ralph loop complete: {reason}", extra)
+
+    def log_no_ticket_selected(
+        self,
+        sleep_seconds: float,
+        reason: str = "no_ready_tickets",
+        mode: str = "serial",
+        iteration: Optional[int] = None,
+    ) -> None:
+        """Log when no ticket is selected and sleep is triggered."""
+        extra: Dict[str, Any] = {
+            "mode": mode,
+            "event": "no_ticket_selected",
+            "reason": reason,
+            "sleep_seconds": sleep_seconds,
+        }
+        if iteration is not None:
+            extra["iteration"] = iteration
+        self.info(f"No ticket selected, sleeping for {sleep_seconds}s", **extra)
+
+    def log_command_executed(
+        self,
+        ticket_id: str,
+        command: str,
+        exit_code: int,
+        mode: str = "serial",
+        iteration: Optional[int] = None,
+    ) -> None:
+        """Log command execution result with sanitized command and exit code."""
+        # Sanitize command for logging (remove potential secrets)
+        sanitized = self._sanitize_command(command)
+
+        extra: Dict[str, Any] = {
+            "ticket": ticket_id,
+            "command": sanitized,
+            "exit_code": exit_code,
+            "mode": mode,
+            "event": "command_executed",
+        }
+        if iteration is not None:
+            extra["iteration"] = iteration
+
+        if exit_code == 0:
+            self.info(f"Command completed successfully (exit={exit_code}): {sanitized}", **extra)
+        else:
+            self.error(f"Command failed (exit={exit_code}): {sanitized}", **extra)
+
+    def _sanitize_command(self, command: str) -> str:
+        """Sanitize command by redacting potential sensitive values."""
+        # Redact common secret patterns in command arguments
+        # Handles both space-separated (--api-key value) and equals-separated (--api-key=value) formats
+        patterns = [
+            (r'(--api-key\s+\S+)', '--api-key [REDACTED]'),
+            (r'(--api-key[=:]\S+)', '--api-key=[REDACTED]'),
+            (r'(--token\s+\S+)', '--token [REDACTED]'),
+            (r'(--token[=:]\S+)', '--token=[REDACTED]'),
+            (r'(--secret\s+\S+)', '--secret [REDACTED]'),
+            (r'(--secret[=:]\S+)', '--secret=[REDACTED]'),
+            (r'(--password\s+\S+)', '--password [REDACTED]'),
+            (r'(--password[=:]\S+)', '--password=[REDACTED]'),
+            (r'(sk-\w+)', '[REDACTED]'),  # OpenAI-style keys
+            (r'(eyJ[\w-]*\.eyJ[\w-]*\.[\w-]*)', '[REDACTED]'),  # JWT tokens (header.payload.signature)
+            (r'(ghp_\w+)', '[REDACTED]'),  # GitHub tokens
+        ]
+
+        result = command
+        for pattern, replacement in patterns:
+            result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
+
+        return result
 
 
 def create_logger(
