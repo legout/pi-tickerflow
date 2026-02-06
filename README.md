@@ -34,9 +34,6 @@ pi install npm:pi-subagents              # Parallel reviewer subagents
 # Global install (installs shim to ~/.local/bin/tf)
 uvx --from git+https://github.com/legout/pi-ticketflow tf install --global
 
-# Project install
-uvx --from git+https://github.com/legout/pi-ticketflow tf install --project /path/to/project
-
 # Local clone (development)
 uvx --from . tf install
 
@@ -52,12 +49,6 @@ uvx --from git+https://github.com/legout/pi-ticketflow tf install --global --for
 ```bash
 # Global install (installs tf CLI to ~/.local/bin/)
 curl -fsSL https://raw.githubusercontent.com/legout/pi-ticketflow/main/install.sh | bash -s -- --global
-
-# Project install (current directory)
-curl -fsSL https://raw.githubusercontent.com/legout/pi-ticketflow/main/install.sh | bash
-
-# Project install (specific path)
-curl -fsSL https://raw.githubusercontent.com/legout/pi-ticketflow/main/install.sh | bash -s -- --project /path/to/project
 ```
 
 ### Interactive Setup (Recommended after install)
@@ -65,18 +56,16 @@ curl -fsSL https://raw.githubusercontent.com/legout/pi-ticketflow/main/install.s
 After global install, the `tf` CLI is available:
 
 ```bash
-# Interactive setup (installs extensions, configures MCP)
+# Global environment setup (extensions + MCP/web-search config)
 tf setup
 
-# In each project, scaffold .tf/ state
+# In each project, install TF workflow assets + config/state
 cd /path/to/project
 tf init
 
-# Sync models from project config
+# Sync models from project config into project-local agents/prompts
 tf sync
 ```
-
-For project installs, use `./.tf/bin/tf` instead (or the global `tf`).
 
 ### Manual Install (from cloned repo, legacy)
 
@@ -90,18 +79,16 @@ uvx --from . tf install
 
 # Legacy install.sh (curl-style)
 ./install.sh --global
-
-# Project install
-./install.sh --project /path/to/project
 ```
 
 ### Installation Locations
 
 | Component | Global Install | Project Install |
 |-----------|---------------|-----------------|
-| Agents, Skills, Prompts | `~/.pi/agent/` | `.pi/` |
-| tf CLI | `~/.local/bin/tf` | `.tf/bin/tf` |
-| Config | _project-only_ | `.tf/config/` |
+| tf CLI shim | `~/.local/bin/tf` | - |
+| Pi extensions + MCP/web-search config | `~/.pi/agent/` | - |
+| TF agents, prompts, skills | - | `.pi/` |
+| TF config + state (knowledge, ralph, etc.) | - | `.tf/` |
 
 ---
 
@@ -389,6 +376,7 @@ Suggestions)
 | `/tf-backlog-ls [topic]` | List backlog status and ticket counts |
 | `/tf-followups <review>` | Create tickets from review Warnings/Suggestions |
 | `/tf-backlog-from-openspec <change>` | Import tickets from OpenSpec changes |
+| `/tf-priority-reclassify` | Reclassify ticket priorities using P0–P4 rubric |
 
 ### Configuration
 
@@ -469,6 +457,62 @@ Topics are automatically linked to tickets via `external-ref`.
 
 ---
 
+## Priority Rubric (P0–P4)
+
+Ticketflow uses a consistent P0–P4 priority classification system:
+
+| Label | Numeric | Name | Description |
+|-------|---------|------|-------------|
+| **P0** | 0 | Critical | System down, data loss, security breach, blocking all work |
+| **P1** | 1 | High | Major feature, significant bug affecting users, performance degradation |
+| **P2** | 2 | Normal | Standard product features, routine enhancements (default) |
+| **P3** | 3 | Low | Engineering quality, dev workflow improvements, tech debt |
+| **P4** | 4 | Minimal | Code cosmetics, refactors, docs polish, test typing |
+
+### Classification Examples
+
+| Scenario | Priority | Rationale |
+|----------|----------|-----------|
+| Security vulnerability in auth | P0 | Exploitable risk |
+| Database corruption on write | P0 | Irreversible damage |
+| User login fails intermittently | P1 | Major user impact |
+| Add new export format | P2 | Standard feature work |
+| Refactor legacy module | P3 | Engineering quality |
+| Fix typo in README | P4 | Documentation polish |
+
+### Priority Reclassification
+
+Automatically classify and re-prioritize tickets using the P0–P4 rubric:
+
+```bash
+# Dry-run (default) - see what would change
+tf new priority-reclassify --ready
+tf new priority-reclassify --ids abc-123,def-456
+
+# Apply changes
+tf new priority-reclassify --ready --apply
+
+# With safety caps and confirmation skipping
+tf new priority-reclassify --ready --apply --yes --max-changes 10
+```
+
+**Options:**
+| Flag | Description |
+|------|-------------|
+| `--apply` | Apply priority changes (default is dry-run) |
+| `--yes` | Skip confirmation prompt |
+| `--max-changes N` | Limit number of tickets to modify |
+| `--ids <id1,id2>` | Process specific ticket IDs |
+| `--ready` | Process all ready tickets |
+| `--status <status>` | Filter by ticket status |
+| `--tag <tag>` | Filter by tag |
+| `--json` | Output as JSON for scripting |
+| `--report` | Write audit trail to `.tf/knowledge/` |
+
+The rubric matches tickets based on tags, title keywords, and description content. See [docs/commands.md](docs/commands.md) for details on customizing classification rules.
+
+---
+
 ## Configuration
 
 Models are configured in `config/settings.json`:
@@ -518,11 +562,7 @@ Models are configured in `config/settings.json`:
 Apply changes with:
 
 ```bash
-# Global install
 tf sync
-
-# Project install
-./.tf/bin/tf sync
 
 # Or via Pi prompt
 /tf-sync
@@ -541,14 +581,9 @@ Ralph enables autonomous ticket processing with:
 - **Progress Tracking**: External state survives resets
 
 ```bash
-# After global install:
 tf ralph init          # Initialize Ralph
 tf ralph status        # Check status
 tf ralph lessons       # View lessons
-
-# After project install:
-./.tf/bin/tf ralph init
-./.tf/bin/tf ralph status
 
 # Start loop (in Pi)
 /ralph-start --max-iterations 50

@@ -22,10 +22,17 @@ Review and reclassify ticket priorities according to the P0-P4 rubric.
 | Flag | Description |
 |------|-------------|
 | `--apply` | Apply priority changes (default is dry-run) |
+| `--yes` | Skip confirmation prompt (use with `--apply`) |
+| `--max-changes N` | Maximum number of tickets to modify (safety cap) |
+| `--force` | Apply changes even for ambiguous/unknown classifications |
 | `--ids` | Comma-separated list of ticket IDs to process |
 | `--ready` | Process all ready tickets |
 | `--status` | Filter by ticket status |
 | `--tag` | Filter by tag |
+| `--include-closed` | Include closed tickets in processing |
+| `--include-unknown` | Include tickets with unknown priority in output |
+| `--json` | Output results as JSON for scripting |
+| `--report` | Write audit trail to `.tf/knowledge/priority-reclassify-{timestamp}.md` |
 
 ## Priority Rubric
 

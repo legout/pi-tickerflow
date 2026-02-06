@@ -504,6 +504,87 @@ The `validate` command detects:
 
 ---
 
+## Priority Reclassification Commands
+
+### `/tf-priority-reclassify`
+
+Review and reclassify ticket priorities according to the P0–P4 rubric.
+
+```
+/tf-priority-reclassify [--apply] [--ids <id1,id2,...>] [--ready] [--status <status>] [--tag <tag>]
+```
+
+**Arguments:**
+| Argument | Description |
+|----------|-------------|
+| `--apply` | Apply priority changes (default is dry-run) |
+| `--yes` | Skip confirmation prompt (required with `--apply` in non-interactive mode) |
+| `--max-changes N` | Maximum number of tickets to modify (safety cap) |
+| `--force` | Apply changes even for ambiguous/unknown classifications |
+| `--ids <id1,id2,...>` | Comma-separated list of ticket IDs to process |
+| `--ready` | Process all ready tickets |
+| `--status <status>` | Filter by ticket status |
+| `--tag <tag>` | Filter by tag |
+| `--include-closed` | Include closed tickets in processing (default: excluded) |
+| `--include-unknown` | Include tickets with unknown/ambiguous priority in output |
+| `--json` | Output results as JSON for scripting |
+| `--report` | Write audit report to `.tf/knowledge/priority-reclassify-{timestamp}.md` |
+
+**P0–P4 Priority Rubric:**
+
+| Label | Numeric | Name | Description |
+|-------|---------|------|-------------|
+| **P0** | 0 | Critical | System down, data loss, security breach, blocking all work |
+| **P1** | 1 | High | Major feature, significant bug affecting users, performance degradation |
+| **P2** | 2 | Normal | Standard product features, routine enhancements (default) |
+| **P3** | 3 | Low | Engineering quality, dev workflow improvements, tech debt |
+| **P4** | 4 | Minimal | Code cosmetics, refactors, docs polish, test typing |
+
+**Classification Keywords:**
+
+The rubric uses keyword matching on ticket titles, descriptions, and tags:
+
+| Priority | Indicators |
+|----------|------------|
+| P0 | `security`, `vulnerability`, `CVE`, `exploit`, `breach`, `XSS`, `injection`, `data loss`, `corruption`, `outage`, `crash`, `OOM`, `deadlock`, `GDPR`, `legal`, `compliance violation` |
+| P1 | `user-facing`, `customer reported`, `regression`, `broken`, `release blocker`, `milestone`, `launch`, `slow`, `timeout`, `memory leak`, `wrong results`, `calculation error` |
+| P2 | `feature`, `implement`, `add support`, `enhancement`, `API`, `webhook`, `export`, `import`, `integration` |
+| P3 | `refactor`, `cleanup`, `tech debt`, `architecture`, `DX`, `dev workflow`, `build time`, `CI/CD`, `metrics`, `logging`, `tracing`, `monitoring`, `test coverage` |
+| P4 | `typo`, `formatting`, `lint`, `style`, `naming`, `cosmetic`, `docs`, `README`, `comments`, `docstrings`, `type hints`, `mypy`, `typing` |
+
+**Examples:**
+
+```bash
+# Dry-run on ready tickets (shows what would change)
+/tf-priority-reclassify --ready
+
+# Apply changes to ready tickets with confirmation
+tf new priority-reclassify --ready --apply
+
+# Process specific tickets
+tf new priority-reclassify --ids abc-123,def-456 --apply --yes
+
+# Filter by tag
+tf new priority-reclassify --tag bug --apply
+
+# Output as JSON for scripting
+tf new priority-reclassify --ready --json
+
+# Generate audit report
+tf new priority-reclassify --ready --apply --report
+```
+
+**Customizing Classification Rules:**
+
+The rubric is defined in `tf_cli/priority_reclassify_new.py`:
+- `RUBRIC` dict - keyword definitions for each priority level
+- `TAG_MAP` - tag-to-priority mappings (tags take precedence)
+- `TYPE_DEFAULTS` - fallback priorities by ticket type
+
+To extend the rubric, edit these dictionaries in the source file.
+
+---
+
 ## Configuration Commands
 
 ### `/tf-sync`
@@ -582,20 +663,14 @@ tf agentsmd validate              # Check for bloat, stale paths
 tf agentsmd fix                   # Auto-fix common issues
 ```
 
-### Project Install (CLI at `.tf/bin/tf`)
+### Project Initialization (Workflow Files)
 
-Use `./.tf/bin/tf` for project installs (or the global `tf`).
-You can install it with:
-
-```bash
-uvx --from https://github.com/legout/pi-ticketflow tf install --project /path/to/project
-```
+The `tf` CLI is installed globally. To install TF workflow files (agents/prompts/skills) into a project:
 
 ```bash
-./.tf/bin/tf setup
-./.tf/bin/tf init
-./.tf/bin/tf sync
-./.tf/bin/tf update
-./.tf/bin/tf next
-./.tf/bin/tf ralph init
+cd /path/to/project
+tf init
+
+# After editing .tf/config/settings.json
+tf sync
 ```
