@@ -115,6 +115,41 @@ A.2 **Resolve the topic argument**:
 
 A.3 **Proceed with resolved topic** for all subsequent steps
 
+**Session Input Incorporation (Phase B):**
+
+If an active session was detected in Phase A, read and incorporate session-linked artifacts as additional context:
+
+B.1 **Read plan document if present**:
+   - If `session.plan` is set (not null):
+     - Read `.tf/knowledge/topics/{plan}/plan.md`
+     - Extract key requirements from `## Requirements` section
+     - Extract constraints from `## Constraints` section
+     - Note the plan status (approved/draft) from frontmatter
+     - Warn if plan status is not `approved`
+     - Store extracted content for ticket context incorporation
+
+B.2 **Read spike documents if present**:
+   - If `session.spikes[]` is non-empty:
+     - For each spike ID in the array:
+       - Read `.tf/knowledge/topics/{spike}/spike.md`
+       - Extract `## Summary` or `## Key Findings`
+       - Extract `## Recommendation` if present
+       - Note any constraints or risks mentioned
+     - Store extracted content for ticket context incorporation
+
+B.3 **Incorporate into ticket descriptions**:
+   - When creating tickets in step 5, include relevant plan requirements and spike findings:
+     - In `## Context`: Briefly reference key plan requirements (1-2 sentences)
+     - In `## Constraints`: Include relevant constraints from plan and spikes
+     - In ticket reasoning: Use spike findings to inform implementation approach
+   - Keep incorporations brief and relevant—don't paste full documents
+   - If plan/spike docs are missing or unreadable: emit warning, continue with seed-only
+
+B.4 **Track inputs used** for final summary:
+   - Count: spikes read successfully
+   - Note: plan present (yes/no) and status
+   - Note: any read failures (for warnings)
+
 **Special case: `--links-only` mode**
 - If `--links-only` is provided: Skip ticket creation (steps 5-7), go directly to linking step
 - Load existing tickets from `backlog.md` instead of creating new ones
@@ -285,6 +320,17 @@ A.3 **Proceed with resolved topic** for all subsequent steps
       - Set `backlog.topic` to the topic-id
       - Set `backlog.backlog_md` to `topics/{topic-id}/backlog.md`
       - Set `backlog.tickets` to array of created ticket IDs (may be empty if all skipped)
+      - Set `backlog.inputs_used` to object documenting what was incorporated:
+        ```json
+        {
+          "seed": "{topic-id}",
+          "plan": "{plan-id or null}",
+          "plan_status": "{approved|draft|missing}",
+          "spikes": ["{spike-id-1}", "{spike-id-2}"],
+          "spikes_read": 2,
+          "spikes_missing": []
+        }
+        ```
       - Update `updated` timestamp to now
     - **If all tickets created successfully** (or zero tickets due to all duplicates):
       - Write archived session snapshot to `sessions/{session_id}.json`:
@@ -299,7 +345,15 @@ A.3 **Proceed with resolved topic** for all subsequent steps
           "backlog": {
             "topic": "{topic-id}",
             "backlog_md": "topics/{topic-id}/backlog.md",
-            "tickets": ["id1", "id2", ...]
+            "tickets": ["id1", "id2", ...],
+            "inputs_used": {
+              "seed": "{topic-id}",
+              "plan": "{plan-id or null}",
+              "plan_status": "{approved|draft|missing}",
+              "spikes": ["{spike-id-1}", "{spike-id-2}"],
+              "spikes_read": 2,
+              "spikes_missing": []
+            }
           },
           "created": "...",
           "updated": "{ISO8601 timestamp}",
@@ -321,7 +375,15 @@ A.3 **Proceed with resolved topic** for all subsequent steps
           "backlog": {
             "topic": "{topic-id}",
             "backlog_md": "topics/{topic-id}/backlog.md",
-            "tickets": ["id1", ...]
+            "tickets": ["id1", ...],
+            "inputs_used": {
+              "seed": "{topic-id}",
+              "plan": "{plan-id or null}",
+              "plan_status": "{approved|draft|missing}",
+              "spikes": ["{spike-id-1}", "{spike-id-2}"],
+              "spikes_read": 2,
+              "spikes_missing": []
+            }
           },
           "error": {
             "message": "Ticket creation failed during backlog generation",
@@ -363,6 +425,39 @@ A.3 **Proceed with resolved topic** for all subsequent steps
 ## References
 
 - Seed: <topic-id>
+```
+
+**Seed with Session Inputs (plan/spikes)**
+
+```markdown
+## Task
+
+<Single-sentence description>
+
+## Context
+
+<2-3 sentences from seed>
+
+<If plan present: 1-2 sentences on key plan requirements relevant to this ticket>
+<If spikes present: Brief reference to spike findings affecting this ticket>
+
+## Acceptance Criteria
+
+- [ ] <criterion 1>
+- [ ] <criterion 2>
+- [ ] <criterion 3>
+
+## Constraints
+
+<Relevant constraints from seed>
+<Additional constraints from plan if applicable>
+<Constraints identified in spikes if applicable>
+
+## References
+
+- Seed: <topic-id>
+<If plan present: - Plan: <plan-id>>
+<If spikes present: - Spike: <spike-id> (relevant finding summary)>
 ```
 
 **Baseline**
@@ -419,6 +514,15 @@ A.3 **Proceed with resolved topic** for all subsequent steps
 ```
 
 ## Output
+
+**Inputs Used Summary** (emit after Phase B input resolution when session is active):
+```
+[tf] Inputs: seed={topic-id} plan={plan-id|none} spikes={count} [{spike-id1}, ...]
+```
+Examples:
+- `[tf] Inputs: seed=seed-auth-rewrite plan=plan-auth-v2 spikes=2 [spike-oauth-lib, spike-jwt-perf]`
+- `[tf] Inputs: seed=seed-cli-tool plan=none spikes=0 []`
+- `[tf] Inputs: seed=seed-api plan=plan-rest-v1 spikes=1 [spike-rate-limiting] (warning: spike-pagination not found)`
 
 **Normal mode:**
 - Tickets created in `tk` (with external-ref linking to source)
