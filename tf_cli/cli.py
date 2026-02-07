@@ -308,7 +308,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     if not argv or argv[0] in {"-h", "--help", "help"}:
         print(
-            """Ticketflow CLI\n\nUsage:\n  tf install [--global] [--force-local]\n  tf setup\n  tf login\n  tf init [--project <path>]\n  tf sync [--project <path>]\n  tf doctor [--project <path>] [--fix]\n  tf update\n  tf next\n  tf backlog-ls [topic-id-or-path]\n  tf track <path>\n  tf priority-reclassify [--apply] [--ids ...] [--ready] [--status ...] [--tag ...]\n  tf ralph <subcommand> ...\n  tf agentsmd <subcommand> ...\n  tf seed ...\n  tf kb ...\n\n(You can also use: tf new <command> ... for the old subcommand namespace.)\n"""
+            """Ticketflow CLI\n\nUsage:\n  tf --version | -v | -V\n  tf install [--global] [--force-local]\n  tf setup\n  tf login\n  tf init [--project <path>]\n  tf sync [--project <path>]\n  tf doctor [--project <path>] [--fix]\n  tf update\n  tf next\n  tf backlog-ls [topic-id-or-path]\n  tf track <path>\n  tf priority-reclassify [--apply] [--ids ...] [--ready] [--status ...] [--tag ...]\n  tf ralph <subcommand> ...\n  tf agentsmd <subcommand> ...\n  tf seed ...\n  tf kb ...\n\n(You can also use: tf new <command> ... for the old subcommand namespace.)\n"""
         )
         return 0
 
