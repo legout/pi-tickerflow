@@ -34,7 +34,8 @@ Before releasing a new version, complete all these steps:
 
 - [ ] **3. Sync `package.json` version** (for documentation consistency)
   ```bash
-  npm version $(cat VERSION) --no-git-tag-version --allow-same-version
+  ./scripts/sync-version.sh
+  # Or: npm run version:sync
   ```
 
 - [ ] **4. Run tests**
@@ -85,7 +86,10 @@ cat VERSION
 
 # Bump version (example: 0.1.0 → 0.2.0)
 echo "0.2.0" > VERSION
+./scripts/sync-version.sh  # Sync to package.json
 
 # Create release commit and tag
-./scripts/release.sh  # Or run the checklist above manually
+git add VERSION package.json CHANGELOG.md
+git commit -m "Release v$(cat VERSION)"
+git tag -a "v$(cat VERSION)" -m "Release version $(cat VERSION)"
 ```
