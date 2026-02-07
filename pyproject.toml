@@ -24,7 +24,7 @@ addopts = [
     "--strict-markers",
     "--disable-warnings",
     "-v",
-    "--cov-fail-under=4",
+    "--cov-fail-under=35",
     "--cov-report=html",
 ]
 markers = [
@@ -56,4 +56,4 @@ exclude_lines = [
 ]
 show_missing = true
 precision = 1
-fail_under = 25
+fail_under = 35
