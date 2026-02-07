@@ -1,18 +1,15 @@
-# Install manifest
+# TF Project Bundle Install Manifest
 #
-# Routing:
-# - agents/*, skills/*, prompts/*  → Pi base (global: ~/.pi/agent, project: <root>/.pi)
-# - everything else (bin/*, scripts/*, config/*) → TF base (project: <root>/.tf only)
-
-# CLI tool (will be installed to bin/tf)
-bin/tf
-
-# Needed so `tf setup` can be run from an already-installed workflow
-config/install-manifest.txt
-
-# Helper scripts for CLI
-scripts/tf_config.py
-scripts/tf_legacy.sh
+# Used by: `tf init` and `tf sync` to ensure TF workflow assets are installed
+# into a project.
+#
+# Routing (project):
+# - agents/*, skills/*, prompts/*  → <project>/.pi/
+# - config/*, scripts/*           → <project>/.tf/
+#
+# Note:
+# - The `tf` CLI shim is installed globally via `tf install` (or install.sh --global).
+# - MCP/web-search config and Pi extensions are set up globally via `tf setup` / `tf login`.
 
 agents/reviewer-general.md
 agents/reviewer-spec-audit.md
@@ -50,3 +47,6 @@ prompts/ralph-start.md
 
 config/settings.json
 config/workflows/tf/README.md
+
+scripts/tf_config.py
+scripts/tf_legacy.sh
