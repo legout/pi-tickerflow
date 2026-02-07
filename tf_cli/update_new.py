@@ -1,38 +1,21 @@
+"""Update command using the canonical asset planner.
+
+This module provides the 'tf update' command for updating assets in a project.
+It uses the asset_planner module for all asset routing and installation decisions.
+"""
 from __future__ import annotations
 
 import argparse
-import filecmp
-import tempfile
-import urllib.request
+import sys
 from pathlib import Path
 from typing import List, Optional
 
-DEFAULT_RAW_REPO_URL = "https://raw.githubusercontent.com/legout/pi-ticketflow/main"
-
-
-def download(url: str, dest: Path) -> bool:
-    try:
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        with urllib.request.urlopen(url) as resp:
-            dest.write_bytes(resp.read())
-        return True
-    except Exception as exc:
-        print(f"WARNING: Failed to download {url}: {exc}")
-        return False
-
-
-def parse_manifest(manifest_path: Path) -> List[str]:
-    entries: List[str] = []
-    for line in manifest_path.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        if stripped.startswith("agents/") or stripped.startswith("skills/") or stripped.startswith("prompts/"):
-            entries.append(stripped)
-    return entries
+from . import asset_planner
+from .asset_planner import DEFAULT_RAW_REPO_URL
 
 
 def resolve_target_base(args: argparse.Namespace) -> Path:
+    """Resolve the target base directory from args."""
     if args.project:
         return Path(args.project).expanduser() / ".pi"
     if args.global_install:
@@ -43,6 +26,7 @@ def resolve_target_base(args: argparse.Namespace) -> Path:
 
 
 def prompt_yes_no(message: str, default_yes: bool) -> bool:
+    """Prompt user for yes/no input."""
     suffix = "(Y/n)" if default_yes else "(y/N)"
     reply = input(f"{message} {suffix} ")
     if not reply.strip():
@@ -50,101 +34,104 @@ def prompt_yes_no(message: str, default_yes: bool) -> bool:
     return reply.strip().lower().startswith("y")
 
 
-def update_assets(target_base: Path) -> int:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_root = Path(temp_dir)
-        manifest_file = temp_root / "install-manifest.txt"
-        manifest_url = f"{DEFAULT_RAW_REPO_URL}/config/install-manifest.txt"
+def run_update(args: argparse.Namespace) -> int:
+    """Run the update command.
 
-        if not download(manifest_url, manifest_file):
-            print(f"Failed to download manifest from {manifest_url}")
-            return 1
+    Uses asset_planner for all asset decisions.
+    """
+    # Determine project root (parent of .pi directory)
+    target_base = resolve_target_base(args)
+    project_root = target_base.parent
 
-        entries = parse_manifest(manifest_file)
-        if not entries:
-            print("No agent/skill/prompt entries found in manifest.")
-            return 0
+    if not project_root.exists():
+        print(f"ERROR: Project directory does not exist: {project_root}", file=sys.stderr)
+        return 1
 
-        new_files: List[str] = []
-        existing_files: List[str] = []
-        for entry in entries:
-            dest = target_base / entry
-            if dest.exists():
-                existing_files.append(entry)
-            else:
-                new_files.append(entry)
+    # Find local repo root for offline installs
+    repo_root = asset_planner.find_repo_root()
+    raw_base = asset_planner.resolve_raw_base()
 
-        downloaded = 0
-        updated = 0
-        errors = 0
+    print("Checking for updates...")
 
-        if new_files:
-            print("New files available:")
-            for entry in new_files:
-                print(f"  - {entry}")
-            if prompt_yes_no(f"Download {len(new_files)} new files into {target_base}?", True):
-                for entry in new_files:
-                    url = f"{DEFAULT_RAW_REPO_URL}/{entry}"
-                    if download(url, target_base / entry):
-                        downloaded += 1
-                    else:
-                        errors += 1
-        else:
-            print("No new files to download.")
+    try:
+        # Use the planner to check for available updates
+        updates_available, errors = asset_planner.check_for_updates(
+            project_root,
+            repo_root=repo_root,
+            raw_base=raw_base,
+        )
+    except Exception as exc:
+        print(f"ERROR: Failed to check for updates: {exc}", file=sys.stderr)
+        return 1
 
-        if existing_files and prompt_yes_no("Check for updates to existing files?", False):
-            update_files: List[str] = []
-            for entry in existing_files:
-                temp_file = temp_root / entry
-                url = f"{DEFAULT_RAW_REPO_URL}/{entry}"
-                if download(url, temp_file):
-                    dest = target_base / entry
-                    if not dest.exists() or not filecmp.cmp(temp_file, dest, shallow=False):
-                        update_files.append(entry)
-                else:
-                    errors += 1
+    if errors:
+        print("Errors:", file=sys.stderr)
+        for err in errors:
+            print(f"  {err}", file=sys.stderr)
+        return 1
 
-            if update_files:
-                print("Updates available:")
-                for entry in update_files:
-                    print(f"  - {entry}")
-                if prompt_yes_no(f"Overwrite {len(update_files)} existing files?", False):
-                    for entry in update_files:
-                        temp_file = temp_root / entry
-                        dest = target_base / entry
-                        dest.parent.mkdir(parents=True, exist_ok=True)
-                        try:
-                            dest.write_bytes(temp_file.read_bytes())
-                            updated += 1
-                        except Exception as exc:
-                            print(f"WARNING: Failed to overwrite {entry}: {exc}")
-                            errors += 1
-            else:
-                print("No updates found for existing files.")
+    if not updates_available:
+        print("No updates available.")
+        return 0
 
-        print("Update complete.")
-        print(f"  New files downloaded: {downloaded}")
-        print(f"  Existing files updated: {updated}")
-        if errors:
-            print(f"  Warnings: {errors}")
+    # Group updates by type for display
+    by_category = {}
+    for plan in updates_available:
+        category = plan.entry.rel_path.split("/")[0] if "/" in plan.entry.rel_path else "other"
+        by_category.setdefault(category, []).append(plan)
 
+    print(f"\nUpdates available ({len(updates_available)} files):")
+    for category in sorted(by_category.keys()):
+        print(f"\n  {category}:")
+        for plan in sorted(by_category[category], key=lambda p: p.entry.rel_path):
+            print(f"    - {plan.entry.rel_path}")
+
+    # Prompt for confirmation
+    if not prompt_yes_no(f"\nUpdate {len(updates_available)} files?", default_yes=True):
+        print("Update cancelled.")
+        return 0
+
+    # Execute the updates
+    print("\nUpdating...")
+    result = asset_planner.update_assets(
+        project_root,
+        repo_root=repo_root,
+        raw_base=raw_base,
+    )
+
+    # Report results
+    if result.updated > 0:
+        print(f"\nUpdated {result.updated} files.")
+    if result.skipped > 0:
+        print(f"Skipped {result.skipped} files (no changes).")
+    if result.errors > 0:
+        print(f"\nErrors ({result.errors}):", file=sys.stderr)
+        for detail in result.error_details:
+            print(f"  {detail}", file=sys.stderr)
+        return 1
+
+    print("\nUpdate complete.")
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="tf new update")
+    """Build argument parser for update command."""
+    parser = argparse.ArgumentParser(description="Update TF workflow assets")
     parser.add_argument("--project", help="Operate on project at <path>")
-    parser.add_argument("--global", dest="global_install", action="store_true", help="Use ~/.pi/agent (default)")
+    parser.add_argument(
+        "--global",
+        dest="global_install",
+        action="store_true",
+        help="Use ~/.pi/agent (default if no project)",
+    )
     return parser
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    """Main entry point for update command."""
     parser = build_parser()
     args = parser.parse_args(argv)
-    target_base = resolve_target_base(args)
-    if not target_base.exists():
-        target_base.mkdir(parents=True, exist_ok=True)
-    return update_assets(target_base)
+    return run_update(args)
 
 
 if __name__ == "__main__":

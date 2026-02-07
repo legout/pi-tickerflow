@@ -1403,11 +1403,18 @@ track_file() {
 }
 
 # Version checking helpers for doctor
+
+# Read version from package.json
 get_package_version() {
   local project_root="$1"
   local package_file="$project_root/package.json"
   
   if [ ! -f "$package_file" ]; then
+    return 0
+  fi
+  
+  # Check python3 is available before trying to use it
+  if ! command -v python3 >/dev/null 2>&1; then
     return 0
   fi
   
@@ -1419,6 +1426,7 @@ try:
     with open(sys.argv[1], "r", encoding="utf-8") as f:
         data = json.load(f)
     version = data.get("version")
+    # Strict validation: must be a non-empty string
     if isinstance(version, str) and version.strip():
         print(version.strip())
 except Exception:
@@ -1426,11 +1434,117 @@ except Exception:
 PY
 ) 2>/dev/null || true
   
+  # Only output if version is non-empty
   if [ -n "$version" ]; then
     echo "$version"
   fi
 }
 
+# Read version from pyproject.toml (PEP 621: version in [project] section)
+get_pyproject_version() {
+  local project_root="$1"
+  local pyproject_file="$project_root/pyproject.toml"
+  
+  if [ ! -f "$pyproject_file" ]; then
+    return 0
+  fi
+  
+  # Check python3 is available before trying to use it
+  if ! command -v python3 >/dev/null 2>&1; then
+    return 0
+  fi
+  
+  local version
+  version=$(python3 - "$pyproject_file" <<'PY'
+import sys
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as f:
+        content = f.read()
+    # Look for version in [project] section
+    # Handles: version = "value", version='value', and dotted keys project.version
+    import re
+    # Match [project] section content until next section
+    project_match = re.search(r'\[project\][^\[]*', content)
+    if project_match:
+        project_section = project_match.group(0)
+        # Try standard version = "x.y.z" first
+        version_match = re.search(r'^\s*version\s*=\s*["\']([^"\']+)["\']', project_section, re.MULTILINE)
+        if version_match:
+            version = version_match.group(1).strip()
+            if version:
+                print(version)
+                sys.exit(0)
+        # Try dotted key project.version
+        dotted_match = re.search(r'^\s*project\.version\s*=\s*["\']([^"\']+)["\']', project_section, re.MULTILINE)
+        if dotted_match:
+            version = dotted_match.group(1).strip()
+            if version:
+                print(version)
+                sys.exit(0)
+except Exception:
+    pass
+PY
+) 2>/dev/null || true
+  
+  # Only output if version is non-empty (handles version = "")
+  if [ -n "$version" ]; then
+    echo "$version"
+  fi
+}
+
+# Read version from Cargo.toml (version in [package] section)
+get_cargo_version() {
+  local project_root="$1"
+  local cargo_file="$project_root/Cargo.toml"
+  
+  if [ ! -f "$cargo_file" ]; then
+    return 0
+  fi
+  
+  # Check python3 is available before trying to use it
+  if ! command -v python3 > /dev/null 2>&1; then
+    return 0
+  fi
+  
+  local version
+  version=$(python3 - "$cargo_file" <<'PY'
+import sys
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as f:
+        content = f.read()
+    # Look for version in [package] section
+    # Handles: version = "value", version='value', and dotted keys package.version
+    import re
+    # Match [package] section content until next section
+    package_match = re.search(r'\[package\][^\[]*', content)
+    if package_match:
+        package_section = package_match.group(0)
+        # Try standard version = "x.y.z" first
+        version_match = re.search(r'^\s*version\s*=\s*["\']([^"\']+)["\']', package_section, re.MULTILINE)
+        if version_match:
+            version = version_match.group(1).strip()
+            if version:
+                print(version)
+                sys.exit(0)
+        # Try dotted key package.version
+        dotted_match = re.search(r'^\s*package\.version\s*=\s*["\']([^"\']+)["\']', package_section, re.MULTILINE)
+        if dotted_match:
+            version = dotted_match.group(1).strip()
+            if version:
+                print(version)
+                sys.exit(0)
+except Exception:
+    pass
+PY
+) 2>/dev/null || true
+  
+  # Only output if version is non-empty (handles version = "")
+  if [ -n "$version" ]; then
+    echo "$version"
+  fi
+}
+
+# Read version from VERSION file
 get_version_file_version() {
   local project_root="$1"
   local version_file="$project_root/VERSION"
@@ -1447,83 +1561,256 @@ get_version_file_version() {
   fi
 }
 
+# Get version from current git tag (if on a tagged commit)
+get_git_tag_version() {
+  local project_root="$1"
+  
+  if ! command -v git >/dev/null 2>&1; then
+    return 0
+  fi
+  
+  local tag
+  tag=$(cd "$project_root" 2>/dev/null && git describe --tags --exact-match 2>/dev/null) || true
+  
+  if [ -n "$tag" ]; then
+    # Normalize tag (strip v/V prefix)
+    echo "$tag" | sed 's/^[vV]//'
+  fi
+}
+
+# Normalize version by stripping leading v or V
 normalize_version() {
   local version="$1"
-  # Strip leading v or V
   echo "$version" | sed 's/^[vV]//'
 }
 
+# Sync VERSION file to match canonical version
 sync_version_file() {
   local project_root="$1"
-  local package_version="$2"
+  local canonical_version="$2"
   local version_file="$project_root/VERSION"
   
-  printf '%s\n' "$package_version" > "$version_file"
+  printf '%s\n' "$canonical_version" > "$version_file"
 }
 
+# Detect versions from all available manifests
+# Sets global variables: _canonical_version, _found_manifests, _manifest_versions
+detect_manifest_versions() {
+  local project_root="$1"
+  
+  local pyproject_version
+  pyproject_version=$(get_pyproject_version "$project_root")
+  local cargo_version
+  cargo_version=$(get_cargo_version "$project_root")
+  local package_version
+  package_version=$(get_package_version "$project_root")
+  
+  _found_manifests=""
+  _manifest_versions=""
+  _canonical_version=""
+  
+  if [ -f "$project_root/pyproject.toml" ]; then
+    _found_manifests="pyproject.toml"
+    if [ -n "$pyproject_version" ]; then
+      _manifest_versions="pyproject.toml:$pyproject_version"
+      _canonical_version="$pyproject_version"
+    else
+      _manifest_versions="pyproject.toml:invalid"
+    fi
+  fi
+  
+  if [ -f "$project_root/Cargo.toml" ]; then
+    if [ -n "$_found_manifests" ]; then
+      _found_manifests="$_found_manifests Cargo.toml"
+    else
+      _found_manifests="Cargo.toml"
+    fi
+    if [ -n "$cargo_version" ]; then
+      if [ -n "$_manifest_versions" ]; then
+        _manifest_versions="$_manifest_versions|Cargo.toml:$cargo_version"
+      else
+        _manifest_versions="Cargo.toml:$cargo_version"
+      fi
+      if [ -z "$_canonical_version" ]; then
+        _canonical_version="$cargo_version"
+      fi
+    else
+      if [ -n "$_manifest_versions" ]; then
+        _manifest_versions="$_manifest_versions|Cargo.toml:invalid"
+      else
+        _manifest_versions="Cargo.toml:invalid"
+      fi
+    fi
+  fi
+  
+  if [ -f "$project_root/package.json" ]; then
+    if [ -n "$_found_manifests" ]; then
+      _found_manifests="$_found_manifests package.json"
+    else
+      _found_manifests="package.json"
+    fi
+    if [ -n "$package_version" ]; then
+      if [ -n "$_manifest_versions" ]; then
+        _manifest_versions="$_manifest_versions|package.json:$package_version"
+      else
+        _manifest_versions="package.json:$package_version"
+      fi
+      if [ -z "$_canonical_version" ]; then
+        _canonical_version="$package_version"
+      fi
+    else
+      if [ -n "$_manifest_versions" ]; then
+        _manifest_versions="$_manifest_versions|package.json:invalid"
+      else
+        _manifest_versions="package.json:invalid"
+      fi
+    fi
+  fi
+}
+
+# Check version consistency across all sources
 check_version_consistency() {
   local project_root="$1"
   local fix="$2"
   local dry_run="$3"
-  local package_file="$project_root/package.json"
   
-  local package_version
-  package_version=$(get_package_version "$project_root")
   local version_file_version
   version_file_version=$(get_version_file_version "$project_root")
+  local git_tag_version
+  git_tag_version=$(get_git_tag_version "$project_root")
   
-  # If no package.json, nothing to check
-  if [ ! -f "$package_file" ]; then
-    echo "[info] No package.json found, skipping version check"
+  # Detect all manifest versions (sets global _canonical_version, _found_manifests, _manifest_versions)
+  detect_manifest_versions "$project_root"
+  
+  local canonical_version="$_canonical_version"
+  local found_manifests="$_found_manifests"
+  local manifest_versions="$_manifest_versions"
+  
+  # If no package manifests found, nothing to check
+  if [ -z "$found_manifests" ]; then
+    echo "[info] No package manifests found (pyproject.toml, Cargo.toml, package.json), skipping version check"
     return 0
   fi
   
-  # If package.json exists but version is invalid/missing
-  if [ -z "$package_version" ]; then
-    echo "[info] package.json found but version field is missing or invalid"
+  # If manifests exist but none have valid versions
+  if [ -z "$canonical_version" ]; then
+    echo "[info] Package manifest(s) found but no valid version field"
+    # Parse pipe-delimited manifest versions
+    local IFS='|'
+    for entry in $manifest_versions; do
+      if [ -n "$entry" ]; then
+        local manifest_name
+        manifest_name=$(echo "$entry" | cut -d: -f1)
+        local version_val
+        version_val=$(echo "$entry" | cut -d: -f2-)
+        echo "       - $manifest_name: $version_val"
+      fi
+    done
     return 0
   fi
   
-  echo "[ok] package.json version: $package_version"
+  # Report found manifests and their versions
+  local first_manifest=""
+  local IFS='|'
+  for entry in $manifest_versions; do
+    if [ -n "$entry" ]; then
+      local manifest_name
+      manifest_name=$(echo "$entry" | cut -d: -f1)
+      local version_val
+      version_val=$(echo "$entry" | cut -d: -f2-)
+      if [ -z "$first_manifest" ]; then
+        first_manifest="$manifest_name"
+      fi
+      if [ "$version_val" = "invalid" ]; then
+        echo "[info] $manifest_name: version field missing or invalid"
+      else
+        echo "[ok] $manifest_name version: $version_val"
+      fi
+    fi
+  done
+  
+  # Check for version mismatches between manifests
+  local manifest_count
+  manifest_count=$(echo "$found_manifests" | wc -w)
+  if [ "$manifest_count" -gt 1 ]; then
+    local normalized_canonical
+    normalized_canonical=$(normalize_version "$canonical_version")
+    local mismatches=""
+    
+    for entry in $manifest_versions; do
+      if [ -n "$entry" ]; then
+        local manifest_name
+        manifest_name=$(echo "$entry" | cut -d: -f1)
+        local version_val
+        version_val=$(echo "$entry" | cut -d: -f2-)
+        if [ "$version_val" != "invalid" ]; then
+          local normalized_version
+          normalized_version=$(normalize_version "$version_val")
+          if [ "$normalized_version" != "$normalized_canonical" ]; then
+            mismatches="$mismatches
+       Mismatch: $manifest_name = $version_val"
+          fi
+        fi
+      fi
+    done
+    
+    if [ -n "$mismatches" ]; then
+      echo "[warn] Version mismatch between package manifests:"
+      echo "       Canonical (first valid): $first_manifest = $canonical_version"
+      printf '%s\n' "$mismatches"
+      echo "       Consider aligning versions across all manifests"
+    fi
+  fi
+  
+  # Check git tag consistency if on a tagged commit
+  if [ -n "$git_tag_version" ]; then
+    local normalized_canonical
+    normalized_canonical=$(normalize_version "$canonical_version")
+    if [ "$git_tag_version" != "$normalized_canonical" ]; then
+      echo "[warn] Git tag ($git_tag_version) does not match $first_manifest ($canonical_version)"
+      echo "       This may indicate a version mismatch in the release"
+    else
+      echo "[ok] Git tag matches: $git_tag_version"
+    fi
+  fi
   
   # Check VERSION file consistency if it exists
+  local check_failed=0
   if [ -n "$version_file_version" ]; then
-    local normalized_package
-    normalized_package=$(normalize_version "$package_version")
+    local normalized_canonical
+    normalized_canonical=$(normalize_version "$canonical_version")
     local normalized_file
     normalized_file=$(normalize_version "$version_file_version")
     
-    if [ "$normalized_file" != "$normalized_package" ]; then
+    if [ "$normalized_file" != "$normalized_canonical" ]; then
       if [ "$dry_run" = "true" ]; then
-        echo "[dry-run] Would update VERSION file from $version_file_version to $package_version"
-        return 1
+        echo "[dry-run] Would update VERSION file from $version_file_version to $canonical_version"
+        check_failed=1
       elif [ "$fix" = "true" ]; then
-        sync_version_file "$project_root" "$package_version"
-        echo "[fixed] VERSION file updated from $version_file_version to $package_version"
-        return 0
+        sync_version_file "$project_root" "$canonical_version"
+        echo "[fixed] VERSION file updated from $version_file_version to $canonical_version"
       else
-        echo "[warn] VERSION file ($version_file_version) does not match package.json ($package_version)"
+        echo "[warn] VERSION file ($version_file_version) does not match $first_manifest ($canonical_version)"
         echo "       To fix: run 'tf doctor --fix' or update VERSION file manually"
-        return 1
+        check_failed=1
       fi
     else
-      echo "[ok] VERSION file matches package.json: $version_file_version"
-      return 0
+      echo "[ok] VERSION file matches: $version_file_version"
     fi
   else
     # VERSION file doesn't exist
     if [ "$dry_run" = "true" ]; then
-      echo "[dry-run] Would create VERSION file with version $package_version"
-      return 1
+      echo "[dry-run] Would create VERSION file with version $canonical_version"
+      check_failed=1
     elif [ "$fix" = "true" ]; then
-      sync_version_file "$project_root" "$package_version"
-      echo "[fixed] VERSION file created with version $package_version"
-      return 0
+      sync_version_file "$project_root" "$canonical_version"
+      echo "[fixed] VERSION file created with version $canonical_version"
     else
       echo "[info] No VERSION file found (optional)"
-      return 0
     fi
   fi
+  
+  return "$check_failed"
 }
 
 doctor() {
