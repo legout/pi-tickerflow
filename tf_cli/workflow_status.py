@@ -1,11 +1,16 @@
 """Workflow status utility - quick overview of IRF workflow state."""
 from __future__ import annotations
 
-import os
-import subprocess
+import logging
+import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Optional
+
+# Use existing frontmatter pattern from ticket_loader
+FRONTMATTER_PATTERN = re.compile(r"^---\s*\r?\n(.*?)\r?\n---\s*\r?\n(.*)$", re.DOTALL)
+
+logger = logging.getLogger(__name__)
 
 
 class WorkflowStats(NamedTuple):
@@ -26,6 +31,35 @@ class WorkflowStatus:
     config_exists: bool
 
 
+def _parse_frontmatter_status(content: str) -> tuple[str, list[str]] | None:
+    """Extract status and deps from frontmatter using proper regex.
+    
+    Returns:
+        Tuple of (status, deps_list) or None if no frontmatter found.
+    """
+    match = FRONTMATTER_PATTERN.match(content)
+    if not match:
+        return None
+    
+    frontmatter = match.group(1)
+    status = "unknown"
+    deps: list[str] = []
+    
+    for line in frontmatter.split("\n"):
+        line = line.strip()
+        if line.startswith("status:"):
+            status = line.split(":", 1)[1].strip()
+        elif line.startswith("deps:"):
+            value = line.split(":", 1)[1].strip()
+            if value.startswith("[") and value.endswith("]"):
+                # Parse [item1, item2]
+                deps = [d.strip().strip('"\'') for d in value[1:-1].split(",") if d.strip()]
+            elif value == "[]":
+                deps = []
+    
+    return status, deps
+
+
 def count_tickets_by_status(tickets_dir: Path) -> dict[str, int]:
     """Count tickets by their status from frontmatter."""
     counts = {"open": 0, "ready": 0, "in_progress": 0, "closed": 0}
@@ -35,17 +69,26 @@ def count_tickets_by_status(tickets_dir: Path) -> dict[str, int]:
     
     for ticket_file in tickets_dir.glob("*.md"):
         try:
-            content = ticket_file.read_text()
-            # Simple frontmatter parsing
-            if "status: open" in content:
-                if "deps: []" in content or "deps:" not in content:
-                    counts["ready"] += 1
+            # Read only first 2KB for frontmatter (efficient)
+            content = ticket_file.read_bytes()[:2048].decode("utf-8", errors="ignore")
+            
+            parsed = _parse_frontmatter_status(content)
+            if parsed is None:
+                continue
+                
+            status, deps = parsed
+            
+            if status == "open":
                 counts["open"] += 1
-            elif "status: closed" in content:
+                # Ready = open with no unresolved dependencies
+                if len(deps) == 0:
+                    counts["ready"] += 1
+            elif status == "closed":
                 counts["closed"] += 1
-            elif "status: in_progress" in content:
+            elif status == "in_progress":
                 counts["in_progress"] += 1
-        except Exception:
+        except (IOError, OSError) as e:
+            logger.warning(f"Could not read ticket {ticket_file.name}: {e}")
             continue
     
     return counts
@@ -65,20 +108,27 @@ def get_knowledge_entries(knowledge_dir: Path) -> int:
     return entries
 
 
+def _resolve_project_root(cwd: Path | None = None) -> Path:
+    """Find project root by looking for .tf directory.
+    
+    Uses the same pattern as TicketLoader._resolve_tickets_dir().
+    """
+    cwd = cwd or Path.cwd()
+    for parent in [cwd, *cwd.parents]:
+        if (parent / ".tf").is_dir():
+            return parent
+    return cwd
+
+
 def get_workflow_status(project_root: Path | str | None = None) -> WorkflowStatus:
     """Get complete workflow status for the project."""
     if project_root is None:
-        # Try to find project root by looking for .tf directory
-        cwd = Path.cwd()
-        project_root = cwd
-        while project_root != project_root.parent:
-            if (project_root / ".tf").exists():
-                break
-            project_root = project_root.parent
+        project_root = _resolve_project_root()
     
     project_root = Path(project_root)
     tf_dir = project_root / ".tf"
-    tickets_dir = tf_dir / "tickets"
+    # Tickets are in .tickets/ at project root, not .tf/tickets/
+    tickets_dir = project_root / ".tickets"
     knowledge_dir = tf_dir / "knowledge"
     ralph_dir = tf_dir / "ralph"
     
