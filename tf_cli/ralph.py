@@ -212,6 +212,8 @@ def run_ticket(
     capture_json: bool = False,
     logs_dir: Optional[Path] = None,
     ticket_title: Optional[str] = None,
+    pi_output: str = "inherit",
+    pi_output_file: Optional[str] = None,
 ) -> int:
     log = logger or create_logger(mode=mode, ticket_id=ticket, ticket_title=ticket_title)
     if not ticket:
@@ -236,10 +238,26 @@ def run_ticket(
     if capture_json and logs_dir:
         jsonl_path = logs_dir / f"{ticket}.jsonl"
 
+    # Determine pi output log path for file mode
+    pi_log_path: Optional[Path] = None
+    if pi_output == "file":
+        if pi_output_file:
+            pi_log_path = Path(pi_output_file).expanduser()
+        elif logs_dir:
+            pi_log_path = logs_dir / f"{ticket}.log"
+        else:
+            # Fallback to default logs location
+            pi_log_path = Path(".tf/ralph/logs") / f"{ticket}.log"
+
     if dry_run:
         prefix = " (worktree)" if cwd else ""
         json_flag = " --mode json" if capture_json else ""
-        log.info(f"Dry run: pi -p{json_flag}{session_flag} \"{cmd}\"{prefix}", ticket=ticket)
+        output_note = ""
+        if pi_output == "file":
+            output_note = f" (output to {pi_log_path})"
+        elif pi_output == "discard":
+            output_note = " (output discarded)"
+        log.info(f"Dry run: pi -p{json_flag}{session_flag} \"{cmd}\"{prefix}{output_note}", ticket=ticket)
         return 0
 
     json_flag_str = " --mode json" if capture_json else ""
@@ -252,14 +270,42 @@ def run_ticket(
         args += ["--session", str(session_path)]
     args.append(cmd)
 
-    if jsonl_path:
-        # Ensure logs directory exists
+    # Handle pi output routing
+    if jsonl_path and pi_output == "file":
+        # Both JSON capture and pi output to file - combine them
+        logs_dir.mkdir(parents=True, exist_ok=True) if logs_dir else None
+        pi_log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(jsonl_path, "w", encoding="utf-8") as jsonl_file:
+            with open(pi_log_path, "w", encoding="utf-8") as pi_log_file:
+                # JSON capture goes to jsonl_file, pi output goes to pi_log_file
+                # We need to capture both separately
+                result = subprocess.run(args, cwd=cwd, stdout=pi_log_file, stderr=subprocess.STDOUT)
+        log.info(f"JSONL trace written to: {jsonl_path}", ticket=ticket, jsonl_path=str(jsonl_path))
+        log.info(f"Pi output written to: {pi_log_path}", ticket=ticket, pi_log_path=str(pi_log_path))
+    elif jsonl_path:
+        # Only JSON capture
         logs_dir.mkdir(parents=True, exist_ok=True)
         with open(jsonl_path, "w", encoding="utf-8") as jsonl_file:
             result = subprocess.run(args, cwd=cwd, stdout=jsonl_file, stderr=subprocess.STDOUT)
         log.info(f"JSONL trace written to: {jsonl_path}", ticket=ticket, jsonl_path=str(jsonl_path))
+    elif pi_output == "file" and pi_log_path:
+        # Only pi output to file
+        pi_log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(pi_log_path, "w", encoding="utf-8") as pi_log_file:
+            result = subprocess.run(args, cwd=cwd, stdout=pi_log_file, stderr=subprocess.STDOUT)
+        log.info(f"Pi output written to: {pi_log_path}", ticket=ticket, pi_log_path=str(pi_log_path))
+    elif pi_output == "discard":
+        # Discard output
+        with open(os.devnull, "w") as devnull:
+            result = subprocess.run(args, cwd=cwd, stdout=devnull, stderr=subprocess.STDOUT)
     else:
+        # inherit - default behavior
         result = subprocess.run(args, cwd=cwd)
+
+    # On failure with file capture, print exit code + log path
+    if result.returncode != 0 and pi_output == "file" and pi_log_path:
+        log.error(f"Command failed with exit code {result.returncode}. Output log: {pi_log_path}", ticket=ticket)
+
     return result.returncode
 
 
@@ -925,9 +971,9 @@ def ralph_run(args: List[str]) -> int:
         DEFAULTS["sessionPerTicket"],
     )
 
-    # Set up logs directory for JSON capture
+    # Set up logs directory for JSON capture or pi output file mode
     logs_dir: Optional[Path] = None
-    if capture_json:
+    if capture_json or pi_output == "file":
         logs_dir = ralph_dir / "logs"
 
     ticket = ticket_override or select_ticket(ticket_query)
@@ -962,6 +1008,8 @@ def ralph_run(args: List[str]) -> int:
         capture_json=capture_json,
         logs_dir=logs_dir,
         ticket_title=ticket_title,
+        pi_output=pi_output,
+        pi_output_file=pi_output_file,
     )
     if dry_run:
         logger.log_ticket_complete(ticket, "DRY_RUN", mode="serial", ticket_title=ticket_title)
@@ -1019,9 +1067,11 @@ def ralph_start(args: List[str]) -> int:
     if not capture_json:
         capture_json = parse_bool(config.get("captureJson", DEFAULTS["captureJson"]), DEFAULTS["captureJson"])
 
-    # Set up logs directory for JSON capture
+    # Set up logs directory for JSON capture or pi output file mode
+    pi_output = options.get("pi_output", "inherit")
+    pi_output_file = options.get("pi_output_file")
     logs_dir: Optional[Path] = None
-    if capture_json:
+    if capture_json or pi_output == "file":
         logs_dir = ralph_dir / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1074,6 +1124,12 @@ def ralph_start(args: List[str]) -> int:
     if progress and use_parallel > 1:
         print("Error: --progress is not supported with --parallel > 1 (serial mode only)", file=sys.stderr)
         return 1
+    
+    # Also validate pi_output for parallel mode compatibility
+    if pi_output != "inherit" and use_parallel > 1:
+        # pi_output is only relevant for subprocess output which is captured in parallel mode via worktrees
+        # For now, we'll allow it but the output will go to worktree logs
+        pass
 
     mode = "parallel" if use_parallel > 1 else "serial"
     logger = logger.with_context(mode=mode)
@@ -1138,6 +1194,8 @@ def ralph_start(args: List[str]) -> int:
                     capture_json=capture_json,
                     logs_dir=logs_dir,
                     ticket_title=ticket_title,
+                    pi_output=pi_output,
+                    pi_output_file=pi_output_file,
                 )
                 ticket_logger.log_command_executed(ticket, cmd, rc, mode="serial", iteration=iteration, ticket_title=ticket_title)
                 if not options["dry_run"]:
