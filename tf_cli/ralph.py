@@ -1388,6 +1388,10 @@ def ralph_start(args: List[str]) -> int:
         if session_dir and not session_per_ticket:
             loop_session_path = session_dir / f"loop-{utc_now()}.jsonl"
 
+        # Resolve timeout and restart configuration for serial mode
+        timeout_ms = resolve_attempt_timeout_ms(config)
+        max_restarts = resolve_max_restarts(config)
+
         if use_parallel <= 1:
             # Initialize progress display if requested
             progress_display = ProgressDisplay(output=sys.stderr) if progress else None
@@ -1428,25 +1432,61 @@ def ralph_start(args: List[str]) -> int:
                     else:
                         session_path = loop_session_path
 
-                cmd = build_cmd(workflow, ticket, workflow_flags)
-                rc = run_ticket(
-                    ticket,
-                    workflow,
-                    workflow_flags,
-                    options["dry_run"],
-                    session_path=session_path,
-                    logger=ticket_logger,
-                    mode="serial",
-                    capture_json=capture_json,
-                    logs_dir=logs_dir,
-                    ticket_title=ticket_title,
-                    pi_output=pi_output,
-                    pi_output_file=pi_output_file,
-                )
-                ticket_logger.log_command_executed(ticket, cmd, rc, mode="serial", iteration=iteration, ticket_title=ticket_title)
+                # Bounded restart loop for timeout handling
+                attempt = 0
+                max_attempts = max_restarts + 1 if max_restarts > 0 else 1
+                ticket_rc = 0
+
+                while attempt < max_attempts:
+                    attempt += 1
+                    if attempt > 1:
+                        ticket_logger.info(f"Restart attempt {attempt - 1}/{max_restarts} for ticket (timeout: {timeout_ms}ms)", ticket=ticket)
+
+                    cmd = build_cmd(workflow, ticket, workflow_flags)
+                    ticket_rc = run_ticket(
+                        ticket,
+                        workflow,
+                        workflow_flags,
+                        options["dry_run"],
+                        session_path=session_path,
+                        logger=ticket_logger,
+                        mode="serial",
+                        capture_json=capture_json,
+                        logs_dir=logs_dir,
+                        ticket_title=ticket_title,
+                        pi_output=pi_output,
+                        pi_output_file=pi_output_file,
+                        timeout_ms=timeout_ms,
+                    )
+                    ticket_logger.log_command_executed(ticket, cmd, ticket_rc, mode="serial", iteration=iteration, ticket_title=ticket_title)
+
+                    if options["dry_run"]:
+                        break  # Only one attempt in dry-run mode
+
+                    # Success case - exit restart loop
+                    if ticket_rc == 0:
+                        break
+
+                    # Timeout case (-1) - restart if we haven't exceeded max_restarts
+                    if ticket_rc == -1:
+                        if attempt < max_attempts:
+                            ticket_logger.warn(f"Attempt {attempt} timed out after {timeout_ms}ms, retrying...", ticket=ticket)
+                            continue
+                        else:
+                            # Max restarts exceeded - ticket will be marked FAILED below
+                            ticket_logger.error(f"Ticket timed out after {attempt} attempt(s) (timeout: {timeout_ms}ms)", ticket=ticket)
+                            break
+                    else:
+                        # Non-timeout failure - don't restart
+                        break
+
+                # Handle final result after restart loop
                 if not options["dry_run"]:
-                    if rc != 0:
-                        error_msg = f"pi -p failed (exit {rc})"
+                    if ticket_rc != 0:
+                        if ticket_rc == -1:
+                            error_msg = f"Ticket failed after {attempt} attempt(s) due to timeout (threshold: {timeout_ms}ms)"
+                        else:
+                            error_msg = f"pi -p failed (exit {ticket_rc})"
                         # Update progress display on failure
                         if progress_display:
                             progress_display.complete_ticket(ticket, "FAILED", iteration)
@@ -1454,7 +1494,7 @@ def ralph_start(args: List[str]) -> int:
                         artifact_path = str(knowledge_dir / "tickets" / ticket)
                         ticket_logger.log_error_summary(ticket, error_msg, artifact_path=artifact_path, iteration=iteration, ticket_title=ticket_title)
                         update_state(ralph_dir, project_root, ticket, "FAILED", error_msg)
-                        return rc
+                        return ticket_rc
                     # Update progress display on success
                     if progress_display:
                         progress_display.complete_ticket(ticket, "COMPLETE", iteration)
