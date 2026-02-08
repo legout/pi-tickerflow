@@ -47,6 +47,64 @@ Follow the **TF Planning Skill** "Follow-up Creation" procedure:
    ```
 4. Write `followups.md` documenting created tickets (same directory as the review when possible)
 
+## followups.md Template
+
+When creating follow-up tickets, ALWAYS write a `followups.md` file in the ticket artifact directory. This serves as an idempotency marker for the scan command.
+
+### Standard Format (when follow-ups are created)
+
+```markdown
+# Follow-ups: {origin-ticket-id}
+
+## Origin
+- **Original Ticket:** {ticket-id}
+- **Review Path:** {path-to-review.md}
+- **Generated:** {ISO-8601-timestamp}
+
+## Created Follow-up Tickets
+
+### From Warnings
+| Ticket ID | Title | File | Line |
+|-----------|-------|------|------|
+| {id} | {title} | {file} | {line} |
+
+### From Suggestions
+| Ticket ID | Title | File | Line |
+|-----------|-------|------|------|
+| {id} | {title} | {file} | {line} |
+
+## Summary
+- {N} ticket(s) created from Warnings
+- {M} ticket(s) created from Suggestions
+- All tagged with: tf, followup, {origin-ticket-id}-followup
+```
+
+### No Follow-ups Needed Format
+
+Write this when:
+- `review.md` file is missing or cannot be found
+- Review has no Warnings section or Warnings section is empty/(none)
+- Review has no Suggestions section or Suggestions section is empty/(none)
+
+```markdown
+# Follow-ups: {origin-ticket-id}
+
+## Origin
+- **Original Ticket:** {ticket-id}
+- **Review Path:** {path-to-review.md-or-"not-found"}
+- **Generated:** {ISO-8601-timestamp}
+
+## Status
+**No Follow-ups Needed**
+
+## Details
+- Warnings found: (none)
+- Suggestions found: (none)
+
+## Rationale
+{explanation: e.g., "Review file not found at expected path" or "No actionable Warnings or Suggestions in review"}
+```
+
 ## Ticket Description Template
 
 ```markdown
