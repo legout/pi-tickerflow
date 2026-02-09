@@ -1,20 +1,29 @@
 # Chain Summary: abc-123
 
 ## Workflow Execution
-Ticket processed through full IRF (Implement-Review-Fix-Close) workflow.
+- Re-Anchor: ✅ Complete
+- Research: ✅ Skipped (already implemented)
+- Implement: ✅ Complete (Minor fix applied)
+- Reviews: ✅ Already complete (reviewed in previous runs)
+- Merge Reviews: ✅ Complete (review.md updated)
+- Fix Issues: ✅ Complete (1 Minor fix applied)
+- Close Ticket: ✅ Complete
 
 ## Artifacts
-| Artifact | Path |
-|----------|------|
-| Research | `.tf/knowledge/tickets/abc-123/research.md` |
-| Implementation | `.tf/knowledge/tickets/abc-123/implementation.md` |
-| Review (Merged) | `.tf/knowledge/tickets/abc-123/review.md` |
-| Review (General) | `.tf/knowledge/tickets/abc-123/review-general.md` |
-| Review (Spec) | `.tf/knowledge/tickets/abc-123/review-spec.md` |
-| Review (Second) | `.tf/knowledge/tickets/abc-123/review-second.md` |
-| Fixes | `.tf/knowledge/tickets/abc-123/fixes.md` |
-| Close Summary | `.tf/knowledge/tickets/abc-123/close-summary.md` |
-| Files Changed | `.tf/knowledge/tickets/abc-123/files_changed.txt` |
+| File | Description |
+|------|-------------|
+| `research.md` | Research skipped - ticket already implemented |
+| `implementation.md` | Implementation summary with test results |
+| `review.md` | Merged review from 3 reviewers |
+| `fixes.md` | Applied Minor fix documentation |
+| `close-summary.md` | This file - final closure summary |
+| `files_changed.txt` | List of files changed in this run |
+
+## Files Changed
+- `tests/test_demo_hello.py`
 
 ## Commit
-`cad7c9e` - abc-123: Workflow re-run - artifacts updated
+`6d87cd4` - abc-123: Fix CLI test pattern - pass argv directly to main() instead of patching sys.argv
+
+## Status
+CLOSED

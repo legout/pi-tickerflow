@@ -15,7 +15,7 @@ Applied Minor fix to hello-world utility test suite. Removed global sys.argv pat
 ```bash
 pytest tests/test_demo_hello.py -v
 ```
-Results: 6 passed
+Results: 6 passed (4 unit tests for hello() + 2 CLI tests)
 - test_hello_default
 - test_hello_custom_name
 - test_hello_empty_string
