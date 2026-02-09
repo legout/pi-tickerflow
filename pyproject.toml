@@ -24,10 +24,10 @@ dependencies = [
 version = {file = "VERSION"}
 
 [project.scripts]
-tf = "tf_cli.cli:main"
+tf = "tf.cli:main"
 
 [tool.setuptools]
-packages = ["tf_cli", "demo"]
+packages = ["tf", "tf_cli", "demo"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -48,7 +48,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["tf_cli"]
+source = ["tf", "tf_cli"]
 omit = [
     "*/tests/*",
     "*/test_*.py",
@@ -69,3 +69,8 @@ exclude_lines = [
 show_missing = true
 precision = 1
 fail_under = 35
+
+[dependency-groups]
+dev = [
+    "ipython>=8.18.1",
+]
