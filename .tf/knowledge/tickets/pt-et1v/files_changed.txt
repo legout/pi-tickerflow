@@ -1,0 +1,3 @@
+.tf/knowledge/tickets/pt-et1v/test_textual_serve.py
+.tf/knowledge/tickets/pt-et1v/research.md
+.tf/knowledge/tickets/pt-et1v/implementation.md
