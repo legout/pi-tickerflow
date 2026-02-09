@@ -402,18 +402,55 @@ def open_topic_doc(topic: Topic, doc_type: str) -> bool:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """Launch the Ticketflow TUI.
+    """Launch the Ticketflow TUI or web UI.
     
     Args:
-        argv: Command line arguments (unused, for API compatibility)
+        argv: Command line arguments
         
     Returns:
         Exit code (0 for success, 1 for error)
     """
+    # Parse command-line arguments
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        prog="tf ui",
+        description="Launch the Ticketflow UI (terminal or web)"
+    )
+    parser.add_argument(
+        "--web",
+        action="store_true",
+        help="Launch web UI with Sanic server"
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host to bind web server to (default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port for web server (default: 8000)"
+    )
+    
+    # Parse only known args to allow backward compatibility
+    args, _ = parser.parse_known_args(argv or sys.argv[1:])
+    
+    # If --web flag is set, launch web server
+    if args.web:
+        try:
+            from tf_cli.web_ui import run_web_server
+            return run_web_server(host=args.host, port=args.port)
+        except ImportError:
+            print("Error: Sanic is not installed. Run: pip install sanic", file=sys.stderr)
+            return 1
+    
     # Check if we're running in a TTY
+    # For web serving via textual serve, stdin/stdout are not TTYs
+    # We allow non-TTY execution as the App will handle it
     if not sys.stdin.isatty() or not sys.stdout.isatty():
-        print("Error: tf ui requires an interactive terminal (TTY)", file=sys.stderr)
-        return 1
+        sys.stderr.write("Warning: Running in non-TTY environment (web server mode)\n")
     
     try:
         from textual.app import App, ComposeResult
@@ -672,6 +709,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         assignee_filter: reactive[str] = reactive("")
         external_ref_filter: reactive[str] = reactive("")
         
+        # Description display state
+        show_full_description: reactive[bool] = reactive(False)
+        DESCRIPTION_LIMIT: int = 2500
+        
         def compose(self) -> ComposeResult:
             """Compose the ticket board layout."""
             with Horizontal():
@@ -927,15 +968,24 @@ def main(argv: Optional[list[str]] = None) -> int:
                     lines.append(f"  • {link}")
             
             lines.append("")
-            lines.append("[b]Description:[/b]")
+            lines.append("[b]Description:[/b] [dim](Press 'e' to expand/collapse)[/dim]")
             
-            # Load and display body (first 500 chars)
-            body = ticket.body[:500] if ticket.body else "(no description)"
-            if len(ticket.body) > 500:
-                body += "\n\n[i](truncated...)[/i]"
+            # Load and display body (with configurable limit)
+            if self.show_full_description:
+                body = ticket.body if ticket.body else "(no description)"
+            else:
+                limit = self.DESCRIPTION_LIMIT
+                body = ticket.body[:limit] if ticket.body else "(no description)"
+                if len(ticket.body) > limit:
+                    body += "\n\n[i](truncated... press 'e' to expand)[/i]"
             lines.append(body)
             
             content.update("\n".join(lines))
+        
+        def action_toggle_description(self) -> None:
+            """Toggle between truncated and full description view."""
+            self.show_full_description = not self.show_full_description
+            self.update_detail_view()
     
     class TicketflowApp(App):
         """Textual app for Ticketflow."""
@@ -1072,6 +1122,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             Binding("q", "quit", "Quit"),
             Binding("r", "refresh", "Refresh"),
             Binding("o", "open_doc", "Open Doc"),
+            Binding("e", "expand_desc", "Expand Desc"),
             Binding("1", "open_overview", "Overview"),
             Binding("2", "open_sources", "Sources"),
             Binding("3", "open_plan", "Plan"),
@@ -1128,6 +1179,11 @@ def main(argv: Optional[list[str]] = None) -> int:
             """Open backlog document (delegates to TopicBrowser)."""
             topic_browser = self.query_one(TopicBrowser)
             topic_browser.action_open_backlog()
+        
+        def action_expand_desc(self) -> None:
+            """Toggle full description view (delegates to TicketBoard)."""
+            ticket_board = self.query_one(TicketBoard)
+            ticket_board.action_toggle_description()
     
     app = TicketflowApp()
     app.run()
