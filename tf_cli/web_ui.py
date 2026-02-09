@@ -22,6 +22,16 @@ from markdown.extensions.toc import TocExtension
 from sanic import Sanic, response
 from jinja2 import Environment, FileSystemLoader
 
+# datastar-py imports for SSE streaming support
+try:
+    from datastar_py.sanic import datastar_respond
+    from datastar_py import ServerSentEventGenerator
+    DATASTAR_AVAILABLE = True
+except ImportError:
+    DATASTAR_AVAILABLE = False
+    datastar_respond = None
+    ServerSentEventGenerator = None
+
 from tf_cli.board_classifier import BoardClassifier, BoardColumn
 from tf_cli.ticket_loader import TicketLoader
 from tf_cli.ui import TopicIndexLoader, TopicIndexLoadError, resolve_knowledge_dir, _find_repo_root
@@ -270,6 +280,67 @@ async def refresh_board(request):
         counts=board_view.counts,
     )
     return response.html(rendered)
+
+
+@app.get("/api/stream")
+async def stream_board(request):
+    """SSE streaming endpoint for live board updates.
+    
+    Streams patch_elements events periodically to update the board
+    without requiring manual refresh. Client subscribes on page load
+    via data-init="@get('/api/stream')".
+    
+    Handles client disconnects gracefully to prevent server crashes.
+    Update frequency is conservative (2s) to avoid busy loops.
+    """
+    import asyncio
+    
+    if not DATASTAR_AVAILABLE:
+        return response.html("<p class='error'>datastar-py not available</p>", status=503)
+    
+    # Get streaming response object for SSE
+    resp = await datastar_respond(request)
+    
+    try:
+        while True:
+            # Load fresh board data
+            board_view = get_board_data()
+            
+            if board_view is not None:
+                columns = _build_columns_data(board_view)
+                
+                # Render board fragment
+                template = env.get_template("_board.html")
+                board_html = template.render(
+                    columns=columns,
+                    counts=board_view.counts,
+                )
+                
+                # Send SSE event to patch the board
+                event = ServerSentEventGenerator.patch_elements(
+                    elements=board_html,
+                    selector="#board"
+                )
+                await resp.send(event)
+            
+            # Wait before next update (conservative 2s interval)
+            await asyncio.sleep(2)
+            
+    except asyncio.CancelledError:
+        # Client disconnected - clean exit
+        pass
+    except Exception as e:
+        # Log error but don't crash the server
+        print(f"Error in stream_board: {e}", file=sys.stderr)
+        # Try to send error event if connection still open
+        try:
+            error_event = ServerSentEventGenerator.patch_elements(
+                elements=f"<p class='error'>Stream error: {e}</p>",
+                selector="#board"
+            )
+            await resp.send(error_event)
+        except Exception:
+            pass  # Connection likely closed
 
 
 @app.get("/topics")
