@@ -144,6 +144,9 @@ Verbosity Options:
 Progress Options:
   --progress, --progressbar
                     Enable progress indicator (serial mode only).
+                    Output includes a timestamp prefix (HH:MM:SS format):
+                      14:32:05 [1/5] Processing pt-abc123...
+                      14:32:15 [1/5] ✓ pt-abc123 complete
                     When used in a TTY, pi output is redirected to a log file
                     to prevent progress bar corruption.
 
