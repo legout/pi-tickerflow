@@ -6,9 +6,13 @@ Covers default parameter, custom names, and edge cases.
 
 from __future__ import annotations
 
+import sys
+from unittest.mock import patch
+
 import pytest
 
 from demo.hello import hello
+from demo.__main__ import main
 
 pytestmark = pytest.mark.unit
 
@@ -35,3 +39,27 @@ def test_hello_whitespace_only() -> None:
     """Test hello with whitespace-only string falls back to World."""
     result = hello("   ")
     assert result == "Hello, World!"
+
+
+def test_hello_whitespace_various() -> None:
+    """Test hello with various whitespace characters (tabs, newlines)."""
+    result = hello("\t\n\r")
+    assert result == "Hello, World!"
+
+
+def test_cli_default(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test CLI entry point with no arguments."""
+    with patch.object(sys, "argv", ["demo"]):
+        result = main()
+    assert result == 0
+    captured = capsys.readouterr()
+    assert "Hello, World!" in captured.out
+
+
+def test_cli_with_name(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test CLI entry point with a name argument."""
+    with patch.object(sys, "argv", ["demo", "Alice"]):
+        result = main()
+    assert result == 0
+    captured = capsys.readouterr()
+    assert "Hello, Alice!" in captured.out
