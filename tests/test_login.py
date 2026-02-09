@@ -108,15 +108,24 @@ class TestConfigureMcp:
         """Test that ZAI servers are included when key provided."""
         target_base = tmp_path / ".pi" / "agent"
         login_module.configure_mcp(target_base, zai_key="zai-key", ctx7_key="", exa_key="")
-        
+
         config = json.loads((target_base / "mcp.json").read_text())
+
+        # zai-web-search and zai-web-reader remain URL-based
         assert "zai-web-search" in config["mcpServers"]
+        assert config["mcpServers"]["zai-web-search"]["url"].startswith("https://")
+        assert config["mcpServers"]["zai-web-search"]["headers"]["Authorization"] == "Bearer zai-key"
+
         assert "zai-web-reader" in config["mcpServers"]
+        assert config["mcpServers"]["zai-web-reader"]["url"].startswith("https://")
+        assert config["mcpServers"]["zai-web-reader"]["headers"]["Authorization"] == "Bearer zai-key"
+
+        # zai-vision is command-based
         assert "zai-vision" in config["mcpServers"]
-        
-        # Check auth header
-        headers = config["mcpServers"]["zai-web-search"]["headers"]
-        assert headers["Authorization"] == "Bearer zai-key"
+        assert config["mcpServers"]["zai-vision"]["command"] == "npx"
+        assert config["mcpServers"]["zai-vision"]["args"] == ["-y", "@z_ai/mcp-server"]
+        assert config["mcpServers"]["zai-vision"]["env"]["Z_AI_API_KEY"] == "zai-key"
+        assert config["mcpServers"]["zai-vision"]["env"]["Z_AI_MODE"] == "ZAI"
 
     def test_skips_zai_servers_without_key(self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
         """Test that ZAI servers are skipped when no key."""
