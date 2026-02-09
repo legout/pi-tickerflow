@@ -11,105 +11,12 @@
     <!-- Pico.css classless (pinned to v2) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css">
     
+    <!-- Ticketflow custom styles -->
+    <link rel="stylesheet" href="/static/web-ui.css">
+    
     <style>
-        /* Design Tokens - small consistent set for the UI */
-        :root {
-            /* Surface colors */
-            --surface: #ffffff;
-            --surface-2: #f6f7f9;
-            --surface-3: #ecf0f1;
-            
-            /* Brand colors */
-            --brand-primary: #2c3e50;
-            --brand-text: #ffffff;
-            
-            /* Border & shadow */
-            --border: #e6e8ee;
-            --border-strong: #bdc3c7;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-            --shadow-md: 0 2px 4px rgba(0,0,0,0.1);
-            --shadow-lg: 0 4px 8px rgba(0,0,0,0.15);
-            
-            /* Radius */
-            --radius: 8px;
-            --radius-sm: 6px;
-            --radius-lg: 10px;
-            
-            /* Fluid spacing with clamp() - responsive without breakpoints */
-            --gap: clamp(0.75rem, 1.2vw, 1.25rem);
-            --gap-sm: clamp(0.5rem, 0.8vw, 0.75rem);
-            --gap-lg: clamp(1rem, 2vw, 2rem);
-            --pad: clamp(0.75rem, 1.5vw, 1.5rem);
-            --pad-sm: clamp(0.5rem, 1vw, 1rem);
-        }
-        
-        /* App header - distinct from Pico's semantic header styling */
-        .app-header {
-            background: var(--brand-primary);
-            color: var(--brand-text);
-            padding: var(--pad-sm) var(--gap-lg);
-            box-shadow: var(--shadow-md);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0;
-        }
-
-        .app-header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 0;
-            color: var(--brand-text);
-        }
-
-        .app-header a {
-            color: var(--brand-text);
-            text-decoration: none;
-        }
-
-        .app-nav {
-            display: flex;
-            gap: var(--gap);
-        }
-
-        .app-nav a {
-            color: var(--brand-text);
-            text-decoration: none;
-            font-size: 0.875rem;
-            padding: 0.5rem 0;
-            border-bottom: 2px solid transparent;
-            transition: border-color 0.2s;
-        }
-
-        .app-nav a:hover {
-            border-bottom-color: rgba(255,255,255,0.5);
-            background: transparent;
-        }
-
-        .app-nav a.active {
-            border-bottom-color: var(--brand-text);
-        }
-        
-        /* Main content area - wider than Pico's default container */
-        .app-main {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: var(--gap-lg);
-        }
-        
-        /* Priority badges */
-        .priority-p0 { background: #e74c3c !important; color: white !important; }
-        .priority-p1 { background: #e67e22 !important; color: white !important; }
-        .priority-p2 { background: #f39c12 !important; color: white !important; }
-        .priority-p3 { background: #3498db !important; color: white !important; }
-        .priority-p4 { background: #95a5a6 !important; color: white !important; }
-        .priority-pnone { background: #bdc3c7 !important; color: white !important; }
-        
-        /* Status indicators */
-        .status-open { color: #27ae60; }
-        .status-closed { color: #7f8c8d; }
-        .status-blocked { color: #e74c3c; }
-        
+        /* Page-specific styles can be added via extra_styles block in child templates */
+        /* This block is intentionally empty by default - styles are loaded from /static/web-ui.css */
         {% block extra_styles %}{% endblock %}
     </style>
 </head>

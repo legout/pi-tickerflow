@@ -34,8 +34,16 @@ def _find_repo_root() -> Path | None:
 
 # Get templates directory (relative to this file)
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
+_STATIC_DIR = Path(__file__).parent / "static"
+
+# Verify static directory exists at startup for better error messages
+if not _STATIC_DIR.exists():
+    print(f"Warning: Static directory does not exist: {_STATIC_DIR}", file=sys.stderr)
 
 app = Sanic("TicketflowWeb")
+
+# Serve static files (CSS, etc.) from the static directory
+app.static("/static", str(_STATIC_DIR), name="static")
 
 # Jinja2 templates with autoescape enabled for security
 env = Environment(
