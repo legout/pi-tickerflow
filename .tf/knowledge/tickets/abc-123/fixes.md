@@ -1,28 +1,31 @@
 # Fixes: abc-123
 
 ## Summary
-No fixes applied. Review found 0 Critical, 0 Major, and 1 Minor issue.
+Applied fixes for 1 Major and 2 Minor issues identified in review.
 
-## Review Counts
-- Critical: 0
-- Major: 0
-- Minor: 1
-- Warnings: 1
-- Suggestions: 1
+## Fixes Applied
 
-## Decision
-The single Minor issue (CLI whitespace handling consistency) was not fixed because:
-1. The behavior is intentional - the library function handles empty/whitespace-only strings as a specific edge case
-2. The CLI correctly passes through user input without modification
-3. Changing this would alter established behavior that users may depend on
-4. The Warning (test coverage gap) and Suggestion (new parameter) are follow-up ticket material, not fixes
+### Major (Fixed)
+- `demo/hello.py:35` - Added None handling to prevent `AttributeError`
+  - Changed: `if not name.strip():` → `if name is None or not name.strip():`
+  - This prevents runtime crash when None is passed to the function
 
-## Files Modified
-None - no fixes required.
+### Minor (Fixed)
+- `demo/hello.py:30-31` - Updated docstring to document edge case behavior
+  - Added: "Empty strings and whitespace-only strings fall back to 'World'."
+  - This clarifies the fallback behavior in the Args section
 
-## Tests Status
-All 4 tests continue to pass:
-- test_hello_default ✓
-- test_hello_custom_name ✓
-- test_hello_empty_string ✓
-- test_hello_whitespace_only ✓
+### Minor (Skipped)
+- Whitespace handling ambiguity - Intentionally preserving original behavior
+  - The current behavior (preserving internal whitespace) is acceptable for demo purposes
+  - Can be addressed in follow-up if needed
+
+## Tests
+All 4 existing tests pass after fixes:
+- test_hello_default ✅
+- test_hello_custom_name ✅
+- test_hello_empty_string ✅
+- test_hello_whitespace_only ✅
+
+## Files Changed
+- `demo/hello.py` - Fixed None handling and updated docstring

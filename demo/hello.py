@@ -28,10 +28,11 @@ def hello(name: str = "World") -> str:
 
     Args:
         name: The name to greet. Defaults to "World".
+            Empty strings and whitespace-only strings fall back to "World".
 
     Returns:
         str: A greeting string in the format "Hello, {name}!".
     """
-    if not name.strip():
+    if name is None or not name.strip():
         name = "World"
     return f"Hello, {name}!"
