@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Documentation note clarifying that `zai-vision` MCP server runs locally via `npx -y @z_ai/mcp-server` and requires Node.js/npx, while `zai-web-search` and `zai-web-reader` remain remote URL-based services.
-
 ### Changed
 
 ### Deprecated
@@ -20,6 +18,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## [0.3.0] - 2026-02-09
+
+### Added
+
+#### Web UI (Sanic + Datastar)
+- **`tf ui --web`** - Print textual serve command for browser-based UI
+- **Sanic web server** - Full web UI with Sanic and Datastar integration
+- **Kanban board view** - Interactive kanban board with drag-and-drop
+- **Topic browser** - Browse knowledge topics in web interface
+- **Ticket detail view** - Full ticket details with markdown rendering
+- **Server-side search/filter** - Real-time search using Datastar signals
+- **Live board updates** - SSE endpoint for real-time board refresh
+- **Dark mode toggle** - Toggle between light and dark themes
+- **Accessibility improvements** - ARIA labels and keyboard navigation
+- **Board stats DOM** - Datastar patching for statistics
+
+#### TUI Improvements
+- **Description expand/collapse** - Press 'e' to toggle full description view
+- **Increased description limit** - From 500 to 2500 characters
+- **Document opening keys** - Fixed TUI document opening with o, 1, 2, 3, 4 keys
+- **Terminal suspend handling** - Proper terminal restoration after opening docs
+
+#### Ralph Loop Enhancements
+- **Timestamped progress** - Timestamps in Ralph --progress output
+- **Progress total computation** - Correct total for parallel processing
+- **Improved error messages** - Better Textual import error with uv guidance
+- **Session management** - Removed --session forwarding, uses sessionDir config
+
+#### Documentation
+- **zai-vision documentation** - Clarified Node.js/npx requirement for local MCP server
+- **Ralph logging docs** - Updated for simplified sessionDir config
+- **Configuration docs** - Updated for command-based zai-vision MCP
+
+### Changed
+
+- **Config**: Updated review-spec model to gpt-5.3-codex
+- **Config**: Changed tf-plan-revise and tf-plan-review categories
+- **gitignore**: Removed .tf/ to track knowledge base artifacts
+- **Skills**: Removed obsolete Follow-ups Scan procedure from tf-planning
+
+### Fixed
+
+- Textual import error now suggests `uv run tf ui` as alternative
+- TUI document opening keys now work correctly
+- Ralph progress display shows correct totals
+
+### Security
+
+- Security audit for web-served UI styling and assets
 
 ## [0.2.0] - 2026-02-08
 
@@ -136,6 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - pytest-based test suite with coverage reporting.
 - Configuration system via `.tf/config/settings.json`.
 
-[unreleased]: https://github.com/volker/pi-tk-workflow/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/volker/pi-tk-workflow/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/volker/pi-tk-workflow/releases/tag/v0.3.0
 [0.2.0]: https://github.com/volker/pi-tk-workflow/releases/tag/v0.2.0
 [0.1.0]: https://github.com/volker/pi-tk-workflow/releases/tag/v0.1.0
