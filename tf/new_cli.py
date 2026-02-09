@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from typing import Optional, List
 
+import tf
 from tf import (
     agentsmd,
     backlog_ls,
@@ -18,12 +19,14 @@ from tf import (
     track,
     update,
 )
-from tf import get_version
 
 
 def usage() -> None:
     print(
-        """Ticketflow (new Python CLI)
+        """Ticketflow compatibility namespace (DEPRECATED)
+
+This namespace is compatibility-only in 0.4.x and will be removed in 0.5.0.
+Use `tf <command>` instead of `tf new <command>`.
 
 Usage:
   tf new agentsmd <subcommand> [path]
@@ -71,8 +74,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     if argv[0] in {"--version", "-v", "-V"}:
-        print(get_version())
+        print(tf.get_version())
         return 0
+
+    print(
+        "WARNING: `tf new` is deprecated and will be removed in 0.5.0. "
+        "Use `tf <command>`.",
+        file=sys.stderr,
+    )
 
     command = argv[0]
     rest = argv[1:]

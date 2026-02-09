@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from tf import get_version
+import tf
 
 DEFAULT_UVX_SOURCE = "git+https://github.com/legout/pi-ticketflow"
 
@@ -366,15 +366,13 @@ Commands:
   ui                Launch the interactive Kanban TUI
 
 Run 'tf <command> --help' for more information on a command.
-
-(You can also use: tf new <command> ... for the old subcommand namespace.)
 """
         )
         return 0
 
     # Handle --version/-v/-V before other commands
     if argv and argv[0] in ("--version", "-v", "-V"):
-        print(get_version())
+        print(tf.get_version())
         return 0
 
     command = argv[0]
@@ -383,7 +381,7 @@ Run 'tf <command> --help' for more information on a command.
     if command == "install":
         return install_main(rest)
 
-    # Back-compat namespace (now using tf.* imports)
+    # Back-compat namespace; deprecated and planned for removal in 0.5.0.
     if command == "new":
         from tf import new_cli
         return new_cli.main(rest)

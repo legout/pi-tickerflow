@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -135,8 +136,14 @@ def verify_package_json_version(repo_root: Optional[Path] = None) -> dict:
         ...     print(f"Version mismatch: {result['error']}")
     """
     # Resolve repo root if not provided
+    # Resolve helpers from the live module entry in sys.modules.
+    # This keeps behavior stable even when test suites reload tf_cli modules.
+    live_mod = sys.modules.get(__name__)
+    resolve_repo_root = getattr(live_mod, "_resolve_repo_root", _resolve_repo_root)
+    get_git_tag_version = getattr(live_mod, "_get_git_tag_version", _get_git_tag_version)
+
     if repo_root is None:
-        repo_root = _resolve_repo_root()
+        repo_root = resolve_repo_root()
     
     result: dict = {
         "ok": False,
@@ -169,7 +176,7 @@ def verify_package_json_version(repo_root: Optional[Path] = None) -> dict:
         return result
     
     # Get git tag version
-    git_version = _get_git_tag_version(repo_root)
+    git_version = get_git_tag_version(repo_root)
     result["git_version"] = git_version
     
     if git_version is None:
@@ -206,23 +213,30 @@ def get_version() -> str:
         >>> print(get_version())
         0.1.0
     """
+    # Resolve helpers from the live module entry in sys.modules.
+    # This keeps behavior stable even when test suites reload tf_cli modules.
+    live_mod = sys.modules.get(__name__)
+    resolve_repo_root = getattr(live_mod, "_resolve_repo_root", _resolve_repo_root)
+    read_version_file = getattr(live_mod, "_read_version_file", _read_version_file)
+    get_git_tag_version = getattr(live_mod, "_get_git_tag_version", _get_git_tag_version)
+
     # Try repo root first (for git checkouts/development)
-    repo_root = _resolve_repo_root()
+    repo_root = resolve_repo_root()
     if repo_root:
-        version = _read_version_file(repo_root / "VERSION")
+        version = read_version_file(repo_root / "VERSION")
         if version:
             return version
 
     # Try relative to this module (for pip/uvx installs)
     # This file is in tf_cli/, so VERSION is at package root (parent of tf_cli/)
     package_root = Path(__file__).resolve().parent.parent
-    version = _read_version_file(package_root / "VERSION")
+    version = read_version_file(package_root / "VERSION")
     if version:
         return version
 
     # Try git tag as third fallback (for git checkouts without VERSION file)
     if repo_root:
-        git_version = _get_git_tag_version(repo_root)
+        git_version = get_git_tag_version(repo_root)
         if git_version:
             return git_version
 

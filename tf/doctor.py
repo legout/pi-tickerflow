@@ -614,7 +614,7 @@ def run_doctor(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="tf new doctor")
+    parser = argparse.ArgumentParser(description="tf doctor")
     parser.add_argument("--project", help="Operate on project at <path>")
     parser.add_argument(
         "--fix", action="store_true", help="Auto-fix VERSION file to match canonical manifest (pyproject.toml, Cargo.toml, or package.json)"

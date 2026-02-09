@@ -5,9 +5,9 @@ shared `tf.component_classifier` module as the single source of truth for
 classification logic, ensuring consistency with `/tf-backlog` automatic tagging.
 
 Commands:
-    tf new tags-suggest - Suggest tags for a ticket or text
-    tf new tags-classify - Classify arbitrary text
-    tf new tags-keywords - Show the keyword mapping documentation
+    tf tags-suggest - Suggest tags for a ticket or text
+    tf tags-classify - Classify arbitrary text
+    tf tags-keywords - Show the keyword mapping documentation
 
 The shared classifier ensures that both `/tf-backlog` (during ticket creation)
 and `/tf-tags-suggest` (as a fallback/explicit tool) produce consistent
@@ -133,7 +133,7 @@ def run_show_keywords() -> int:
 def build_suggest_parser() -> argparse.ArgumentParser:
     """Build the argument parser for tags-suggest."""
     parser = argparse.ArgumentParser(
-        prog="tf new tags-suggest",
+        prog="tf tags-suggest",
         description="Suggest component tags for tickets using keyword classification.",
     )
     parser.add_argument(
@@ -169,7 +169,7 @@ def build_suggest_parser() -> argparse.ArgumentParser:
 def build_classify_parser() -> argparse.ArgumentParser:
     """Build the argument parser for tags-classify."""
     parser = argparse.ArgumentParser(
-        prog="tf new tags-classify",
+        prog="tf tags-classify",
         description="Classify arbitrary text and suggest component tags.",
     )
     parser.add_argument(
@@ -193,7 +193,7 @@ def build_classify_parser() -> argparse.ArgumentParser:
 def build_keywords_parser() -> argparse.ArgumentParser:
     """Build the argument parser for tags-keywords."""
     return argparse.ArgumentParser(
-        prog="tf new tags-keywords",
+        prog="tf tags-keywords",
         description="Show the keyword mapping used for component classification.",
     )
 

@@ -126,7 +126,7 @@ def init_agentsmd(target_dir: Path) -> int:
     print(f"  {agents_file}")
     size = agents_file.stat().st_size
     print(f"\nFile size: {size} bytes")
-    print("\nNext steps:\n  1. Review and customize the description\n  2. Add convention docs to docs/ folder if needed\n  3. Run 'tf new agentsmd validate' to check")
+    print("\nNext steps:\n  1. Review and customize the description\n  2. Add convention docs to docs/ folder if needed\n  3. Run 'tf agentsmd validate' to check")
 
     cl_path = target_dir / "CLAUDE.md"
     if not cl_path.exists():
@@ -147,7 +147,7 @@ def status_agentsmd(target_dir: Path) -> int:
     print("=== AGENTS.md Status ===\n")
     if not agents_file.exists():
         print(f"❌ No AGENTS.md found at: {agents_file}\n")
-        print("Create one with:\n  tf new agentsmd init")
+        print("Create one with:\n  tf agentsmd init")
         return 1
 
     size = agents_file.stat().st_size
@@ -274,7 +274,7 @@ def validate_agentsmd(target_dir: Path) -> int:
 
     print(f"Issues: {issues}, Warnings: {warnings}")
     if issues > 0:
-        print("Run 'tf new agentsmd fix' to attempt auto-fixes")
+        print("Run 'tf agentsmd fix' to attempt auto-fixes")
     return 1 if issues > 0 else 0
 
 
@@ -329,7 +329,7 @@ def fix_agentsmd(target_dir: Path) -> int:
 def update_agentsmd(target_dir: Path) -> int:
     agents_file = target_dir / "AGENTS.md"
     if not agents_file.exists():
-        print("AGENTS.md not found. Run: tf new agentsmd init")
+        print("AGENTS.md not found. Run: tf agentsmd init")
         return 1
 
     backup = agents_file.with_name(f"AGENTS.md.backup.{datetime_stamp()}")
@@ -354,7 +354,7 @@ def datetime_stamp() -> str:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="tf new agentsmd")
+    parser = argparse.ArgumentParser(description="tf agentsmd")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     init_parser = subparsers.add_parser("init")

@@ -44,7 +44,7 @@ def run_query(query: str) -> Optional[str]:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="tf new next")
+    parser = argparse.ArgumentParser(description="tf next")
     parser.add_argument("--project", help="Operate on project at <path>")
     args = parser.parse_args(argv)
 

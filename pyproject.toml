@@ -27,7 +27,11 @@ version = {file = "VERSION"}
 tf = "tf.cli:main"
 
 [tool.setuptools]
-packages = ["tf", "tf_cli", "demo"]
+packages = ["tf", "tf.web", "tf_cli", "demo"]
+
+[tool.setuptools.package-data]
+"tf.web" = ["templates/*.html", "static/*.css"]
+"tf_cli" = ["templates/*.html", "static/*.css"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Kanban Board - Ticketflow{% endblock %}
+
+{% block content %}
+<!-- The board fragment includes header and grid - updated by Datastar on refresh -->
+<!-- Subscribe to SSE stream for live updates on page load -->
+<div data-init="@get('/api/stream')">
+    {% include "_board.html" %}
+</div>
+{% endblock %}

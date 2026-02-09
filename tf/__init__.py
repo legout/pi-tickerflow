@@ -92,8 +92,8 @@ __version__ = _read_version()
 
 
 def get_version() -> str:
-    """Return the version string."""
-    return __version__
+    """Return the current version string."""
+    return _read_version()
 
 
 # Re-export ticket_factory for convenient access

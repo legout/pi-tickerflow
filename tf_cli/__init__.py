@@ -18,12 +18,9 @@ if os.environ.get("TF_CLI_DEPRECATION_WARN"):
         stacklevel=2,
     )
 
-# Keep original imports during transition period
-# In pt-tupn, the implementation will move to tf/ and these will re-export from there
+# Re-export version API from tf_cli.version for test/runtime compatibility.
 from tf_cli.version import get_version, __version__
-
-# Re-export ticket_factory for convenience
-from tf_cli.ticket_factory import (
+from tf.ticket_factory import (
     TicketDef,
     CreatedTicket,
     apply_dependencies,

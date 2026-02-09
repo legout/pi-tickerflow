@@ -144,7 +144,7 @@ def run_backlog_ls(topic_arg: Optional[str]) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="tf new backlog-ls")
+    parser = argparse.ArgumentParser(description="tf backlog-ls")
     parser.add_argument("topic", nargs="?", help="Topic id or path")
     return parser
 

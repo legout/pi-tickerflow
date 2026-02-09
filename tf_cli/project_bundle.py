@@ -1,62 +1,13 @@
-"""Project bundle installation using the canonical asset planner.
+"""Compatibility shim for deprecated tf_cli.project_bundle module.
 
-This module is now a thin wrapper around asset_planner for backward compatibility.
-New code should use asset_planner directly.
+DEPRECATED: Use 'tf.project_bundle' instead. This shim will be removed in version 0.5.0.
 """
 from __future__ import annotations
 
-from pathlib import Path
-from typing import List, Optional, Tuple
+from tf.project_bundle import *  # noqa: F401,F403
+from tf.project_bundle import compute_bundle_plan
+from tf.project_bundle import __all__ as _PROJECT_BUNDLE_ALL
 
-# Re-export from asset_planner for backward compatibility
-from .asset_planner import (
-    DEFAULT_RAW_REPO_URL,
-    DEFAULT_UVX_SOURCE,
-    ExecutionResult,
-    PlanResult,
-    find_repo_root,
-    install_bundle,
-    load_manifest,
-    plan_installation,
-    raw_base_from_source,
-    resolve_raw_base,
-)
-
-# Re-export common types
-__all__ = [
-    "DEFAULT_RAW_REPO_URL",
-    "DEFAULT_UVX_SOURCE",
-    "ExecutionResult",
-    "PlanResult",
-    "find_repo_root",
-    "install_bundle",
-    "load_manifest",
-    "plan_installation",
-    "raw_base_from_source",
-    "resolve_raw_base",
-]
-
-
-def compute_bundle_plan(project_root: Path, manifest: List[str]) -> List:
-    """Legacy compatibility: compute bundle plan (now uses asset_planner).
-
-    This function is kept for backward compatibility. New code should use
-    asset_planner.plan_installation() directly.
-    """
-    from .asset_planner import AssetEntry, AssetPlan, AssetAction, classify_asset
-
-    plan: List[AssetPlan] = []
-    for rel in manifest:
-        classified = classify_asset(rel, project_root)
-        if classified is not None:
-            dest_path, executable = classified
-            # Create a minimal AssetPlan for compatibility
-            plan.append(
-                AssetPlan(
-                    entry=AssetEntry(rel_path=rel),
-                    dest_path=dest_path,
-                    action=AssetAction.INSTALL,
-                    executable=executable,
-                )
-            )
-    return plan
+__all__ = list(_PROJECT_BUNDLE_ALL)
+if "compute_bundle_plan" not in __all__:
+    __all__.append("compute_bundle_plan")

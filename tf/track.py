@@ -22,7 +22,7 @@ def resolve_files_changed(path_arg: Optional[str]) -> Path:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="tf new track")
+    parser = argparse.ArgumentParser(description="tf track")
     parser.add_argument("path", help="File path to track")
     parser.add_argument("--file", dest="files_changed", help="Output files_changed.txt path")
     args = parser.parse_args(argv)
