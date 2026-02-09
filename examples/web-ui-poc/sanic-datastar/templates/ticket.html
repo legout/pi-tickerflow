@@ -172,16 +172,16 @@
 
 {% block content %}
 <div class="ticket-detail">
-    <button class="btn btn-secondary" data-on:click="@get('/')">
+    <button class="btn btn-secondary" data-on:click="@get('/board')">
         ← Back to Board
     </button>
-    
+
     <div class="ticket-header">
         <h1>
             <span class="ticket-id-large">{{ ticket.id }}</span>
             {{ ticket.title or '(no title)' }}
         </h1>
-        
+
         <div class="ticket-meta-bar">
             <span class="ticket-status {{ ticket.status }}">{{ ticket.status }}</span>
             <span class="ticket-priority-badge priority-p{{ ticket.priority }}">P{{ ticket.priority }}</span>
@@ -192,7 +192,7 @@
             <span>📅 {{ ticket.created }}</span>
             {% endif %}
         </div>
-        
+
         {% if ticket.tags %}
         <div class="ticket-tags">
             {% for tag in ticket.tags %}
@@ -201,16 +201,26 @@
         </div>
         {% endif %}
     </div>
-    
+
     <div class="ticket-body markdown">
-        {% if ticket.body %}
-            {# Note: In production, render markdown to HTML server-side #}
-            <pre>{{ ticket.body }}</pre>
+        {% if ticket.body_html %}
+            {{ ticket.body_html | safe }}
         {% else %}
             <p><em>No description provided.</em></p>
         {% endif %}
     </div>
-    
+
+    {% if ticket.links %}
+    <div class="ticket-links">
+        <h3>Linked Tickets</h3>
+        <ul>
+            {% for link in ticket.links %}
+            <li><a href="#" data-on:click="@get('/ticket/{{ link }}')">{{ link }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     {% if ticket.deps %}
     <div class="ticket-links">
         <h3>Dependencies</h3>
@@ -221,11 +231,9 @@
         </ul>
     </div>
     {% endif %}
-    
-    {% if ticket.external_ref %}
-    <a class="external-link" href="https://tracker.example.com/{{ ticket.id }}" target="_blank">
-        Open in external tracker →
+
+    <a class="external-link" href="/ticket/{{ ticket.id }}/web" target="_blank">
+        Open in tk web →
     </a>
-    {% endif %}
 </div>
 {% endblock %}

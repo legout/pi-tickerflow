@@ -31,6 +31,7 @@ else:
 from sanic import Sanic
 from sanic.response import html
 from jinja2 import Environment, FileSystemLoader
+import markdown
 
 from tf_cli.board_classifier import BoardClassifier, BoardColumn
 from tf_cli.ticket_loader import TicketLoader
@@ -39,6 +40,9 @@ app = Sanic("TicketflowWebDatastar")
 
 # Jinja2 templates
 env = Environment(loader=FileSystemLoader(str(Path(__file__).parent / "templates")))
+
+# Markdown extensions configuration
+MD_EXTENSIONS = ["fenced_code", "tables", "toc"]
 
 
 def get_board_data():
@@ -93,19 +97,29 @@ async def index(request):
     return html(rendered)
 
 
+@app.get("/board")
+async def board(request):
+    """Board page - same as index for Datastar navigation."""
+    return await index(request)
+
+
 @app.get("/ticket/<ticket_id>")
 async def ticket_detail(request, ticket_id: str):
     """Individual ticket detail page."""
     try:
         loader = TicketLoader()
         tickets = loader.load_all()
-        
+
         ticket_map = {t.id: t for t in tickets}
         ticket = ticket_map.get(ticket_id)
-        
+
         if not ticket:
             return html(f"<h1>Ticket {ticket_id} not found</h1>", status=404)
-        
+
+        # Render markdown body to HTML (new instance per request for thread safety)
+        md = markdown.Markdown(extensions=MD_EXTENSIONS)
+        body_html = md.convert(ticket.body) if ticket.body else ""
+
         template = env.get_template("ticket.html")
         rendered = template.render(
             ticket={
@@ -119,6 +133,7 @@ async def ticket_detail(request, ticket_id: str):
                 "links": ticket.links,
                 "external_ref": ticket.external_ref,
                 "body": ticket.body,
+                "body_html": body_html,
                 "created": ticket.created,
             }
         )
