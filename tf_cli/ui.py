@@ -1103,6 +1103,31 @@ def main(argv: Optional[list[str]] = None) -> int:
             elif active_pane and active_pane.id == "tab-tickets":
                 ticket_board = self.query_one(TicketBoard)
                 ticket_board.load_tickets()
+        
+        def action_open_doc(self) -> None:
+            """Open the first available document (delegates to TopicBrowser)."""
+            topic_browser = self.query_one(TopicBrowser)
+            topic_browser.action_open_doc()
+        
+        def action_open_overview(self) -> None:
+            """Open overview document (delegates to TopicBrowser)."""
+            topic_browser = self.query_one(TopicBrowser)
+            topic_browser.action_open_overview()
+        
+        def action_open_sources(self) -> None:
+            """Open sources document (delegates to TopicBrowser)."""
+            topic_browser = self.query_one(TopicBrowser)
+            topic_browser.action_open_sources()
+        
+        def action_open_plan(self) -> None:
+            """Open plan document (delegates to TopicBrowser)."""
+            topic_browser = self.query_one(TopicBrowser)
+            topic_browser.action_open_plan()
+        
+        def action_open_backlog(self) -> None:
+            """Open backlog document (delegates to TopicBrowser)."""
+            topic_browser = self.query_one(TopicBrowser)
+            topic_browser.action_open_backlog()
     
     app = TicketflowApp()
     app.run()
