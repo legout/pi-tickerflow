@@ -48,7 +48,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["tf", "tf_cli"]
+source = ["tf", "tf_cli", "demo"]
 omit = [
     "*/tests/*",
     "*/test_*.py",

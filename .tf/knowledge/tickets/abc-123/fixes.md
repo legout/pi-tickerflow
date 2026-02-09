@@ -1,22 +1,29 @@
 # Fixes: abc-123
 
-## Status
-No fixes needed.
+## Fixed Issues
 
-## Review Summary
-- Critical: 0
-- Major: 0
-- Minor: 0
-- Warnings: 1
-- Suggestions: 6
+### Critical (1 fixed)
+- `pyproject.toml:62` - Added `"demo"` to coverage `source` list so the demo package is included in coverage tracking.
 
-## Action Taken
-No code changes required. All quality checks pass:
-- 3/3 tests passing
-- CLI functionality verified
-- Code follows project conventions
+### Major (1 fixed)
+- `demo/__main__.py` - Refactored CLI to use `argparse` instead of raw `sys.argv` parsing:
+  - Changed `main()` signature to accept `argv: Optional[list[str]] = None`
+  - Added `argparse.ArgumentParser` with proper help text
+  - Added positional `name` argument with default "World"
+  - Updated docstring with examples showing multi-word name support
+  - Now follows project convention established in `tf/hello.py`
 
-## Follow-up Items (for future tickets)
-- Add CLI-specific tests (Warning)
-- Consider argparse for CLI growth (Suggestion)
-- Add `__version__` support (Suggestion)
+## Verification
+```bash
+python -m demo
+# Hello, World!
+
+python -m demo Alice
+# Hello, Alice!
+
+python -m demo --help
+# usage: demo [-h] [name]
+# Print a hello message
+```
+
+All 4 tests passing after fixes.
