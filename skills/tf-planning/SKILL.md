@@ -395,7 +395,7 @@ Extract `workflow.knowledgeDir` (default: `.tf/knowledge`).
 
 **Session Store API** (for implementation):
 ```python
-from tf_cli.session_store import (
+from tf.session_store import (
     load_active_session,
     archive_and_create_session,
     list_archived_sessions,
@@ -456,10 +456,10 @@ from tf_cli.session_store import (
    - Split large phases into 1-2 hour chunks
 
 7. **Create tickets** (1-2 hours each, 30 lines max):
-   - **PREFERRED**: Use `tf_cli.ticket_factory` module (see "Ticket Creation with ticket_factory Module" in Common Tool Usage) instead of writing inline scripts
+   - **PREFERRED**: Use `tf.ticket_factory` module (see "Ticket Creation with ticket_factory Module" in Common Tool Usage) instead of writing inline scripts
    - If using the module:
      ```python
-     from tf_cli.ticket_factory import TicketDef, create_tickets, score_tickets
+     from tf.ticket_factory import TicketDef, create_tickets, score_tickets
      tickets = [TicketDef(title="...", description="..."), ...]
      scored = score_tickets(tickets)
      created = create_tickets(scored, topic_id=TOPIC_ID, mode="seed")
@@ -942,14 +942,14 @@ tk create "<title>" \
 
 ### Ticket Creation with ticket_factory Module
 
-**Instead of writing inline Python scripts for ticket creation, use the `tf_cli.ticket_factory` module.** This module provides reusable functions for scoring, creating, and managing tickets during backlog generation.
+**Instead of writing inline Python scripts for ticket creation, use the `tf.ticket_factory` module.** This module provides reusable functions for scoring, creating, and managing tickets during backlog generation.
 
 **Usage Pattern:**
 
 ```python
 from __future__ import annotations
 
-from tf_cli.ticket_factory import (
+from tf.ticket_factory import (
     TicketDef,
     create_tickets,
     write_backlog_md,

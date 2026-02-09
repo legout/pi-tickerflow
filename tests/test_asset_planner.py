@@ -99,11 +99,6 @@ class TestClassifyAsset:
         result = asset_planner.classify_asset("bin/tf", tmp_path)
         assert result is None
 
-    def test_skips_legacy_script(self, tmp_path: Path) -> None:
-        """Should skip legacy shell script."""
-        result = asset_planner.classify_asset("scripts/tf_legacy.sh", tmp_path)
-        assert result is None
-
     def test_skips_manifest(self, tmp_path: Path) -> None:
         """Should skip install manifest."""
         result = asset_planner.classify_asset("config/install-manifest.txt", tmp_path)

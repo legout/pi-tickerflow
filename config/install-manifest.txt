@@ -22,6 +22,7 @@ agents/closer.md
 
 skills/tf-workflow/SKILL.md
 skills/tf-planning/SKILL.md
+skills/tf-review/SKILL.md
 skills/tf-config/SKILL.md
 skills/tf-tickets/SKILL.md
 skills/ralph/SKILL.md
@@ -29,6 +30,7 @@ skills/ralph/SKILL.md
 prompts/tf.md
 prompts/tf-next.md
 prompts/tf-plan.md
+prompts/tf-plan-chain.md
 prompts/tf-plan-consult.md
 prompts/tf-plan-revise.md
 prompts/tf-plan-review.md
@@ -50,4 +52,3 @@ config/settings.json
 config/workflows/tf/README.md
 
 scripts/tf_config.py
-scripts/tf_legacy.sh

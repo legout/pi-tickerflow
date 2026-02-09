@@ -210,6 +210,10 @@ Each reviewer uses a different meta-model:
 - `reviewer-spec-audit` → `metaModels.review-spec.model`  
 - `reviewer-second-opinion` → `metaModels.review-secop.model`
 
+Reviewer implementation note:
+- The three reviewer agents are thin wrappers over the shared `tf-review` skill.
+- Keep wrappers separate to preserve model diversity in parallel review runs.
+
 **Resolve repo root for reviewer cwd**:
 - Run `git rev-parse --show-toplevel` to get `{repoRoot}`
 - If it fails (non-git), use the current working directory

@@ -161,7 +161,7 @@ Update agent **and prompt** files from config:
 **Prompt mapping (config key → prompt file)**:
 | Config Key | Prompt File |
 |------------|-------------|
-| `models.planning` | `.pi/prompts/tf-plan.md`, `.pi/prompts/tf-plan-consult.md`, `.pi/prompts/tf-plan-revise.md`, `.pi/prompts/tf-plan-review.md`, `.pi/prompts/tf-seed.md`, `.pi/prompts/tf-backlog.md`, `.pi/prompts/tf-backlog-ls.md`, `.pi/prompts/tf-spike.md`, `.pi/prompts/tf-backlog-from-openspec.md`, `.pi/prompts/tf-baseline.md`, `.pi/prompts/tf-followups.md` |
+| `models.planning` | `.pi/prompts/tf-plan.md`, `.pi/prompts/tf-plan-chain.md`, `.pi/prompts/tf-plan-consult.md`, `.pi/prompts/tf-plan-revise.md`, `.pi/prompts/tf-plan-review.md`, `.pi/prompts/tf-seed.md`, `.pi/prompts/tf-backlog.md`, `.pi/prompts/tf-backlog-ls.md`, `.pi/prompts/tf-spike.md`, `.pi/prompts/tf-backlog-from-openspec.md`, `.pi/prompts/tf-baseline.md`, `.pi/prompts/tf-followups.md` |
 | `models.general` | `.pi/prompts/tf-next.md` |
 | `models.config` | `.pi/prompts/tf-sync.md` |
 

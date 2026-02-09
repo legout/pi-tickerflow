@@ -29,6 +29,7 @@ Follow the **IRF Config Skill** procedures:
 
 | Extension | Status | Install Command |
 |-----------|--------|-----------------|
+| pi-prompt-template-model | Required | `pi install npm:pi-prompt-template-model` |
 | pi-subagents | Required | `pi install npm:pi-subagents` |
 | pi-model-switch | Required | `pi install npm:pi-model-switch` |
 | pi-mcp-adapter | Optional | `pi install npm:pi-mcp-adapter` |
@@ -49,7 +50,7 @@ Config key → Agent file mapping:
 ### Prompt Models Updated
 
 Config key → Prompt file mapping:
-- `models.planning` → `prompts/tf-plan.md`, `prompts/tf-plan-consult.md`, `prompts/tf-plan-revise.md`, `prompts/tf-plan-review.md`, `prompts/tf-seed.md`, `prompts/tf-backlog.md`, `prompts/tf-backlog-ls.md`, `prompts/tf-spike.md`, `prompts/tf-backlog-from-openspec.md`, `prompts/tf-baseline.md`, `prompts/tf-followups.md`
+- `models.planning` → `prompts/tf-plan.md`, `prompts/tf-plan-chain.md`, `prompts/tf-plan-consult.md`, `prompts/tf-plan-revise.md`, `prompts/tf-plan-review.md`, `prompts/tf-seed.md`, `prompts/tf-backlog.md`, `prompts/tf-backlog-ls.md`, `prompts/tf-spike.md`, `prompts/tf-backlog-from-openspec.md`, `prompts/tf-baseline.md`, `prompts/tf-followups.md`
 - `models.general` → `prompts/tf-next.md`
 - `models.config` → `prompts/tf-sync.md`
 

@@ -92,6 +92,11 @@ When no session is active:
 
 ## Next Steps
 
+Chained flow (recommended when `pi-prompt-template-model` prompt chaining is available):
+```
+/tf-plan-chain <request description>
+```
+
 Run consultant and reviewer:
 ```
 /tf-plan-consult {topic-id}

@@ -212,10 +212,6 @@ def classify_asset(rel_path: str, project_root: Path) -> Optional[Tuple[Path, bo
     if rel_path == "bin/tf":
         return None
 
-    # Skip legacy shell runtime
-    if rel_path == "scripts/tf_legacy.sh":
-        return None
-
     # Skip manifest itself
     if rel_path == "config/install-manifest.txt":
         return None

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 DEFAULT_UVX_SOURCE = "git+https://github.com/legout/pi-ticketflow"
+
 
 def read_root_file(path: Path) -> str:
     try:
@@ -39,7 +41,7 @@ def find_repo_root() -> Optional[Path]:
 
     here = Path(__file__).resolve()
     candidate = here.parent.parent
-    if (candidate / "tf_cli").is_dir() and (candidate / "pyproject.toml").is_file():
+    if (candidate / "tf").is_dir() and (candidate / "pyproject.toml").is_file():
         return candidate
 
     return None
@@ -65,30 +67,21 @@ def find_uvx_source() -> Optional[str]:
     return None
 
 
-def find_legacy_script() -> Optional[Path]:
-    env_path = os.environ.get("TF_LEGACY_SCRIPT", "").strip()
-    if env_path:
-        path = Path(env_path).expanduser()
-        if path.is_file():
-            return path
-
-    cwd = Path.cwd()
-    for parent in [cwd, *cwd.parents]:
-        candidate = parent / ".tf/scripts/tf_legacy.sh"
-        if candidate.is_file():
-            return candidate
-
-    global_legacy = Path.home() / ".tf/scripts/tf_legacy.sh"
-    if global_legacy.is_file():
-        return global_legacy
-
-    repo_root = find_repo_root()
-    if repo_root:
-        candidate = repo_root / "scripts/tf_legacy.sh"
-        if candidate.is_file():
-            return candidate
-
-    return None
+def can_import_tf(python: str, env: Optional[Dict[str, str]] = None) -> bool:
+    try:
+        result = subprocess.run(
+            [
+                python,
+                "-c",
+                "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec('tf.cli') else 1)",
+            ],
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        return result.returncode == 0
+    except FileNotFoundError:
+        return False
 
 
 def exec_with_env(cmd: List[str], env: Optional[Dict[str, str]] = None) -> None:
@@ -103,27 +96,17 @@ def main() -> None:
     python = shutil.which("python3") or shutil.which("python")
 
     repo_root = find_repo_root()
-    
-    # Try local Python module first (works offline) if available
+
     if python and repo_root:
         env = os.environ.copy()
         existing = env.get("PYTHONPATH", "")
-        env["PYTHONPATH"] = (
-            f"{repo_root}{os.pathsep}{existing}" if existing else str(repo_root)
-        )
-        try:
-            exec_with_env([python, "-m", "tf_cli.cli", *args], env)
-        except FileNotFoundError:
-            pass
+        env["PYTHONPATH"] = f"{repo_root}{os.pathsep}{existing}" if existing else str(repo_root)
+        if can_import_tf(python, env):
+            exec_with_env([python, "-m", "tf.cli", *args], env)
 
-    # Try local pip install (works offline)
-    if python:
-        try:
-            exec_with_env([python, "-m", "tf_cli.cli", *args])
-        except FileNotFoundError:
-            pass
+    if python and can_import_tf(python):
+        exec_with_env([python, "-m", "tf.cli", *args])
 
-    # Try uvx with repo root
     if uvx and repo_root:
         exec_with_env(["uvx", "--from", str(repo_root), "tf", *args])
 
@@ -131,18 +114,11 @@ def main() -> None:
     if uvx and uvx_source:
         exec_with_env(["uvx", "--from", uvx_source, "tf", *args])
 
-    legacy = find_legacy_script()
-    if legacy:
-        exec_with_env(["bash", str(legacy), *args])
-
     if uvx:
         exec_with_env(["uvx", "--from", DEFAULT_UVX_SOURCE, "tf", *args])
 
-    if python:
-        exec_with_env([python, "-m", "tf_cli.cli", *args])
-
     print("ERROR: Unable to locate Ticketflow CLI runtime.", file=sys.stderr)
-    print("Install uvx or Python, or reinstall with the legacy shell script.", file=sys.stderr)
+    print("Install uvx or Python with the tf package.", file=sys.stderr)
     raise SystemExit(1)
 
 
