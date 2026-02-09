@@ -75,3 +75,54 @@
   - Summary: Add server-side search/filter using Datastar signals (read_signals)
   - Issues: Critical(0)/Major(0)/Minor(0)
   - Status: COMPLETE
+
+- pt-k2rk: COMPLETE (2026-02-09T16:31:00Z)
+  - Summary: Inventory of tf_cli packaging structure completed
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: CLOSED
+  - Commit: f9014ee
+- pt-k2rk: COMPLETE (2026-02-09T16:32:12Z)
+  - Summary: Inventory current packaging + entrypoints for tf_cli
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-mu0s: COMPLETE (2026-02-09T16:34:45Z)
+  - Summary: Define tf_cli shim + deprecation strategy (timeline + warning policy)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-62g6: COMPLETE (2026-02-09T16:36:00Z)
+  - Summary: Wired packaging/entrypoints so tf console script uses tf namespace
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: CLOSED
+  - Commit: 574e3de
+- pt-62g6: COMPLETE (2026-02-09T16:37:06Z)
+  - Summary: Wire packaging/entrypoints so tf console script uses tf namespace
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-ce2e: COMPLETE (2026-02-09T16:38:00Z)
+  - Summary: Add tf/__main__.py for python -m tf module execution
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: CLOSED
+  - Commit: c34e189
+- pt-ce2e: COMPLETE (2026-02-09T16:39:29Z)
+  - Summary: Introduce tf package skeleton + module entrypoint (python -m tf)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-hpme: COMPLETE (2026-02-09T16:47:00Z)
+  - Summary: Implement tf_cli compatibility shims with opt-in deprecation warnings
+  - Issues: Critical(2→0)/Major(5→0)/Minor(3→1)
+  - Status: COMPLETE
+  - Commit: e0b8617
+- pt-hpme: COMPLETE (2026-02-09T16:50:03Z)
+  - Summary: Implement tf_cli compatibility shims (re-export) + optional deprecation warnings
+  - Issues: Critical(2)/Major(5)/Minor(3)
+  - Status: COMPLETE
+- pt-tupn: FAILED (2026-02-09T17:05:08Z)
+  - Summary: Move CLI dispatcher + core modules from tf_cli to tf
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: FAILED
+  - Error: Ticket failed after 2 attempt(s) due to timeout (threshold: 450000ms)
+- abc-123: COMPLETE (2026-02-09T17:13:00Z)
+  - Summary: Workflow re-run for hello-world utility - artifacts updated
+  - Issues: Critical(0)/Major(0)/Minor(4)
+  - Status: COMPLETE
+  - Commit: f828181
