@@ -1,0 +1,5 @@
+.tf/knowledge/tickets/pt-qmor/implementation.md
+.tf/knowledge/tickets/pt-qmor/review.md
+.tf/knowledge/tickets/pt-qmor/fixes.md
+.tf/knowledge/tickets/pt-qmor/ticket_id.txt
+.tf/knowledge/tickets/pt-qmor/close-summary.md

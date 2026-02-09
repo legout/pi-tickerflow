@@ -1,0 +1,3 @@
+scripts/sync-version.sh
+package.json
+VERSIONING.md

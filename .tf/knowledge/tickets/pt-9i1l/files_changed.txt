@@ -1,0 +1,2 @@
+/home/volker/coding/pi-ticketflow/.pi/skills/tf-planning/SKILL.md
+/home/volker/coding/pi-ticketflow/.tf/config/settings.json

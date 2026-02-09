@@ -1,0 +1,3 @@
+prompts/tf-plan.md
+prompts/tf-seed.md
+skills/tf-planning/SKILL.md

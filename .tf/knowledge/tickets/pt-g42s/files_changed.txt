@@ -1,0 +1,3 @@
+scripts/tf_legacy.sh
+tf_cli/cli.py
+docs/deprecation-policy.md

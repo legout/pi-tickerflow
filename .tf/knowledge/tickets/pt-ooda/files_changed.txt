@@ -1,0 +1,6 @@
+.tf/knowledge/tickets/pt-ooda/research.md
+.tf/knowledge/tickets/pt-ooda/test_doc_opening.sh
+.tf/knowledge/tickets/pt-ooda/test_results.md
+.tf/knowledge/tickets/pt-ooda/ticket_id.txt
+.tf/knowledge/tickets/pt-ooda/files_changed.txt
+.tf/knowledge/tickets/pt-ooda/implementation.md

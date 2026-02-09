@@ -1,0 +1,2 @@
+docs/configuration.md
+CHANGELOG.md

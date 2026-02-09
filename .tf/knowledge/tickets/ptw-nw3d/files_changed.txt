@@ -1,0 +1,2 @@
+tf_cli/version.py
+tests/test_version.py

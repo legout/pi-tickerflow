@@ -1,0 +1,4 @@
+tf_cli/cli.py
+scripts/tf_legacy.sh
+tests/test_cli_version.py
+/home/volker/coding/pi-ticketflow/tf_cli/cli.py

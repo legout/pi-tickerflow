@@ -1,0 +1,6 @@
+/home/volker/coding/pi-ticketflow/docs/archive/CLEANUP_PLAN.md
+/home/volker/coding/pi-ticketflow/docs/archive/CRITICAL_REVIEW_AND_CLEANUP_PLAN.md
+/home/volker/coding/pi-ticketflow/docs/archive/proposal-irf-improvements.md
+/home/volker/coding/pi-ticketflow/docs/archive/research.md
+/home/volker/coding/pi-ticketflow/docs/archive/reviewer-subagent-failure-report.md
+/home/volker/coding/pi-ticketflow/docs/archive/ARCHIVE_INDEX.md

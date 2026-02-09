@@ -1,0 +1,6 @@
+scripts/guardrails.py
+scripts/install-guardrails.sh
+.github/workflows/ci.yml
+docs/guardrails.md
+.tf/knowledge/tickets/pt-1vz2/research.md
+.tf/knowledge/tickets/pt-1vz2/implementation.md

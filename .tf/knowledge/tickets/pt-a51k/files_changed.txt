@@ -1,0 +1,4 @@
+tf_cli/frontmatter.py
+tf_cli/sync_new.py
+scripts/tf_config.py
+.tf/scripts/tf_config.py

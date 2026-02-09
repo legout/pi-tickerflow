@@ -1,0 +1,8 @@
+examples/web-ui-poc/textual-web/serve.toml
+examples/web-ui-poc/textual-web/README.md
+examples/web-ui-poc/fastapi-htmx/web_app.py
+examples/web-ui-poc/fastapi-htmx/templates/base.html
+examples/web-ui-poc/fastapi-htmx/templates/index.html
+examples/web-ui-poc/fastapi-htmx/templates/_board.html
+examples/web-ui-poc/fastapi-htmx/templates/ticket.html
+examples/web-ui-poc/fastapi-htmx/README.md

@@ -1,0 +1,3 @@
+examples/web-ui-poc/sanic-datastar/requirements.txt
+examples/web-ui-poc/sanic-datastar/web_app.py
+examples/web-ui-poc/sanic-datastar/templates/ticket.html

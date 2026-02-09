@@ -1,0 +1,3 @@
+.pi/prompts/tf-followups-scan.md
+prompts/tf-followups-scan.md
+.tf/config/settings.json

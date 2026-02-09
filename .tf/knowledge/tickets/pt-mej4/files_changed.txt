@@ -1,0 +1,6 @@
+tests/test_setup.py
+tests/test_login.py
+tests/test_tags_suggest.py
+tests/test_seed_cli.py
+tests/test_agentsmd.py
+pyproject.toml
