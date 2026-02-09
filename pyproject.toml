@@ -15,7 +15,7 @@ version = {file = "VERSION"}
 tf = "tf_cli.cli:main"
 
 [tool.setuptools]
-packages = ["tf_cli"]
+packages = ["tf_cli", "demo"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
