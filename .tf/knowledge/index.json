@@ -2,7 +2,7 @@
   "topics": [
     {
       "id": "plan-auto-planning-sessions-linkage",
-      "title": "Automatic planning sessions for seed\u2194spike\u2194plan\u2194backlog linkage",
+      "title": "Automatic planning sessions for seed↔spike↔plan↔backlog linkage",
       "keywords": [
         "planning-session",
         "auto-linking",
@@ -78,7 +78,7 @@
     },
     {
       "id": "seed-automatic-planning-sessions-linkage",
-      "title": "Automatic planning sessions for seed\u2194spike\u2194plan\u2194backlog linkage",
+      "title": "Automatic planning sessions for seed↔spike↔plan↔backlog linkage",
       "keywords": [
         "planning-session",
         "auto-linking",
@@ -126,7 +126,7 @@
     },
     {
       "id": "seed-pi-command-reclassify-priorities",
-      "title": "Add a Pi command to reclassify ticket priorities (P0\u2013P4)",
+      "title": "Add a Pi command to reclassify ticket priorities (P0–P4)",
       "keywords": [
         "priorities",
         "triage",
@@ -383,7 +383,152 @@
       "overview": "topics/seed-fix-ralph-agents-md/overview.md",
       "sources": "topics/seed-fix-ralph-agents-md/sources.md",
       "backlog": "topics/seed-fix-ralph-agents-md/backlog.md"
+    },
+    {
+      "id": "seed-fix-tui-doc-opening",
+      "title": "Fix TUI document opening keys (o, 1, 2, 3, 4)",
+      "keywords": [
+        "tui",
+        "textual",
+        "keyboard-shortcuts",
+        "document-opening",
+        "bug-fix",
+        "terminal-suspend",
+        "action-methods"
+      ],
+      "overview": "topics/seed-fix-tui-doc-opening/overview.md",
+      "sources": "topics/seed-fix-tui-doc-opening/sources.md",
+      "backlog": "topics/seed-fix-tui-doc-opening/backlog.md"
+    },
+    {
+      "id": "seed-tf-ui-web-app",
+      "title": "Serve tf ui as a web application",
+      "keywords": [
+        "web-ui",
+        "textual-web",
+        "fastapi",
+        "htmx",
+        "browser",
+        "remote-access",
+        "web-app",
+        "server",
+        "websocket"
+      ],
+      "overview": "topics/seed-tf-ui-web-app/overview.md",
+      "sources": "topics/seed-tf-ui-web-app/sources.md",
+      "backlog": "topics/seed-tf-ui-web-app/backlog.md"
+    },
+    {
+      "id": "spike-sanic-datastar-vs-fastapi-htmx",
+      "title": "Sanic+Datastar vs FastAPI+HTMX for tf ui web (2026)",
+      "keywords": [
+        "sanic",
+        "fastapi",
+        "datastar",
+        "htmx",
+        "html-over-the-wire",
+        "hypermedia",
+        "sse",
+        "web-ui",
+        "templates"
+      ],
+      "overview": "topics/spike-sanic-datastar-vs-fastapi-htmx/overview.md",
+      "sources": "topics/spike-sanic-datastar-vs-fastapi-htmx/sources.md"
+    },
+    {
+      "id": "seed-allow-to-serve-the-textual-app-as-a-web",
+      "title": "Allow serving the Textual app as a web app via `textual serve`",
+      "keywords": [
+        "textual",
+        "textual-serve",
+        "web",
+        "tui",
+        "python",
+        "deployment"
+      ],
+      "overview": "topics/seed-allow-to-serve-the-textual-app-as-a-web/overview.md",
+      "sources": "topics/seed-allow-to-serve-the-textual-app-as-a-web/sources.md"
+    },
+    {
+      "id": "spike-textual-serve",
+      "title": "Textual `textual serve`: serving a Textual app in the browser",
+      "keywords": [
+        "textual",
+        "textual-serve",
+        "textual-dev",
+        "web",
+        "websocket"
+      ],
+      "overview": "topics/spike-textual-serve/overview.md",
+      "sources": "topics/spike-textual-serve/sources.md"
+    },
+    {
+      "id": "plan-allow-to-serve-the-textual-app-as-a-web",
+      "title": "Serve the Ticketflow Textual UI in a browser via `textual serve`",
+      "keywords": [
+        "textual",
+        "textual-serve",
+        "web",
+        "tui",
+        "documentation",
+        "safety"
+      ],
+      "plan": "topics/plan-allow-to-serve-the-textual-app-as-a-web/plan.md",
+      "sources": "topics/plan-allow-to-serve-the-textual-app-as-a-web/sources.md",
+      "backlog": "topics/plan-allow-to-serve-the-textual-app-as-a-web/backlog.md"
+    },
+    {
+      "id": "plan-update-zai-vision-mcp",
+      "title": "Update tf setup to use new ZAI Vision MCP server (command-based)",
+      "keywords": [
+        "mcp",
+        "zai",
+        "vision",
+        "login",
+        "setup",
+        "configuration"
+      ],
+      "plan": "topics/plan-update-zai-vision-mcp/plan.md",
+      "sources": "topics/plan-update-zai-vision-mcp/sources.md",
+      "backlog": "topics/plan-update-zai-vision-mcp/backlog.md"
+    },
+    {
+      "id": "spike-datastar-py-sanic-datastar-tf-web-ui",
+      "title": "datastar-py: using the Datastar Python SDK in Ticketflow's Sanic+Datastar web UI",
+      "keywords": [
+        "datastar",
+        "datastar-py",
+        "sanic",
+        "sse",
+        "signals",
+        "html-over-the-wire",
+        "hypermedia",
+        "ticketflow",
+        "web-ui"
+      ],
+      "overview": "topics/spike-datastar-py-sanic-datastar-tf-web-ui/overview.md",
+      "sources": "topics/spike-datastar-py-sanic-datastar-tf-web-ui/sources.md",
+      "backlog": "topics/spike-datastar-py-sanic-datastar-tf-web-ui/backlog.md"
+    },
+    {
+      "id": "spike-modern-simple-css-dashboard-kanban",
+      "title": "Modern but simple CSS patterns for dashboard/kanban web apps",
+      "keywords": [
+        "css",
+        "dashboard",
+        "kanban",
+        "classless-css",
+        "design-tokens",
+        "pico-css",
+        "open-props",
+        "clamp",
+        "utopia",
+        "every-layout"
+      ],
+      "overview": "topics/spike-modern-simple-css-dashboard-kanban/overview.md",
+      "sources": "topics/spike-modern-simple-css-dashboard-kanban/sources.md",
+      "backlog": "topics/spike-modern-simple-css-dashboard-kanban/backlog.md"
     }
   ],
-  "updated": "2026-02-08T23:04:54.548399+00:00"
+  "updated": "2026-02-09T13:42:03.997996+00:00"
 }

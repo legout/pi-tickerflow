@@ -249,3 +249,115 @@
   - Issues: Critical(1)/Major(2)/Minor(2)
   - Status: COMPLETE
 
+- pt-sf9w: COMPLETE (2026-02-09T12:02:31Z)
+  - Summary: Verify Ticketflow UI runs via `textual serve`
+  - Issues: Critical(1)/Major(2)/Minor(2)
+  - Status: COMPLETE
+- pt-fo58: COMPLETE (2026-02-09T12:47:36Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-fo58: FAILED (2026-02-09T12:48:32Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: FAILED
+  - Error: Ticket failed after 2 attempt(s) due to timeout (threshold: 450000ms)
+- pt-fo58: COMPLETE (2026-02-09T12:48:58Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-fo58: COMPLETE (2026-02-09T12:49:08Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-fo58: COMPLETE (2026-02-09T12:49:15Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-fo58: COMPLETE (2026-02-09T12:49:22Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-fo58: COMPLETE (2026-02-09T12:49:28Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-fo58: COMPLETE (2026-02-09T12:49:34Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-fo58: COMPLETE (2026-02-09T12:49:41Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-fo58: COMPLETE (2026-02-09T12:49:46Z)
+  - Summary: Implement web server CLI command for tf ui (Sanic)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+
+- pt-1d6c: COMPLETE (2026-02-09T13:24:13Z)
+  - Summary: Implement kanban board view in web UI - fixed 4 critical issues
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+  - Commit: 336d7b3
+- pt-1d6c: COMPLETE (2026-02-09T13:27:39Z)
+  - Summary: Implement kanban board view in web UI (Datastar)
+  - Issues: Critical(4)/Major(6)/Minor(4)
+  - Status: COMPLETE
+
+- pt-6hpl: COMPLETE $(date -Iseconds)
+  - Summary: Added datastar-py>=0.7.0,<0.8.0 dependency for Datastar SSE responses
+  - Issues: Critical(0)/Major(0)/Minor(1)
+  - Status: COMPLETE
+  - Commit: 86d2a9c
+- pt-6hpl: COMPLETE (2026-02-09T13:32:42Z)
+  - Summary: Setup datastar-py dependency (pin version) for web UI
+  - Issues: Critical(1)/Major(0)/Minor(1)
+  - Status: COMPLETE
+- pt-8o4i: COMPLETE (2026-02-09T13:35:35Z)
+  - Summary: Update tf login/setup to write command-based `zai-vision` MCP server
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-ba0n: COMPLETE (2026-02-09T13:42:27Z)
+  - Summary: Implement topic browser in web UI (Datastar)
+  - Issues: Critical(3)/Major(3)/Minor(3)
+  - Status: COMPLETE
+- pt-bsuf: COMPLETE 2026-02-09T13:44:53+00:00
+  - Summary: Integrate Pico.css classless into web UI base template
+  - Issues: Critical(0)/Major(0)/Minor(1)
+  - Status: COMPLETE
+  - Commit: df8db41
+- pt-bsuf: COMPLETE (2026-02-09T13:45:00Z)
+  - Summary: Integrate Pico.css (classless) into Sanic+Datastar web UI templates
+  - Issues: Critical(0)/Major(0)/Minor(1)
+  - Status: COMPLETE
+- pt-7p2i: COMPLETE (2026-02-09T13:49:50Z)
+  - Summary: Add a small design-token layer (CSS variables) + fluid spacing via clamp()
+  - Issues: Critical(0)/Major(2)/Minor(16)
+  - Status: COMPLETE
+- pt-33o0: COMPLETE (2026-02-09T13:55:00Z)
+  - Summary: Extract inline CSS to dedicated stylesheet served by Sanic
+  - Issues: Critical(0)/Major(0)/Minor(5)
+  - Status: COMPLETE
+  - Commit: f3f1e59
+- pt-33o0: COMPLETE (2026-02-09T13:56:19Z)
+  - Summary: Extract inline web UI CSS into a dedicated stylesheet served by Sanic
+  - Issues: Critical(0)/Major(0)/Minor(5)
+  - Status: COMPLETE
+- pt-c4lo: COMPLETE (2026-02-09T13:56:00Z)
+  - Summary: Implement ticket detail view in web UI (Datastar)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-c4lo: COMPLETE (2026-02-09T13:59:48Z)
+  - Summary: Implement ticket detail view in web UI (Datastar)
+  - Issues: Critical(0)/Major(0)/Minor(2)
+  - Status: COMPLETE
+- pt-cvj1: COMPLETE [2026-02-09T13:59:00Z]
+  - Summary: Update tests for command-based zai-vision MCP config
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+
+- pt-cvj1: COMPLETE (2026-02-09T14:02:57Z)
+  - Summary: Update tests for command-based `zai-vision` MCP config
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
