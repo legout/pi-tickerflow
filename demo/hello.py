@@ -10,7 +10,7 @@ def hello(name: str = "World") -> str:
         name: The name to greet. Defaults to "World".
 
     Returns:
-        str: A greeting string.
+        str: A greeting string in the format "Hello, {name}!".
     """
     return f"Hello, {name}!"
 
