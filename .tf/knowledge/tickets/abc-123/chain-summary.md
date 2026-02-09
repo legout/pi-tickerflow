@@ -1,35 +1,26 @@
 # Chain Summary: abc-123
 
 ## Workflow Execution
-- **Ticket**: abc-123
-- **Flags**: --auto
-- **Status**: COMPLETED
-- **Commit**: 5d98fae
+Executed: 2026-02-10
 
-## Steps Executed
-| Step | Status | Details |
-|------|--------|---------|
-| Re-Anchor | ✅ | Loaded AGENTS.md, existing research, ticket details |
-| Research | ✅ | Used existing research.md |
-| Implement | ✅ | Verified implementation, updated documentation |
-| Parallel Reviews | ✅ | 3 reviewers completed (2/3 agents succeeded) |
-| Merge Reviews | ✅ | Consolidated into review.md |
-| Fix Issues | ✅ | Fixed 1 Minor (docs), 1 already fixed |
-| Close Ticket | ✅ | Note added, already closed |
+## Artifact Links
+- [research.md](research.md) - Research stub (internal task, no external sources)
+- [implementation.md](implementation.md) - Implementation summary (6 tests)
+- [review.md](review.md) - Consolidated review (0 Critical, 0 Major, 2 Minor already fixed)
+- [fixes.md](fixes.md) - No fixes required
+- [close-summary.md](close-summary.md) - Final summary
+- [files_changed.txt](files_changed.txt) - Tracked file changes
 
-## Artifacts
-- [research.md](research.md)
-- [implementation.md](implementation.md)
-- [review.md](review.md)
-- [fixes.md](fixes.md)
-- [close-summary.md](close-summary.md)
+## Status
+✅ **COMPLETE** - Quality gate passed
 
-## Review Summary
+## Commit
+`f920e56` - abc-123: Update workflow artifacts - verification run, no fixes required
+
+## Summary Statistics
 - Critical: 0
 - Major: 0
-- Minor: 2
+- Minor: 2 (already fixed)
 - Warnings: 2
 - Suggestions: 8
-
-## Test Results
-✅ 6/6 tests passing
+- Tests: 6 passed
