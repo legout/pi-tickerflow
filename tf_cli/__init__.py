@@ -1,6 +1,25 @@
-"""Ticketflow CLI - IRF workflow toolkit for Pi."""
+"""Ticketflow CLI - IRF workflow toolkit for Pi (deprecated shim).
+
+DEPRECATED: Use 'tf' package instead. This shim will be removed in version 0.5.0.
+Set TF_CLI_DEPRECATION_WARN=1 to see warnings.
+"""
 from __future__ import annotations
 
+import os
+import warnings
+
+# Emit deprecation warning if opted in (default off to avoid CI noise)
+if os.environ.get("TF_CLI_DEPRECATION_WARN"):
+    warnings.warn(
+        "tf_cli is deprecated. Use 'tf' package instead. "
+        "This shim will be removed in version 0.5.0. "
+        "See https://github.com/legout/pi-ticketflow/blob/main/docs/deprecation-policy.md",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+# Keep original imports during transition period
+# In pt-tupn, the implementation will move to tf/ and these will re-export from there
 from tf_cli.version import get_version, __version__
 
 # Re-export ticket_factory for convenience
