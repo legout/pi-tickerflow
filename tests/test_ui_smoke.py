@@ -93,6 +93,41 @@ class TestUiErrorHandling:
         assert "TTY" in captured.err or "interactive" in captured.err.lower()
 
 
+class TestUiHeadlessImport:
+    """Test that tf_cli.ui can be imported in CI/headless contexts.
+
+    These tests verify the module doesn't crash on import when running
+    in non-TTY environments (e.g., CI, web-served contexts).
+    """
+
+    def test_ui_module_imports_without_error(self):
+        """Importing tf_cli.ui should not raise in headless contexts."""
+        # This test verifies the basic import works - critical for CI
+        import tf_cli.ui as ui
+
+        assert ui is not None
+
+    def test_ui_module_imports_in_non_tty_context(self, monkeypatch):
+        """Import should succeed even when stdin/stdout are not TTYs."""
+        # Simulate headless/CI environment
+        mock_stdin = mock.MagicMock()
+        mock_stdin.isatty.return_value = False
+        mock_stdout = mock.MagicMock()
+        mock_stdout.isatty.return_value = False
+
+        monkeypatch.setattr(sys, "stdin", mock_stdin)
+        monkeypatch.setattr(sys, "stdout", mock_stdout)
+
+        # Force re-import by clearing cache
+        if "tf_cli.ui" in sys.modules:
+            del sys.modules["tf_cli.ui"]
+
+        # Import should not raise
+        import tf_cli.ui as ui
+
+        assert ui is not None
+
+
 class TestUiModuleImports:
     """Test that ui module can import its dependencies."""
 
