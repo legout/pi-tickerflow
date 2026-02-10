@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 from tf.logger import LogLevel, RalphLogger, RedactionHelper, create_logger
 
 # Import shared utilities
-from tf.utils import find_project_root
+from tf.utils import calculate_timeout_backoff, find_project_root
 
 # Import queue state for progress display
 from tf.ralph.queue_state import QueueStateSnapshot, get_queue_state
@@ -133,6 +133,10 @@ DEFAULTS: Dict[str, Any] = {
     "captureJson": False,  # Capture Pi JSON mode output for debugging
     "attemptTimeoutMs": 600000,  # 10 minutes default (0 = no timeout). Serial mode only.
     "maxRestarts": 0,  # 0 = no restarts, N = up to N restarts per ticket. Serial mode only.
+    # Timeout backoff settings (for linear timeout increase per attempt)
+    "timeoutBackoffEnabled": False,  # Enable timeout backoff calculation
+    "timeoutBackoffIncrementMs": 150000,  # Default increment per attempt (150s = 2.5min)
+    "timeoutBackoffMaxMs": 0,  # Max cap (0 = no cap, use attemptTimeoutMs as base)
 }
 
 # Legacy session directory for backward compatibility detection
@@ -208,6 +212,11 @@ Configuration (in .tf/ralph/config.json):
                         Set to 0 to disable timeout. Serial mode only.
   maxRestarts           Maximum restarts per ticket on timeout/failure (default: 0)
                         Set to N to allow up to N restarts before marking as failed. Serial mode only.
+  timeoutBackoffEnabled Enable linear timeout backoff per restart attempt (default: false)
+                        When enabled, each restart gets additional timeout:
+                        effective = attemptTimeoutMs + attempt_index * timeoutBackoffIncrementMs
+  timeoutBackoffIncrementMs  Additional timeout per restart in ms (default: 150000 = 2.5 min)
+  timeoutBackoffMaxMs   Maximum timeout cap in ms (default: 0 = no cap, uses attemptTimeoutMs as base)
 
 Configuration Environment Variables:
   RALPH_ATTEMPT_TIMEOUT_MS  Override attemptTimeoutMs (in milliseconds)
@@ -736,6 +745,118 @@ def resolve_max_restarts(config: Dict[str, Any]) -> int:
         return int(config_restarts)
     except (ValueError, TypeError):
         return DEFAULTS["maxRestarts"]
+
+
+def resolve_timeout_backoff_enabled(config: Dict[str, Any]) -> bool:
+    """Resolve timeout backoff enabled from config.
+
+    Returns:
+        True if timeout backoff is enabled, False otherwise
+    """
+    value = config.get("timeoutBackoffEnabled", DEFAULTS["timeoutBackoffEnabled"])
+    return parse_bool(value, DEFAULTS["timeoutBackoffEnabled"])
+
+
+def resolve_timeout_backoff_increment_ms(config: Dict[str, Any]) -> int:
+    """Resolve timeout backoff increment from config.
+
+    Returns:
+        Increment in milliseconds (default: 150000). Always >= 0.
+    """
+    value = config.get("timeoutBackoffIncrementMs", DEFAULTS["timeoutBackoffIncrementMs"])
+    try:
+        result = int(value)
+        return max(0, result)
+    except (ValueError, TypeError):
+        return DEFAULTS["timeoutBackoffIncrementMs"]
+
+
+def resolve_timeout_backoff_max_ms(config: Dict[str, Any]) -> int:
+    """Resolve timeout backoff max cap from config.
+
+    Returns:
+        Max timeout in milliseconds (0 = no cap). Always >= 0.
+    """
+    value = config.get("timeoutBackoffMaxMs", DEFAULTS["timeoutBackoffMaxMs"])
+    try:
+        result = int(value)
+        return max(0, result)
+    except (ValueError, TypeError):
+        return DEFAULTS["timeoutBackoffMaxMs"]
+
+
+def calculate_effective_timeout(
+    base_timeout_ms: int,
+    attempt_index: int,
+    backoff_enabled: bool,
+    increment_ms: int,
+    max_ms: int,
+) -> tuple[int, dict[str, Any]]:
+    """Calculate effective timeout for a given attempt.
+
+    When backoff is enabled, computes timeout as:
+        effective = base_timeout_ms + attempt_index * increment_ms
+
+    When max_ms > 0, caps the result at that value.
+    When backoff is disabled, returns base_timeout_ms unchanged.
+
+    Args:
+        base_timeout_ms: Base timeout from attemptTimeoutMs config
+        attempt_index: Zero-based attempt index (0 = first attempt)
+        backoff_enabled: Whether backoff calculation is enabled
+        increment_ms: Additional timeout per attempt
+        max_ms: Maximum cap (0 = no cap)
+
+    Returns:
+        Tuple of (effective_timeout_ms, debug_info) where debug_info contains:
+        - base_ms: Base timeout
+        - increment_ms: Increment per attempt
+        - attempt_index: Current attempt index
+        - max_ms: Max cap (0 = no cap)
+        - capped: Whether max cap was applied
+
+    Note:
+        If configuration is invalid (negative values or max_ms < base_ms),
+        falls back to base_timeout_ms to prevent crashes.
+    """
+    debug_info: dict[str, Any] = {
+        "base_ms": base_timeout_ms,
+        "increment_ms": increment_ms,
+        "attempt_index": attempt_index,
+        "max_ms": max_ms if max_ms > 0 else None,
+        "capped": False,
+    }
+
+    if not backoff_enabled or base_timeout_ms == 0:
+        # Backoff disabled or no timeout configured
+        return base_timeout_ms, debug_info
+
+    # Validate inputs to prevent crashes from misconfiguration
+    if base_timeout_ms < 0:
+        return 0, debug_info
+    if increment_ms < 0:
+        # Invalid increment, fall back to base
+        return base_timeout_ms, debug_info
+    if max_ms < 0:
+        # Invalid max, treat as no cap
+        max_ms = 0
+        debug_info["max_ms"] = None
+
+    try:
+        effective = calculate_timeout_backoff(
+            base_ms=base_timeout_ms,
+            increment_ms=increment_ms,
+            iteration_index=attempt_index,
+            max_ms=max_ms if max_ms > 0 else None,
+        )
+        # Check if capped
+        uncapped = base_timeout_ms + attempt_index * increment_ms
+        debug_info["capped"] = max_ms > 0 and uncapped > max_ms
+        return effective, debug_info
+    except ValueError:
+        # Configuration error (e.g., max_ms < base_ms after our validation)
+        # Fall back to base timeout to prevent crashes
+        return base_timeout_ms, debug_info
 
 
 def resolve_session_dir(
@@ -1490,19 +1611,59 @@ def ralph_run(args: List[str]) -> int:
     logger.log_ticket_start(ticket, mode="serial", ticket_title=ticket_title)
 
     # Resolve timeout and restart configuration
-    timeout_ms = resolve_attempt_timeout_ms(config)
+    base_timeout_ms = resolve_attempt_timeout_ms(config)
     max_restarts = resolve_max_restarts(config)
+    backoff_enabled = resolve_timeout_backoff_enabled(config)
+    backoff_increment_ms = resolve_timeout_backoff_increment_ms(config)
+    backoff_max_ms = resolve_timeout_backoff_max_ms(config)
 
     if dry_run:
-        logger.info(f"Dry run config: timeout={timeout_ms}ms, max_restarts={max_restarts}", ticket=ticket)
+        logger.info(f"Dry run config: timeout={base_timeout_ms}ms, max_restarts={max_restarts}", ticket=ticket)
 
     # Attempt ticket with optional restart loop
     attempt = 0
     max_attempts = max_restarts + 1 if max_restarts > 0 else 1
 
     while attempt < max_attempts:
+        # Calculate effective timeout with optional backoff
+        effective_timeout_ms, timeout_debug = calculate_effective_timeout(
+            base_timeout_ms=base_timeout_ms,
+            attempt_index=attempt,
+            backoff_enabled=backoff_enabled,
+            increment_ms=backoff_increment_ms,
+            max_ms=backoff_max_ms,
+        )
+
+        # Build detailed timeout log message
+        if backoff_enabled and base_timeout_ms > 0:
+            base_info = f"base={timeout_debug['base_ms']}ms"
+            increment_info = f"increment={timeout_debug['increment_ms']}ms"
+            iteration_info = f"iteration={timeout_debug['attempt_index']}"
+            effective_info = f"effective={effective_timeout_ms}ms"
+            cap_info = ""
+            if timeout_debug.get("max_ms"):
+                cap_status = "capped" if timeout_debug.get("capped") else "uncapped"
+                cap_info = f" max={timeout_debug['max_ms']}ms ({cap_status})"
+            timeout_log = f"Timeout[{iteration_info}]: {base_info} + {increment_info} -> {effective_info}{cap_info}"
+        else:
+            timeout_log = f"Timeout: {effective_timeout_ms}ms (backoff disabled)"
+
         if attempt > 0:
-            logger.info(f"Restart attempt {attempt}/{max_restarts}", ticket=ticket)
+            if backoff_enabled:
+                logger.info(
+                    f"Restart attempt {attempt}/{max_restarts} (timeout: {effective_timeout_ms}ms)",
+                    ticket=ticket
+                )
+            else:
+                logger.info(f"Restart attempt {attempt}/{max_restarts}", ticket=ticket)
+            # Log detailed timeout info on restart
+            logger.info(timeout_log, ticket=ticket)
+        elif backoff_enabled and effective_timeout_ms != base_timeout_ms:
+            logger.info(f"Initial timeout: {effective_timeout_ms}ms (backoff enabled)", ticket=ticket)
+            logger.info(timeout_log, ticket=ticket)
+        elif backoff_enabled:
+            # First attempt with backoff enabled but no effective change yet
+            logger.info(timeout_log, ticket=ticket)
 
         rc = run_ticket(
             ticket,
@@ -1516,7 +1677,7 @@ def ralph_run(args: List[str]) -> int:
             ticket_title=ticket_title,
             pi_output=pi_output,
             pi_output_file=pi_output_file,
-            timeout_ms=timeout_ms,
+            timeout_ms=effective_timeout_ms,
         )
 
         if dry_run:
@@ -1533,10 +1694,13 @@ def ralph_run(args: List[str]) -> int:
         if rc == -1:  # Timeout
             attempt += 1
             if attempt < max_attempts:
-                logger.warn(f"Attempt timed out, restarting ({attempt}/{max_restarts})", ticket=ticket)
+                logger.warn(
+                    f"Attempt {attempt} timed out after {effective_timeout_ms}ms, restarting...",
+                    ticket=ticket
+                )
                 continue
             else:
-                error_msg = f"Attempt timed out after {max_attempts} attempt(s) (timeout: {timeout_ms}ms)"
+                error_msg = f"Attempt timed out after {attempt} attempt(s) (last timeout: {effective_timeout_ms}ms)"
                 logger.log_error_summary(ticket, error_msg, ticket_title=ticket_title)
                 update_state(ralph_dir, project_root, ticket, "FAILED", error_msg)
                 return rc
@@ -1645,11 +1809,15 @@ def ralph_start(args: List[str]) -> int:
 
     # Safety check: timeout/restart is not supported in parallel mode
     # Per constraint: prefer warn+disable over partial/unsafe behavior
-    timeout_ms = resolve_attempt_timeout_ms(config)
+    base_timeout_ms = resolve_attempt_timeout_ms(config)
     max_restarts = resolve_max_restarts(config)
-    if use_parallel > 1 and (timeout_ms > 0 or max_restarts > 0):
+    backoff_enabled = resolve_timeout_backoff_enabled(config)
+    backoff_increment_ms = resolve_timeout_backoff_increment_ms(config)
+    backoff_max_ms = resolve_timeout_backoff_max_ms(config)
+
+    if use_parallel > 1 and (base_timeout_ms > 0 or max_restarts > 0):
         logger.warn(
-            f"Timeout ({timeout_ms}ms) and restart ({max_restarts}) settings are not supported in parallel mode. "
+            f"Timeout ({base_timeout_ms}ms) and restart ({max_restarts}) settings are not supported in parallel mode. "
             "Falling back to serial mode for safe cleanup semantics."
         )
         use_parallel = 1
@@ -1757,8 +1925,26 @@ def ralph_start(args: List[str]) -> int:
 
                 while attempt < max_attempts:
                     attempt += 1
+
+                    # Calculate effective timeout with optional backoff
+                    effective_timeout_ms = calculate_effective_timeout(
+                        base_timeout_ms=base_timeout_ms,
+                        attempt_index=attempt - 1,  # 0-indexed for first attempt
+                        backoff_enabled=backoff_enabled,
+                        increment_ms=backoff_increment_ms,
+                        max_ms=backoff_max_ms,
+                    )
+
                     if attempt > 1:
-                        ticket_logger.info(f"Restart attempt {attempt - 1}/{max_restarts} for ticket (timeout: {timeout_ms}ms)", ticket=ticket)
+                        if backoff_enabled:
+                            ticket_logger.info(
+                                f"Restart attempt {attempt - 1}/{max_restarts} for ticket (timeout: {effective_timeout_ms}ms)",
+                                ticket=ticket
+                            )
+                        else:
+                            ticket_logger.info(f"Restart attempt {attempt - 1}/{max_restarts} for ticket", ticket=ticket)
+                    elif backoff_enabled and effective_timeout_ms != base_timeout_ms:
+                        ticket_logger.info(f"Initial timeout: {effective_timeout_ms}ms (backoff enabled)", ticket=ticket)
 
                     cmd = build_cmd(workflow, ticket, workflow_flags)
                     ticket_rc = run_ticket(
@@ -1773,7 +1959,7 @@ def ralph_start(args: List[str]) -> int:
                         ticket_title=ticket_title,
                         pi_output=pi_output,
                         pi_output_file=pi_output_file,
-                        timeout_ms=timeout_ms,
+                        timeout_ms=effective_timeout_ms,
                     )
                     ticket_logger.log_command_executed(ticket, cmd, ticket_rc, mode="serial", iteration=iteration, ticket_title=ticket_title)
 
@@ -1787,11 +1973,17 @@ def ralph_start(args: List[str]) -> int:
                     # Timeout case (-1) - restart if we haven't exceeded max_restarts
                     if ticket_rc == -1:
                         if attempt < max_attempts:
-                            ticket_logger.warn(f"Attempt {attempt} timed out after {timeout_ms}ms, retrying...", ticket=ticket)
+                            ticket_logger.warn(
+                                f"Attempt {attempt} timed out after {effective_timeout_ms}ms, restarting...",
+                                ticket=ticket
+                            )
                             continue
                         else:
                             # Max restarts exceeded - ticket will be marked FAILED below
-                            ticket_logger.error(f"Ticket timed out after {attempt} attempt(s) (timeout: {timeout_ms}ms)", ticket=ticket)
+                            ticket_logger.error(
+                                f"Ticket timed out after {attempt} attempt(s) (last timeout: {effective_timeout_ms}ms)",
+                                ticket=ticket
+                            )
                             break
                     else:
                         # Non-timeout failure - don't restart
@@ -1816,7 +2008,7 @@ def ralph_start(args: List[str]) -> int:
 
                     if ticket_rc != 0:
                         if ticket_rc == -1:
-                            error_msg = f"Ticket failed after {attempt} attempt(s) due to timeout (threshold: {timeout_ms}ms)"
+                            error_msg = f"Ticket failed after {attempt} attempt(s) due to timeout (last threshold: {effective_timeout_ms}ms)"
                         else:
                             error_msg = f"pi -p failed (exit {ticket_rc})"
                         # Update progress display on failure
