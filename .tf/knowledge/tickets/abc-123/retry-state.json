@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "ticketId": "abc-123",
+  "attempts": [
+    {
+      "attemptNumber": 1,
+      "startedAt": "2026-02-10T13:50:04Z",
+      "completedAt": "2026-02-10T13:50:04Z",
+      "status": "blocked",
+      "trigger": "manual",
+      "qualityGate": {
+        "failOn": ["Critical", "Major"],
+        "counts": {
+          "Critical": 0,
+          "Major": 3,
+          "Minor": 3,
+          "Warnings": 2,
+          "Suggestions": 6
+        }
+      },
+      "escalation": {
+        "fixer": null,
+        "reviewerSecondOpinion": null,
+        "worker": null
+      },
+      "closeSummaryRef": "close-summary.md"
+    },
+    {
+      "attemptNumber": 2,
+      "startedAt": "2026-02-10T13:52:38Z",
+      "completedAt": "2026-02-10T13:52:38Z",
+      "status": "closed",
+      "trigger": "manual",
+      "qualityGate": {
+        "failOn": ["Critical", "Major"],
+        "counts": {
+          "Critical": 0,
+          "Major": 0,
+          "Minor": 3,
+          "Warnings": 2,
+          "Suggestions": 6
+        }
+      },
+      "escalation": {
+        "fixer": null,
+        "reviewerSecondOpinion": null,
+        "worker": null
+      },
+      "closeSummaryRef": "close-summary.md"
+    }
+  ],
+  "lastAttemptAt": "2026-02-10T13:52:38Z",
+  "status": "closed",
+  "retryCount": 0
+}

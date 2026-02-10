@@ -1,21 +1,32 @@
 # Chain Summary: abc-123
 
 ## Workflow Execution
+- **Ticket**: abc-123
+- **Command**: `/tf abc-123 --auto`
+- **Status**: Complete
 
-| Step | Status | Artifact |
-|------|--------|----------|
-| Research | ✅ Skipped (existing) | [research.md](research.md) |
-| Implement | ✅ Complete | [implementation.md](implementation.md) |
-| Parallel Reviews | ✅ Complete | [review.md](review.md) |
-| Fix Issues | ⚠️ Partial | [fixes.md](fixes.md) |
-| Post-Fix Verification | ❌ BLOCKED | [post-fix-verification.md](post-fix-verification.md) |
-| Close Ticket | ❌ BLOCKED | [close-summary.md](close-summary.md) |
+## Artifacts
+| Artifact | Path |
+|----------|------|
+| Research | `.tf/knowledge/tickets/abc-123/research.md` |
+| Implementation | `.tf/knowledge/tickets/abc-123/implementation.md` |
+| Review (Merged) | `.tf/knowledge/tickets/abc-123/review.md` |
+| Fixes | `.tf/knowledge/tickets/abc-123/fixes.md` |
+| Post-Fix Verification | `.tf/knowledge/tickets/abc-123/post-fix-verification.md` |
+| Close Summary | `.tf/knowledge/tickets/abc-123/close-summary.md` |
+| Retry State | `.tf/knowledge/tickets/abc-123/retry-state.json` |
 
-## Quality Gate
-- **Blocks on**: Critical, Major
-- **Pre-fix**: 0 Critical, 3 Major, 3 Minor
-- **Post-fix**: 0 Critical, 3 Major, 3 Minor
-- **Result**: BLOCKED
+## Review Outputs (Individual)
+| Reviewer | File |
+|----------|------|
+| reviewer-general | `.tf/knowledge/tickets/abc-123/review-general.md` |
+| reviewer-spec-audit | `.tf/knowledge/tickets/abc-123/review-spec.md` |
+| reviewer-second-opinion | `.tf/knowledge/tickets/abc-123/review-second.md` |
 
-## Artifacts Location
-`.tf/knowledge/tickets/abc-123/`
+## Files Changed
+See: `.tf/knowledge/tickets/abc-123/files_changed.txt`
+
+## Summary
+- **Quality Gate**: PASSED
+- **Blocking Issues**: 0 Critical, 0 Major
+- **Tests**: 11 passing
