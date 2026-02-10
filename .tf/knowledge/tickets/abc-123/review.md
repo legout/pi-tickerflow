@@ -7,27 +7,29 @@ No issues found.
 No issues found.
 
 ## Minor (nice to fix)
-- `tests/test_demo_hello.py:4` - Documentation inconsistency: docstring states test count that may not match actual test count. Update for accuracy. *(reviewer-general)*
-- `demo/__main__.py:37` - `print()` to stdout lacks BrokenPipeError handling for piped output scenarios. *(reviewer-second-opinion)*
-- `demo/hello.py:48-49` - Docstring wording could be clearer about "substitutes default name" vs "returns full greeting". *(reviewer-second-opinion)*
-- `tests/test_demo_hello.py:58-61` - Whitespace test only covers ASCII; consider Unicode whitespace coverage. *(reviewer-second-opinion)*
+- `tests/test_demo_hello.py:1` - Test count in module docstring should be verified for accuracy. Reviewers note discrepancy between docstring count and actual test count (10-11 tests).
+
+- `demo/__main__.py:37` - `print()` to stdout lacks BrokenPipeError handling. If output is piped to a command that exits early, a BrokenPipeError traceback may clutter stderr.
+
+- `demo/hello.py:48-49` - Docstring states behavior for empty/whitespace strings could be clearer about substitution vs returning.
 
 ## Warnings (follow-up ticket)
-- `demo/hello.py:33` - The `name is None` check is redundant given `name: str` type hint, but provides runtime safety. Consider static type checking only approach. *(reviewer-spec-audit)*
-- `demo/__main__.py:33` - No signal handling for SIGINT/SIGTERM (follow-up if tool grows). *(reviewer-second-opinion)*
-- `demo/__main__.py:15` - Empty string CLI example behavior is shell-dependent. *(reviewer-second-opinion)*
+- `demo/__main__.py:33` - No signal handling for SIGINT/SIGTERM. Consider adding if tool grows more complex.
+
+- `demo/__main__.py:15` - Docstring example with empty string argument depends on shell quoting rules. Behavior may vary across platforms.
 
 ## Suggestions (follow-up ticket)
-- `demo/__main__.py:28` - Argparse default "World" is redundant with hello() default. *(reviewer-general)*
-- `demo/hello.py:34-37` - Document type validation trade-off vs static checking. *(reviewer-general)*
-- `tests/test_demo_hello.py:1` - Add subprocess integration test for full CLI path. *(reviewer-spec-audit)*
-- `demo/__init__.py:1` - Consider adding `__version__` attribute. *(reviewer-spec-audit)*
-- `demo/hello.py:42-43` - None check could be simplified (style preference). *(reviewer-second-opinion)*
-- `demo/hello.py:46` - Consider `typing.cast(str, name)` for type checker. *(reviewer-second-opinion)*
+- `demo/__main__.py:28` - The argparse default value "World" is redundant since hello() already has this default.
+
+- `demo/hello.py:34-37` - Consider documenting the explicit type validation trade-off in the docstring.
+
+- `demo/hello.py:42-43` - The explicit None check could be removed (isinstance handles it), though separate error message is more user-friendly.
+
+- `tests/test_demo_hello.py:58-61` - Whitespace test only covers ASCII. Consider Unicode whitespace characters.
 
 ## Summary Statistics
 - Critical: 0
 - Major: 0
-- Minor: 4
-- Warnings: 3
-- Suggestions: 6
+- Minor: 3
+- Warnings: 2
+- Suggestions: 4

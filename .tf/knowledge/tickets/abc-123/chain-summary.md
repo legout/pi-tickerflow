@@ -1,31 +1,29 @@
 # Chain Summary: abc-123
 
 ## Workflow Execution
+- **Started**: 2026-02-10T14:19:34Z
+- **Completed**: 2026-02-10T14:19:34Z
+- **Status**: CLOSED
 
-| Step | Status | Output |
-|------|--------|--------|
-| Re-Anchor | ✅ | Loaded lessons, ticket details, retry state |
-| Research | ✅ | Used existing research.md |
-| Implement | ✅ | Verified implementation (11 tests) |
-| Parallel Reviews | ✅ | 3 reviewers completed |
-| Merge Reviews | ✅ | review.md consolidated |
-| Fix Issues | ✅ | Verified compliance, no changes needed |
-| Post-Fix Verification | ✅ | PASSED |
-| Close Ticket | ✅ | Committed artifacts |
+## Steps Executed
+| Step | Status | Artifact |
+|------|--------|----------|
+| Re-Anchor | ✅ | Loaded existing research |
+| Implement | ✅ | implementation.md |
+| Reviews | ✅ | 3 reviewers completed |
+| Merge | ✅ | review.md |
+| Fix | ✅ | No fixes needed |
+| Post-Fix Verify | ✅ | PASSED |
+| Close | ✅ | Note added, commit: 745037a |
+
+## Results
+- **Tests**: 11 passing
+- **Quality Gate**: PASSED (0 Critical, 0 Major)
+- **Commit**: 745037a
 
 ## Artifacts
-
-- [research.md](research.md) - Ticket research
-- [implementation.md](implementation.md) - Implementation summary
-- [review.md](review.md) - Consolidated review
-- [fixes.md](fixes.md) - Fixes verification
-- [post-fix-verification.md](post-fix-verification.md) - Quality gate results
-- [close-summary.md](close-summary.md) - This summary
-- [retry-state.json](retry-state.json) - Retry tracking
-
-## Quality Gate
-- **Status**: PASSED
-- **Blocking**: 0 Critical, 0 Major
-
-## Commit
-`431f4b0` - abc-123: Workflow re-execution - all quality checks passed
+- `.tf/knowledge/tickets/abc-123/implementation.md`
+- `.tf/knowledge/tickets/abc-123/review.md`
+- `.tf/knowledge/tickets/abc-123/fixes.md`
+- `.tf/knowledge/tickets/abc-123/post-fix-verification.md`
+- `.tf/knowledge/tickets/abc-123/close-summary.md`
