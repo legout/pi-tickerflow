@@ -26,3 +26,6 @@ python -m pytest tests/test_demo_hello.py -v
 python -m demo              # Hello, World!
 python -m demo "Test User"  # Hello, Test User!
 ```
+
+## Workflow Re-execution
+Re-verified on 2026-02-10: All tests passing, implementation complete.
