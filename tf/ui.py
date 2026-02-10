@@ -829,12 +829,13 @@ def main(argv: Optional[list[str]] = None) -> int:
             """
             filtered = tickets
             
-            # Search query (title or body)
+            # Search query (title, body, or ID)
             if self.search_query:
                 query = self.search_query.lower()
                 filtered = [
                     ct for ct in filtered
-                    if query in ct.ticket.title.lower()
+                    if query in ct.id.lower()
+                    or query in ct.ticket.title.lower()
                     or query in ct.ticket.body.lower()
                 ]
             
