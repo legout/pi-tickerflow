@@ -3,7 +3,7 @@
 ## Summary
 - **Status**: PASS
 - **Quality Gate**: blocks on Critical, Major
-- **Note**: Source files differ by 37.1s (possible race condition)
+- **Note**: Source files differ by 39.8s (possible race condition)
 
 ## Pre-Fix Counts (from review.md)
 - **Critical**: 1
