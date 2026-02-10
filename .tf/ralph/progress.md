@@ -281,3 +281,22 @@
   - Issues: Critical(0)/Major(0)/Minor(5)
   - Status: COMPLETE
   - Commit: 8ee96eb
+- pt-te9b: COMPLETE (2026-02-10T12:44:00Z)
+  - Summary: Defined retry state spec + quality-gate block detection algorithm
+  - Issues: Critical(0)/Major(0)/Minor(4)
+  - Status: COMPLETE
+  - Commit: 2e43496
+- pt-te9b: COMPLETE (2026-02-10T12:45:38Z)
+  - Summary: Define retry state + quality-gate block detection
+  - Issues: Critical(0)/Major(0)/Minor(4)
+  - Status: COMPLETE
+- pt-ussr: FAILED (2026-02-10T12:45:41Z)
+  - Summary: Update Ralph progress display to show ready/blocked counts
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: FAILED
+  - Error: Ticket failed after 2 attempt(s) due to timeout (threshold: 450000ms)
+- pt-ussr: COMPLETE (2026-02-10T12:46:00Z)
+  - Summary: Verify Ralph progress display ready/blocked counts implementation
+  - Issues: Critical(0)/Major(0)/Minor(4)
+  - Status: COMPLETE
+  - Commit: 64bd8c4
