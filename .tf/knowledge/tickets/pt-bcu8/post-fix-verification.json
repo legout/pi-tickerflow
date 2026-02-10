@@ -1,0 +1,33 @@
+{
+  "ticket_id": "pt-bcu8",
+  "pre_fix_counts": {
+    "Critical": 1,
+    "Major": 2,
+    "Minor": 3,
+    "Warnings": 1,
+    "Suggestions": 2
+  },
+  "fixed_counts": {
+    "Critical": 9,
+    "Major": 8,
+    "Minor": 6,
+    "Warnings": 3,
+    "Suggestions": 2
+  },
+  "post_fix_counts": {
+    "Critical": 0,
+    "Major": 0,
+    "Minor": 0,
+    "Warnings": 0,
+    "Suggestions": 0
+  },
+  "verification_passed": true,
+  "fail_on": [
+    "Critical",
+    "Major"
+  ],
+  "fixes_found": true,
+  "fixes_parse_warning": null,
+  "review_mtime": 1770732096.0597806,
+  "fixes_mtime": 1770732133.1397426
+}
