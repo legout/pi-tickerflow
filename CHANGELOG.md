@@ -13,13 +13,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
-- **`tf_cli` package namespace** - The `tf_cli` Python package is now deprecated in favor of `tf`. The `tf_cli` package serves as a compatibility shim re-exporting from `tf` and will be removed in version 0.5.0. See [docs/deprecation-policy.md](docs/deprecation-policy.md) for migration guide and timeline. Set `TF_CLI_DEPRECATION_WARN=1` to enable deprecation warnings.
-
 ### Removed
 
 ### Fixed
 
 ### Security
+
+## [0.4.0] - 2026-02-09
+
+### Added
+
+#### Canonical tf Package Namespace
+- **New `tf/` package** - 32 modules migrated from `tf_cli` to canonical `tf` namespace
+- **CLI dispatcher** - Entry points now use `tf.cli:main` as canonical implementation
+- **Core utilities** - utils, frontmatter, logger, ticket_loader, component_classifier, ticket_factory in tf/
+- **All CLI commands** - setup, login, init, sync, doctor, ralph, ui, and 20+ more commands in tf/
+- **Backward compatibility shim** - `tf_cli` package re-exports from `tf` for compatibility
+
+#### Test Suite Updates
+- **Migrated 24+ test files** - All tests now import from `tf.*` namespace
+- **Shim regression tests** - Comprehensive tests in `test_tf_cli_shim.py` verify backward compatibility
+- **Mock path fixes** - All mock.patch() paths updated to match new import namespace
+
+#### Documentation
+- **Migration guide** - Added deprecation timeline and migration notes to README
+- **Namespace documentation** - Clear documentation of tf vs tf_cli usage
+
+### Deprecated
+
+- **`tf_cli` package namespace** - The `tf_cli` Python package is deprecated in favor of `tf`. The `tf_cli` package serves as a compatibility shim re-exporting from `tf` and will be removed in version 0.5.0. See [docs/deprecation-policy.md](docs/deprecation-policy.md) for migration guide and timeline. Set `TF_CLI_DEPRECATION_WARN=1` to enable deprecation warnings.
+
+### Fixed
+
+- Fixed mock.patch() paths in tests to use `tf.*` namespace instead of `tf_cli.*`
+- Fixed incomplete import migrations in test files
+- Fixed docstring references from `tf_cli` to `tf`
 
 ## [0.3.0] - 2026-02-09
 
