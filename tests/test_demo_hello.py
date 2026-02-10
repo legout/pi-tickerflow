@@ -48,6 +48,21 @@ def test_hello_whitespace_stripped() -> None:
     assert result == "Hello, Bob!"
 
 
+def test_hello_unicode_whitespace_stripped() -> None:
+    """Test hello strips Unicode zero-width whitespace characters."""
+    # Zero-width space (U+200B), zero-width non-joiner (U+200C), zero-width joiner (U+200D)
+    # and zero-width no-break space (U+FEFF) should be stripped
+    for zw_char in ["\u200B", "\u200C", "\u200D", "\uFEFF"]:
+        result = hello(f"{zw_char}Alice{zw_char}")
+        assert result == "Hello, Alice!", f"Failed for zero-width char: U+{ord(zw_char):04X}"
+    # Multiple zero-width chars and mixed with regular whitespace
+    result = hello("\u200B\u200C \tAlice\n\uFEFF")
+    assert result == "Hello, Alice!"
+    # Zero-width only should fall back to World
+    result = hello("\u200B\u200C\u200D")
+    assert result == "Hello, World!"
+
+
 def test_cli_default(capsys: pytest.CaptureFixture[str]) -> None:
     """Test CLI entry point with no arguments."""
     result = main([])

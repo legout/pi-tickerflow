@@ -5,21 +5,21 @@
     "Major": 1,
     "Minor": 5,
     "Warnings": 2,
-    "Suggestions": 6
+    "Suggestions": 7
   },
   "fixed_counts": {
-    "Critical": 15,
-    "Major": 14,
-    "Minor": 13,
-    "Warnings": 8,
-    "Suggestions": 6
+    "Critical": 10,
+    "Major": 9,
+    "Minor": 8,
+    "Warnings": 3,
+    "Suggestions": 1
   },
   "post_fix_counts": {
     "Critical": 0,
     "Major": 0,
     "Minor": 0,
     "Warnings": 0,
-    "Suggestions": 0
+    "Suggestions": 6
   },
   "verification_passed": true,
   "fail_on": [
@@ -28,6 +28,6 @@
   ],
   "fixes_found": true,
   "fixes_parse_warning": null,
-  "review_mtime": 1770733791.3630884,
-  "fixes_mtime": 1770733804.3270752
+  "review_mtime": 1770733919.7879572,
+  "fixes_mtime": 1770733977.9888978
 }
