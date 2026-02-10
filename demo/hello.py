@@ -39,7 +39,7 @@ def hello(name: str = "World") -> str:
         TypeError: If name is not a string type.
     """
     if name is None:
-        raise TypeError("name must be a string, not None")
+        raise TypeError("name must be a string, got NoneType")
     if not isinstance(name, str):
         raise TypeError(f"name must be a string, got {type(name).__name__}")
     cleaned_name = name.strip()

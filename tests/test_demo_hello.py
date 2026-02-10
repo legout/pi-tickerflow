@@ -1,7 +1,7 @@
 """Tests for demo hello module.
 
 Test suite for the hello-world utility demonstrating IRF workflow.
-Covers default parameter, custom names, and edge cases (8 tests total).
+Covers default parameter, custom names, and edge cases (10 tests total).
 """
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ def test_cli_empty_string(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_hello_none_raises() -> None:
     """Test hello with None raises TypeError."""
-    with pytest.raises(TypeError, match="name must be a string, not None"):
+    with pytest.raises(TypeError, match="name must be a string, got NoneType"):
         hello(None)  # type: ignore[arg-type]
 
 
@@ -84,3 +84,12 @@ def test_hello_non_string_raises() -> None:
         hello(123)  # type: ignore[arg-type]
     with pytest.raises(TypeError, match="name must be a string, got list"):
         hello(["Alice"])  # type: ignore[arg-type]
+
+
+def test_module_exports() -> None:
+    """Test that __all__ exports are correct."""
+    from demo import __all__ as demo_all
+    from demo.hello import __all__ as hello_all
+
+    assert demo_all == ["hello"]
+    assert hello_all == ["hello"]

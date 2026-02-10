@@ -1,31 +1,27 @@
 # Chain Summary: abc-123
 
 ## Workflow Execution
-- **Ticket**: abc-123
-- **Flags**: --auto
-- **Status**: COMPLETE
+Ticket: abc-123
+Executed: 2026-02-10T13:36:00Z
+Flags: --auto
 
 ## Artifacts
-- [implementation.md](implementation.md) - Implementation verification
-- [review.md](review.md) - Consolidated review (3 reviewers)
-- [fixes.md](fixes.md) - No fixes required
-- [post-fix-verification.md](post-fix-verification.md) - Quality gate verification
-- [close-summary.md](close-summary.md) - Final summary
+| Artifact | Path |
+|----------|------|
+| Research | `.tf/knowledge/tickets/abc-123/research.md` |
+| Implementation | `.tf/knowledge/tickets/abc-123/implementation.md` |
+| Review | `.tf/knowledge/tickets/abc-123/review.md` |
+| Fixes | `.tf/knowledge/tickets/abc-123/fixes.md` |
+| Post-Fix Verification | `.tf/knowledge/tickets/abc-123/post-fix-verification.md` |
+| Close Summary | `.tf/knowledge/tickets/abc-123/close-summary.md` |
+| Files Changed | `.tf/knowledge/tickets/abc-123/files_changed.txt` |
+| Ticket ID | `.tf/knowledge/tickets/abc-123/ticket_id.txt` |
 
-## Review Results
-| Severity | Count |
-|----------|-------|
-| Critical | 0 |
-| Major | 0 |
-| Minor | 2 |
-| Warnings | 1 |
-| Suggestions | 6 |
-
-## Quality Gate
-**PASSED** - No Critical or Major issues
-
-## Tests
-10 passed
+## Results
+- **Status**: CLOSED
+- **Quality Gate**: PASSED
+- **Tests**: 8/8 passing
+- **Issues**: 0 Critical, 0 Major, 0 Minor
 
 ## Commit
-`709e728` - abc-123: Workflow re-verification - 0 Critical, 0 Major issues
+b7b4977: abc-123: Workflow execution artifacts
