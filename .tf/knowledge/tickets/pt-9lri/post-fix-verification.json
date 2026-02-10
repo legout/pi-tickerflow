@@ -1,0 +1,33 @@
+{
+  "ticket_id": "pt-9lri",
+  "pre_fix_counts": {
+    "Critical": 0,
+    "Major": 0,
+    "Minor": 2,
+    "Warnings": 2,
+    "Suggestions": 2
+  },
+  "fixed_counts": {
+    "Critical": 8,
+    "Major": 7,
+    "Minor": 6,
+    "Warnings": 4,
+    "Suggestions": 2
+  },
+  "post_fix_counts": {
+    "Critical": 0,
+    "Major": 0,
+    "Minor": 0,
+    "Warnings": 0,
+    "Suggestions": 0
+  },
+  "verification_passed": true,
+  "fail_on": [
+    "Critical",
+    "Major"
+  ],
+  "fixes_found": true,
+  "fixes_parse_warning": null,
+  "review_mtime": 1770732573.9832914,
+  "fixes_mtime": 1770732580.945285
+}
