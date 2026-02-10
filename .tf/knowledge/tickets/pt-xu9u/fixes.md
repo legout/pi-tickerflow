@@ -1,122 +1,85 @@
-# Fixes: pt-xu9u
+# Fixes: pt-xu9u (Attempt 3)
 
 ## Summary
-Addressed all Critical and Major issues identified in the review.
+Fixed Critical and Major issues identified in Attempt 3 review of the retry_state.py implementation.
 
-## Critical Fixes Applied
+## Critical Fix
 
-### 1. Attempt Numbering Consistency (FIXED)
-**Issue**: Off-by-one error in attempt numbering causing second attempts to be labeled as 3.
+### 1. resolve_escalation() Sequencing Bug (CRITICAL → FIXED)
+**Issue**: `resolve_escalation()` used `get_attempt_number()` which returns `len(attempts)` (completed attempts), but for blocked retries we need the NEXT attempt number to determine correct escalation.
+
+**Impact**: Attempt 2's escalation was resolved as if it were attempt 1, so the fixer never escalated on the first retry. The escalation curve never started.
 
 **Fix**: 
-- Standardized on `attemptNumber` (1-indexed) throughout
-- Fresh attempt: `attemptNumber = 1`, `retryCount = 0`
-- Retry attempt: `attemptNumber = len(attempts) + 1`, `retryCount = previous_retryCount + 1`
-- Escalation curve based on `attemptNumber` directly:
-  - Attempt 1: Base models
-  - Attempt 2: Escalated fixer
-  - Attempt 3+: Escalated fixer + reviewer-second-opinion + worker (if configured)
+- Added `next_attempt_number: int | None = None` parameter to `resolve_escalation()`
+- If explicit number provided, use it; otherwise calculate as `get_attempt_number() + 1`
+- This ensures blocked retries get the correct escalation level for their next attempt
 
-### 2. Config Schema Example (FIXED)
-**Issue**: Example showed `{ "escalation": { ... } }` at root instead of under `workflow`.
-
-**Fix**: Updated all config examples to show proper nested structure:
-```json
-{
-  "workflow": {
-    "escalation": {
-      "enabled": false,
-      "maxRetries": 3,
-      "models": { ... }
-    }
-  }
-}
-```
-
-### 3. Detection Algorithm - Missing has_items Fallback (FIXED)
-**Issue**: review.md detection only extracted summary statistics, missing fallback when stats absent.
-
-**Fix**: Added complete detection logic:
+**Code Change** (`tf/retry_state.py`):
 ```python
-# Find section boundaries
-section_start = section_match.end()
-next_header = re.search(r'\n^##\s', content[section_start:], re.MULTILINE)
-section_end = section_start + next_header.start() if next_header else len(content)
-section = content[section_start:section_end]
-
-# Check if section has bullet items (fallback indicator)
-has_items = bool(re.search(r'\n-\s', section))
-
-# Extract count from summary stats (fallback to 1 if items exist but no count)
-if stat_match:
-    count = int(stat_match.group(1))
-else:
-    count = 1 if has_items else 0
+def resolve_escalation(
+    self,
+    escalation_config: dict[str, Any],
+    base_models: dict[str, str],
+    next_attempt_number: int | None = None,  # NEW PARAMETER
+) -> EscalatedModels:
+    # ...
+    if next_attempt_number is not None:
+        attempt = next_attempt_number
+    else:
+        attempt = self.get_attempt_number() + 1  # Calculate next attempt
 ```
 
-### 4. Ralph Skip Logic for maxRetries (FIXED)
-**Issue**: No mechanism to skip tickets that exceeded max retries.
+## Major Fixes
 
-**Fix**: Added to Ralph Integration section:
-- Check `{artifactDir}/retry-state.json` for `status: blocked` and `retryCount >= maxRetries`
-- If exceeded: Skip ticket with log message
-- Also skip if `parallelWorkers > 1` without locking
+### 2. start_attempt() In-Progress Resume (MAJOR → FIXED)
+**Issue**: `start_attempt()` unconditionally appended a new attempt without checking if the last attempt was still "in_progress". Created duplicate attempts when a run crashed and restarted.
 
-### 5. Parallel Worker Safety (FIXED)
-**Issue**: Only documented assumption without enforcement.
+**Impact**: Aborted executions consumed retry counts and triggered premature escalation.
 
-**Fix**: Added explicit skip logic:
-```
-Also skip if `parallelWorkers > 1` and no locking mechanism is implemented (log warning)
-```
+**Fix**:
+- Added check for existing in-progress attempt before creating new one
+- If last attempt status is "in_progress", resume it instead of creating duplicate
+- Update trigger, quality_gate, and escalation if provided during resume
 
-### 6. qualityGate.counts Population in BLOCKED Case (FIXED)
-**Issue**: Attempt entry didn't show extraction of counts for BLOCKED case.
-
-**Fix**: 
-- Parse severity counts from review.md using detection algorithm
-- Store in `blocked_counts` when BLOCKED, `severity_counts` when CLOSED
-- Populated in attempt entry: `"counts": {blocked_counts if closeStatus == BLOCKED else severity_counts}`
-
-## Major Fixes Applied
-
-### 7. Base Model Resolution Ambiguity (FIXED)
-**Issue**: Agent keys (kebab-case) vs escalation fields (camelCase) mapping unclear.
-
-**Fix**: 
-- Added explicit mapping note: `reviewer-second-opinion` (agent) → `reviewerSecondOpinion` (escalation field)
-- Clarified resolution order in escalation table
-
-### 8. maxRetries Semantics (FIXED)
-**Issue**: Unclear if maxRetries means "max total attempts" or "max BLOCKED attempts".
-
-**Fix**: 
-- Defined as "max BLOCKED attempts before giving up"
-- Comparison: `if retryCount >= maxRetries: Log warning`
-
-### 9. Successful Close Detection (FIXED)
-**Issue**: Described in prose without algorithmic clarity.
-
-**Fix**: Detection algorithm is now fully specified with regex patterns and status normalization.
-
-### 10. Schema Validation (FIXED)
-**Issue**: Only validated schema version, not required fields.
-
-**Fix**: 
-- Added validation for required fields: version, ticketId, attempts, lastAttemptAt, status
-- Added corrupted state handling: backup + reset
-
-### 11. Atomic Write for retry-state.json (FIXED)
-**Issue**: Direct write without atomic replace.
-
-**Fix**: 
+**Code Change** (`tf/retry_state.py`):
 ```python
-temp_path = f"{retry_state_path}.tmp"
-with open(temp_path, 'w') as f:
-    json.dump(state, f, indent=2)
-os.replace(temp_path, retry_state_path)  # Atomic rename
+def start_attempt(self, ...):
+    # Check if we should resume an in-progress attempt
+    if self._data["attempts"]:
+        last_attempt = self._data["attempts"][-1]
+        if last_attempt.get("status") == "in_progress":
+            # Resume existing attempt
+            if trigger:
+                last_attempt["trigger"] = trigger
+            if quality_gate:
+                last_attempt["qualityGate"] = quality_gate
+            if escalation:
+                last_attempt["escalation"] = escalation
+            self._data["lastAttemptAt"] = now
+            return last_attempt["attemptNumber"]
+    
+    # ... create new attempt if no in-progress found
 ```
+
+### 3. SKILL.md Documentation (MAJOR → ACCEPTED)
+**Issue**: Reviewers noted camelCase vs hyphenated agent names could cause confusion.
+
+**Status**: Already documented in SKILL.md with explicit mapping note. The documentation clearly states:
+- `reviewerSecondOpinion` (escalation config) → `agents.reviewer-second-opinion` (agents map)
+- `fixer` → `agents.fixer`
+- `worker` → `agents.worker`
+
+No code changes needed - documentation is correct.
 
 ## Files Modified
-- `skills/tf-workflow/SKILL.md` - All fixes applied
-- `.pi/skills/tf-workflow/SKILL.md` - Synced
+- `tf/retry_state.py` - Fixed resolve_escalation() and start_attempt()
+
+## Verification
+- [x] resolve_escalation() now calculates next attempt number correctly
+- [x] start_attempt() resumes in-progress attempts instead of duplicating
+- [x] Escalation curve works: Attempt 2 escalates fixer, Attempt 3+ escalates fixer + reviewer-second-opinion
+- [x] No duplicate attempts created on crash restart
+
+## Status
+All Critical and Major issues from Attempt 3 review have been fixed.

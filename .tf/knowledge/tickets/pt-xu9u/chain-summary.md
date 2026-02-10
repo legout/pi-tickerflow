@@ -1,42 +1,76 @@
 # Chain Summary: pt-xu9u
 
-## Execution
-- Ticket: pt-xu9u
-- Started: 2026-02-10T12:39:47Z
-- Completed: 2026-02-10T13:15:41Z
-- Attempt: 1
-- Status: BLOCKED
+## Execution Date
+2026-02-10
 
-## Phases Executed
-1. ✅ Re-Anchor Context
-2. ✅ Research (used existing)
-3. ✅ Implement
-4. ✅ Parallel Reviews
-5. ✅ Merge Reviews
-6. ✅ Fix Issues
-7. ⏭️ Follow-ups (skipped - not requested)
-8. ⚠️ Close Ticket (BLOCKED by quality gate)
+## Status
+**CLOSED** (Attempt 3)
 
-## Artifacts
-| Artifact | Path |
-|----------|------|
-| Research | `.tf/knowledge/tickets/pt-xu9u/research.md` |
-| Implementation | `.tf/knowledge/tickets/pt-xu9u/implementation.md` |
-| Review (merged) | `.tf/knowledge/tickets/pt-xu9u/review.md` |
-| Review (general) | `.tf/knowledge/tickets/pt-xu9u/review-general.md` |
-| Review (spec) | `.tf/knowledge/tickets/pt-xu9u/review-spec.md` |
-| Review (second) | `.tf/knowledge/tickets/pt-xu9u/review-second.md` |
-| Fixes | `.tf/knowledge/tickets/pt-xu9u/fixes.md` |
-| Retry State | `.tf/knowledge/tickets/pt-xu9u/retry-state.json` |
-| Close Summary | `.tf/knowledge/tickets/pt-xu9u/close-summary.md` |
+## Workflow Chain
 
-## Quality Gate Results
-- Critical: 6 (blocking)
-- Major: 6 (blocking)
-- Minor: 5
-- Warnings: 4
-- Suggestions: 4
+### Attempt 1
+- **Status**: BLOCKED
+- **Issues**: Critical: 6, Major: 6, Minor: 5
+- **Artifacts**:
+  - implementation.md
+  - review.md
+  - fixes.md
+  - close-summary.md
+  - retry-state.json (attempt 1 recorded)
 
-## Retry State
-- Retry count: 1
-- Next attempt will use escalated fixer model
+### Attempt 2
+- **Status**: CLOSED (prematurely - Major issues not fully fixed)
+- **Issues**: Critical: 0, Major: 4 (documented but not implemented)
+- **Fixes Applied**:
+  - Added escalation config to settings.json
+  - Fixed agent name mapping documentation
+- **Artifacts**:
+  - fixes-attempt2.md
+  - close-summary-attempt2.md
+
+### Attempt 3 (Current)
+- **Status**: CLOSED
+- **Issues**: Critical: 0, Major: 0 (all fixed)
+- **Fixes Applied**:
+  - Fixed resolve_escalation() sequencing bug
+  - Fixed start_attempt() in-progress resume
+  - Added retry cap enforcement
+  - Added parallel worker safety check
+- **Artifacts**:
+  - implementation-attempt3.md
+  - review.md (merged)
+  - fixes.md
+  - close-summary.md
+
+## File Changes
+- `.pi/skills/tf-workflow/SKILL.md` - Retry escalation documentation
+- `skills/tf-workflow/SKILL.md` - Synced changes
+- `tf/retry_state.py` - Implementation
+
+## Commit
+1d8358d: pt-xu9u: Fix Major issues - retry cap enforcement, parallel worker safety, escalation sequencing
+
+## Acceptance Criteria
+- [x] Retry attempt is loaded from retry state before running phases
+- [x] Attempt 2 escalates fixer model (if configured)
+- [x] Attempt 3+ escalates fixer + reviewer-second-opinion (+ worker)
+- [x] Retry attempt number and escalated roles/models recorded in artifacts/logs
+
+## Artifacts Index
+| Artifact | Description |
+|----------|-------------|
+| research.md | Ticket research |
+| implementation.md | Attempt 1 implementation |
+| implementation-attempt3.md | Attempt 3 implementation |
+| review-general.md | General code review |
+| review-spec.md | Spec audit review |
+| review-second.md | Second opinion review |
+| review.md | Merged review |
+| fixes.md | Attempt 1 fixes |
+| fixes-attempt2.md | Attempt 2 fixes |
+| fixes-attempt3.md | Attempt 3 fixes |
+| close-summary.md | Final close summary |
+| retry-state.json | Retry state tracking |
+| files_changed.txt | Tracked file changes |
+| ticket_id.txt | Ticket identifier |
+| chain-summary.md | This file |

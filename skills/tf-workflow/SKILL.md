@@ -143,11 +143,23 @@ Determines if this is a retry attempt and calculates model escalation.
    - Else if last attempt was BLOCKED:
      - `attemptNumber = len(attempts) + 1`
      - `retryCount = retryCount + 1`
-     - If `retryCount >= maxRetries`: Log warning "Max retries exceeded"
+     - If `retryCount >= maxRetries`: 
+       - Log warning "Max retries ({maxRetries}) exceeded for {ticket-id}"
+       - Set `shouldSkipTicket = true`
+       - Skip all workflow steps and write `{artifactDir}/close-summary.md` with status SKIPPED
    - Else if last attempt was CLOSED:
      - `attemptNumber = 1`, `retryCount = 0` (reset on success)
-   - Else (in_progress): Resume current attempt
-4. **Determine escalation models** based on `attemptNumber`:
+   - Else (in_progress): 
+     - Resume current attempt using existing `attemptNumber` from last attempt
+     - Do not increment retry count (attempt still in progress)
+4. **Determine escalation models** based on `attemptNumber` (only if escalation enabled AND not skipped):
+   
+   First, check if escalation should apply:
+   - If `workflow.escalation.enabled` is `false`: Use base models for all roles, skip escalation
+   - If `shouldSkipTicket` is `true` (max retries exceeded): Skip escalation determination
+   - If parallel workers > 1 without locking: Skip escalation (already logged warning)
+   
+   Then resolve models based on attempt number:
    
    | Attempt Number | Fixer Model | Reviewer-2nd-Opinion Model | Worker Model |
    |----------------|-------------|---------------------------|--------------|
@@ -675,26 +687,26 @@ Location: `{artifactDir}/retry-state.json`
 
 ### Parallel Worker Safety
 
-**Assumption**: Retry logic assumes `ralph.parallelWorkers: 1` (default).
+**Enforcement**: Before using retry logic, verify `ralph.parallelWorkers` setting:
 
-When `ralph.parallelWorkers > 1`:
-- **Option A** (recommended): Implement file-based locking on `retry-state.json` using `filelock` library:
-  ```python
-  from filelock import FileLock
-  lock = FileLock(f"{retry_state_path}.lock")
-  with lock:
-      # read/write retry state
-  ```
-- **Option B**: Disable retry logic and log warning: "Retry escalation disabled: parallelWorkers > 1 without locking"
+1. Read `ralph.parallelWorkers` from config (default: 1)
+2. If `ralph.parallelWorkers > 1`:
+   - **Option A** (recommended): Implement file-based locking on `retry-state.json` using `filelock` library:
+     ```python
+     from filelock import FileLock
+     lock = FileLock(f"{retry_state_path}.lock")
+     with lock:
+         # read/write retry state
+     ```
+   - **Option B**: Disable retry escalation and log warning:
+     ```
+     "Retry escalation disabled: parallelWorkers ({ralph.parallelWorkers}) > 1 without file locking"
+     ```
+     - Set `escalation.enabled = false` for this run
+     - Continue with base models (no escalation)
 
-**Default behavior** without locking: Disable retry logic to prevent race conditions (lost updates, duplicate attempts, inconsistent escalation).
+**Default behavior** without locking: When `ralph.parallelWorkers > 1` and no locking mechanism detected, automatically disable retry escalation to prevent race conditions (lost updates, duplicate attempts, inconsistent escalation).
 - State persists across Ralph restarts
-
-### Parallel Worker Safety
-
-Retry logic assumes `ralph.parallelWorkers: 1`. When parallel workers > 1:
-- **Option A**: Implement file-based locking on `retry-state.json`
-- **Option B**: Disable retry logic and warn about race conditions
 
 ## Error Handling
 
