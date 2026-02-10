@@ -1,37 +1,35 @@
 # Review: pt-ussr
 
 ## Overall Assessment
-The implementation for updating Ralph progress display with ready/blocked counts is complete and functional. The code correctly integrates `QueueStateSnapshot` into both the `ProgressDisplay` class for TTY/non-TTY output and the `RalphLogger` for structured logging. All acceptance criteria are met, and existing tests pass.
+The implementation for updating Ralph progress display with ready/blocked counts is functionally complete and well-structured. The QueueStateSnapshot class provides immutable queue state with proper validation, and both TTY and non-TTY output modes are correctly handled. All 63 relevant tests pass.
 
 ## Critical (must fix)
-No issues found
+No issues found.
 
 ## Major (should fix)
-No issues found
+No issues found.
 
 ## Minor (nice to fix)
-- `tf/ralph/queue_state.py` - No unit tests exist for this module. While the code is straightforward, adding tests for `QueueStateSnapshot` validation, `get_queue_state()` edge cases, and format methods would improve maintainability.
+- `tf/ralph/queue_state.py:107-108` - The `get_queue_state_from_scheduler()` function accepts a `dep_resolver` callable but never validates that the returned sets are non-empty before adding to `dep_graph`. While the current code handles this correctly (empty sets mean not blocked), adding a comment or filtering would improve clarity.
 
 ## Warnings (follow-up ticket)
-- `tests/test_progress_display.py` - Tests don't verify queue_state formatting in progress output. The test file only tests basic TTY/non-TTY behavior without the `R:<n> B:<n>` format.
-- `tests/test_logger.py` - Tests for `log_ticket_start()` and `log_ticket_complete()` don't verify queue_state is correctly formatted in log output.
+- `tf/ralph.py:1478-1510` - The queue state computation in `ralph_start()` recomputes `list_ready_tickets()` and `list_blocked_tickets()` after each ticket completion. While the implementation.md claims this is "in-memory scheduler state", the actual implementation calls external `tk` commands which could be slow for large backlogs. Consider caching these results within the iteration.
 
 ## Suggestions (follow-up ticket)
-- `tf/ralph.py:1525-1537` - Consider caching `list_ready_tickets()` and `list_blocked_tickets()` results to avoid duplicate shell calls when computing queue state at ticket start and completion.
-- `tf/ralph/queue_state.py:90-104` - The `get_queue_state_from_scheduler()` convenience function exists but is not used anywhere. Consider removing if not needed, or document when to use it vs `get_queue_state()`.
+- `tf/ralph/queue_state.py` - No dedicated unit tests exist for the `QueueStateSnapshot` class or `get_queue_state()` function. While these are implicitly tested through integration tests, dedicated unit tests would improve maintainability and document edge cases (e.g., empty queues, validation failures).
+- `tf/logger.py:173-174` - The `log_ticket_start()` method formats queue state differently than `ProgressDisplay` - logger uses `[R:X B:Y done:D/T]` while display uses `R:X B:Y (done D/T)`. Consider standardizing the format for consistency.
 
 ## Positive Notes
-- Clean separation of concerns: `QueueStateSnapshot` handles formatting, `ProgressDisplay` handles UI, `RalphLogger` handles logging
-- Good type hints throughout with proper `Optional` annotations
-- Immutable dataclass with invariant validation ensures data integrity
-- Both TTY (`\x1b[2K\r` for clear line) and non-TTY (plain text) modes properly implemented
-- Backward compatible: queue_state parameter is optional in all public methods
-- Queue state is recomputed after each ticket completion to reflect updated counts
-- Logger uses separate format (`to_log_format()`) optimized for log parsing vs display
+- The `QueueStateSnapshot` dataclass uses `frozen=True` for immutability and includes comprehensive `__post_init__` validation that catches invariant violations early.
+- TTY mode correctly uses `\x1b[2K\r` for clearing lines without flickering, while non-TTY mode produces clean output without control characters.
+- The progress display properly shows timestamps in `HH:MM:SS` format as specified.
+- Queue state is correctly passed to both `ProgressDisplay` and `RalphLogger`, ensuring consistent information across UI and logs.
+- The implementation correctly handles the distinction between `__str__()` (for display: `R:3 B:2 (done 1/6)`) and `to_log_format()` (for logs: `R:3 B:2 done:1/6`).
+- All existing tests pass, confirming backward compatibility is maintained.
 
 ## Summary Statistics
 - Critical: 0
 - Major: 0
 - Minor: 1
-- Warnings: 2
+- Warnings: 1
 - Suggestions: 2

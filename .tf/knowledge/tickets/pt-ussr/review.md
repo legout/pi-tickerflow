@@ -1,8 +1,5 @@
 # Review: pt-ussr
 
-## Overall Assessment
-All three reviewers confirm the implementation is **COMPLETE** and **CORRECT**. The Ralph progress display correctly shows ready/blocked counts (R:<n> B:<n>) and done/total in both TTY and non-TTY modes. All 74 existing tests pass. No Critical or Major issues identified.
-
 ## Critical (must fix)
 No issues found.
 
@@ -10,80 +7,45 @@ No issues found.
 No issues found.
 
 ## Minor (nice to fix)
-1. **Add unit tests for queue_state module** (`tf/ralph/queue_state.py`):
-   - No dedicated unit tests exist for `QueueStateSnapshot` validation, `get_queue_state()` edge cases
-   - Suggested test cases: zero tickets, all blocked, all ready, overlapping state validation
-   - Source: reviewer-general, reviewer-spec-audit, reviewer-second-opinion
+- `tf/ralph/queue_state.py:107-108` - The `get_queue_state_from_scheduler()` function accepts a `dep_resolver` callable but never validates that the returned sets are non-empty before adding to `dep_graph`. While the current code handles this correctly (empty sets mean not blocked), adding a comment or filtering would improve clarity. *(reviewer-general)*
 
-2. **Unnecessary str() conversion** (`tf/ralph.py:1424-1430`):
-   - `str(queue_state.total)` is passed to `start_ticket()` but parameter type is already `Union[int, str]`
-   - Consider passing `queue_state.total` directly
-   - Source: reviewer-second-opinion
+- `tf/ralph.py:1537` - The `start_ticket()` call passes `str(queue_state.total)` as the third positional argument. Explicitly using the keyword argument `total_tickets=str(queue_state.total)` would be clearer and more maintainable. *(reviewer-second-opinion)*
 
-3. **Missing internal reference** (`tf/ralph/queue_state.py:1`):
-   - Module docstring references "pt-m54d specification" without link or explanation
-   - Consider adding comment with ticket reference or removing internal reference
-   - Source: reviewer-second-opinion
-
-4. **Missing test coverage for queue_state parameter** (`tests/test_progress_display.py`):
-   - Tests don't verify `queue_state` is properly formatted in output when provided
-   - Consider adding tests that verify `R:3 B:2` and `done 1/7` appear in output
-   - Source: reviewer-general, reviewer-second-opinion
+- `tests/test_progress_display.py` and `tests/test_logger.py` - No tests verify that `queue_state` parameter is actually passed and rendered in output. The existing tests mock `ProgressDisplay` but don't verify the `queue_state` parameter. *(reviewer-second-opinion)*
 
 ## Warnings (follow-up ticket)
-1. **Duplicate shell calls** (`tf/ralph.py`):
-   - `list_ready_tickets()` and `list_blocked_tickets()` called twice per iteration (start and completion)
-   - Consider caching results within a single iteration to avoid duplicate shell calls
-   - Source: reviewer-general, reviewer-spec-audit, reviewer-second-opinion
+- `tf/ralph.py:1478-1510` - The queue state computation in `ralph_start()` recomputes `list_ready_tickets()` and `list_blocked_tickets()` after each ticket completion. While the implementation.md claims this is "in-memory scheduler state", the actual implementation calls external `tk` commands which could be slow for large backlogs. Consider caching these results within the iteration. *(reviewer-general)*
 
-2. **Unused convenience function** (`tf/ralph/queue_state.py:90-104`):
-   - `get_queue_state_from_scheduler()` exists but is not used anywhere
-   - Consider removing if not needed, or document when to use vs `get_queue_state()`
-   - Source: reviewer-general
+- **Missing unit tests for queue_state.py**: The plan explicitly requires "Unit tests for `queue_state.py` helper (ready/blocked/running/done invariants)" but no dedicated test file exists. This is acknowledged in the ticket's linked work (pt-ri6k: "Add tests for queue-state counts + progress/log formatting"). *(reviewer-spec-audit)*
 
-3. **Code duplication in logger** (`tf/logger.py:157-170`):
-   - `log_ticket_start()` and `log_ticket_complete()` check `if queue_state is not None` twice each
-   - Consider refactoring to a helper method to reduce duplication
-   - Source: reviewer-second-opinion
+- `tf/ralph.py:1523-1533` - The `list_blocked_tickets()` function depends on `tk blocked` command. If this command is unavailable or returns different output formats, the queue state computation could be incorrect. Consider adding validation or fallback behavior. *(reviewer-second-opinion)*
 
 ## Suggestions (follow-up ticket)
-1. **Add dedicated queue state tests** (`tests/test_queue_state.py`):
-   - Create new test file with comprehensive coverage of `QueueStateSnapshot`
-   - Test `__post_init__` validation, formatting methods, `get_queue_state()` edge cases
-   - Source: reviewer-spec-audit, reviewer-second-opinion
+- `tf/ralph/queue_state.py` - No dedicated unit tests exist for the `QueueStateSnapshot` class or `get_queue_state()` function. While these are implicitly tested through integration tests, dedicated unit tests would improve maintainability and document edge cases (e.g., empty queues, validation failures). *(reviewer-general)*
 
-2. **Enhance progress visibility**:
-   - Consider including done count in "Processing" message for better visibility during processing
-   - Currently only shows on completion
-   - Source: reviewer-second-opinion
+- `tf/logger.py:173-174` - The `log_ticket_start()` method formats queue state differently than `ProgressDisplay` - logger uses `[R:X B:Y done:D/T]` while display uses `R:X B:Y (done D/T)`. Consider standardizing the format for consistency. *(reviewer-general)*
 
-## Positive Notes (All Reviewers)
-- ✅ Clean separation of concerns between `QueueStateSnapshot`, `ProgressDisplay`, and `RalphLogger`
-- ✅ Proper TTY mode with `\x1b[2K\r` for animated progress
-- ✅ Non-TTY mode with plain text (no control characters)
-- ✅ Immutable dataclass with invariant validation
-- ✅ Queue state recomputed after each ticket completion
-- ✅ Backward compatible (queue_state parameter is optional)
-- ✅ All 74 existing tests pass
-- ✅ Uses in-memory scheduler state (no expensive recomputation)
+- `tf/ralph/queue_state.py` - Consider adding unit tests specifically for `QueueStateSnapshot` and `get_queue_state()` to document expected behavior and prevent regressions. The class has validation logic in `__post_init__` that should be tested. *(reviewer-second-opinion)*
+
+- `tf/ralph.py:1527-1546` and `tf/ralph.py:1603-1629` - The queue state computation is duplicated in both the start and complete sections. Consider extracting a helper function like `_compute_queue_state()` to reduce duplication and improve maintainability. *(reviewer-second-opinion)*
+
+## Positive Notes
+- The `QueueStateSnapshot` dataclass uses `frozen=True` for immutability and includes comprehensive `__post_init__` validation that catches invariant violations early.
+- TTY mode correctly uses `\x1b[2K\r` for clearing lines without flickering, while non-TTY mode produces clean output without control characters.
+- The progress display properly shows timestamps in `HH:MM:SS` format as specified.
+- Queue state is correctly passed to both `ProgressDisplay` and `RalphLogger`, ensuring consistent information across UI and logs.
+- The implementation correctly handles the distinction between `__str__()` (for display: `R:3 B:2 (done 1/6)`) and `to_log_format()` (for logs: `R:3 B:2 done:1/6`).
+- All 74 existing tests pass, confirming backward compatibility is maintained.
+- Queue state is recomputed after each ticket completion, ensuring counts accurately reflect dependency resolution as tickets complete.
 
 ## Summary Statistics
 - Critical: 0
 - Major: 0
-- Minor: 4
+- Minor: 3
 - Warnings: 3
-- Suggestions: 2
+- Suggestions: 4
 
-## Spec Coverage Verification
-| Criterion | Status | Location |
-|-----------|--------|----------|
-| TTY progress shows `R:<n> B:<n>` and `done x/y` | ✅ PASS | `QueueStateSnapshot.__str__()` |
-| Non-TTY output readable (no control chars) | ✅ PASS | `ProgressDisplay._draw()` |
-| Counts update when deps resolve | ✅ PASS | Recomputed after each ticket |
-| No expensive recomputation | ✅ PASS | In-memory sets, O(1) per iteration |
-| Backwards compatible | ✅ PASS | Optional queue_state parameter |
-
-## Reviewer Sources
-- reviewer-general: No Critical/Major, 1 Minor, 2 Warnings, 2 Suggestions
-- reviewer-spec-audit: No Critical/Major/Minor/Warnings, 2 Suggestions
-- reviewer-second-opinion: No Critical/Major, 3 Minor, 2 Warnings, 2 Suggestions
+## Reviewers
+- reviewer-general
+- reviewer-spec-audit
+- reviewer-second-opinion
