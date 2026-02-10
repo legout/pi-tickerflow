@@ -70,6 +70,7 @@
     "tf-dedup": "planning",
     "tf-backlog-from-openspec": "planning",
     "tf-sync": "general",
+    "tf-priority-reclassify": "worker",
     "ralph-start": "general"
   },
   "checkers": {

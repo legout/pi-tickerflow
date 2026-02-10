@@ -46,6 +46,7 @@ prompts/tf-tags-suggest.md
 prompts/tf-deps-sync.md
 prompts/tf-dedup.md
 prompts/tf-sync.md
+prompts/tf-priority-reclassify.md
 prompts/ralph-start.md
 
 config/settings.json
