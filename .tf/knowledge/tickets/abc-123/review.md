@@ -4,35 +4,37 @@
 No issues found.
 
 ## Major (should fix)
-- `demo/hello.py:35` - Function crashes with `AttributeError` when passed `None` instead of string. While static type checkers catch this, dynamic code could fail unexpectedly. (from reviewer-second-opinion)
-- `demo/hello.py:35` - Function crashes with `AttributeError` when passed non-string types (e.g., integers, objects). Runtime type mismatch leads to unhelpful error messages. (from reviewer-second-opinion)
-- `tests/test_demo_hello.py:14` - Missing test coverage for `None` and non-string type inputs. These edge cases are not tested despite being common dynamic Python patterns. (from reviewer-second-opinion)
+No issues found.
 
 ## Minor (nice to fix)
-- `demo/hello.py:38` - No sanitization of ANSI escape sequences. While not a security issue in this demo, terminal control codes pass through unchanged. (from reviewer-second-opinion)
-- `demo/hello.py:38` - No length validation on names. Extremely long strings could cause terminal issues in constrained environments. (from reviewer-second-opinion)
-- `demo/hello.py:38` - Zero-width and invisible characters pass through unmodified. Characters like `\u200b` could cause duplicate detection issues. (from reviewer-second-opinion)
+- `demo/hello.py:30-32` - Error message inconsistency: The explicit `None` check produces `"name must be a string, not None"` while the `isinstance()` fallback produces `"name must be a string, got NoneType"`. Consider removing the explicit None check to let isinstance handle it consistently, or align the message format. *(from reviewer-second-opinion)*
+
+- `demo/__main__.py:30` - CLI argument parsing behavior: When users explicitly pass an empty string (`python -m demo ""`), argparse passes it through and the function falls back to "World". This may be surprising - users might expect their explicit empty argument to be respected. Consider documenting this behavior in the CLI help text. *(from reviewer-second-opinion)*
 
 ## Warnings (follow-up ticket)
-- `demo/__main__.py:32` - argparse returns exit code 2 on argument errors. Standard behavior but may not match automated pipeline expectations. (from reviewer-second-opinion)
-- `demo/__main__.py` - No `--version` CLI flag. Consider adding for better package metadata. (from reviewer-general, reviewer-second-opinion)
+- `tests/test_demo_hello.py:45-48` - Test structure: The whitespace loop test uses assertion messages instead of pytest's parametrize decorator. While functional, this makes individual test case failures harder to identify in output. Consider refactoring to `@pytest.mark.parametrize` for better test isolation and reporting. *(from reviewer-second-opinion)*
 
 ## Suggestions (follow-up ticket)
-- `demo/hello.py:32` - Consider adding `__all__ = ["hello"]` to explicitly control public API surface. (from reviewer-general)
-- `tests/test_demo_hello.py` - Consider adding parameterized tests for edge cases using `@pytest.mark.parametrize`. (from reviewer-general)
-- Consider adding a `try: name = str(name)` conversion for more graceful type handling, or explicitly raising a `TypeError` with clear message. (from reviewer-second-opinion)
-- Consider adding a `max_length` parameter to prevent excessive output. (from reviewer-second-opinion)
-- Consider using `re.sub()` to strip ANSI escape codes if terminal safety becomes a concern. (from reviewer-second-opinion)
-- Consider adding integration tests for CLI error handling (invalid arguments, --help verification). (from reviewer-second-opinion)
+- `demo/hello.py:32` - Consider adding `__all__ = ["hello"]` to explicitly control public API surface (cosmetic, exports are managed in `__init__.py`) *(from reviewer-general)*
+
+- `demo/__main__.py:24-28` - Consider adding version flag (`-V/--version`) for CLI completeness *(from reviewer-general)*
+
+- `tests/test_demo_hello.py` - Consider adding parameterized tests for edge cases using `@pytest.mark.parametrize` for more maintainable test code *(from reviewer-general)*
+
+- `demo/hello.py` - Consider adding tests for Unicode edge cases (emoji, right-to-left text, combining characters) to ensure the greeting works correctly for international users *(from reviewer-second-opinion)*
+
+- `demo/hello.py` - Consider documenting or testing behavior with very long input strings (10k+ characters) to ensure no performance degradation from string operations *(from reviewer-second-opinion)*
+
+- `tests/test_demo_hello.py` - Add a test case for `bytes` input (e.g., `hello(b"Alice")`) to verify TypeError handling for bytes vs string confusion *(from reviewer-second-opinion)*
 
 ## Summary Statistics
 - Critical: 0
-- Major: 3
-- Minor: 3
-- Warnings: 2
+- Major: 0
+- Minor: 2
+- Warnings: 1
 - Suggestions: 6
 
-## Reviewer Sources
-- reviewer-general: 0 Critical, 0 Major, 0 Minor, 0 Warnings, 3 Suggestions
-- reviewer-spec-audit: 0 Critical, 0 Major, 0 Minor, 0 Warnings, 0 Suggestions
-- reviewer-second-opinion: 0 Critical, 3 Major, 3 Minor, 2 Warnings, 4 Suggestions
+## Reviewer Notes
+- **reviewer-general**: Well-implemented with clean, production-quality Python code. All acceptance criteria met.
+- **reviewer-spec-audit**: SPEC COMPLIANT - All acceptance criteria satisfied. Implementation complete.
+- **reviewer-second-opinion**: Solid implementation with good type safety. Found minor inconsistency in error messages.

@@ -1,350 +1,60 @@
 
-- pt-n2dw: COMPLETE (2026-02-09T14:18:00Z)
-  - Summary: Fixed security and code quality issues for document viewer
-  - Issues: Critical(0)/Major(0)/Minor(0) - All resolved
+- pt-xu9u: BLOCKED (2026-02-10T13:15:41Z)
+  - Summary: Implement retry-aware escalation in /tf workflow
+  - Issues: Critical(6)/Major(6)/Minor(5)
+  - Retry: Attempt 1, Count 1
+  - Status: BLOCKED
+  - Next: Attempt 2 will escalate fixer model
+- pt-xu9u: COMPLETE (2026-02-10T13:16:34Z)
+  - Summary: Implement retry-aware escalation in /tf workflow
+  - Issues: Critical(6)/Major(6)/Minor(5)
   - Status: COMPLETE
-  - Commit: 24383d7
-- pt-n2dw: COMPLETE (2026-02-09T14:21:18Z)
-  - Summary: Handle document viewing in web UI (replace $PAGER)
-  - Issues: Critical(2)/Major(3)/Minor(4)
+- abc-123: VERIFIED (2026-02-10T13:24:16Z)
+  - Summary: Hello-world utility for IRF workflow demonstration
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: CLOSED (previously)
+  - Verification: All 8 tests passing, implementation complete
+- pt-xu9u: COMPLETE (2026-02-10T13:27:20Z)
+  - Summary: Implement retry-aware escalation in /tf workflow
+  - Issues: Critical(2)/Major(4)/Minor(1)
   - Status: COMPLETE
-
-## pt-pbpm: COMPLETE - 2026-02-09T14:21:00Z
-- Summary: Added id="board-stats" to board stats div for Datastar patching
-- Issues: Critical 0, Major 0, Minor 0
-- Status: RUNNING
-- Commit: b0d5e82
-- pt-pbpm: COMPLETE (2026-02-09T14:23:07Z)
-  - Summary: Add board stats DOM target for Datastar patching
+- pt-7lrp: COMPLETE (2026-02-10T13:28:02Z)
+  - Summary: Tests + docs for retries and escalation
   - Issues: Critical(0)/Major(0)/Minor(0)
   - Status: COMPLETE
-- pt-4y31: COMPLETE (2026-02-09T14:26:25Z)
-  - Summary: Implement /api/refresh as DatastarResponse (multi-target SSE patch)
+- pt-7lrp: COMPLETE (2026-02-10T13:28:55Z)
+  - Summary: Tests + docs for retries and escalation
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- pt-xu9u: COMPLETE (2026-02-10T13:31:27Z)
+  - Summary: Implement retry-aware escalation in /tf workflow
+  - Issues: Critical(1)/Major(2)/Minor(2)
+  - Status: COMPLETE
+- pt-lbvu: COMPLETE (2026-02-10T13:32:14Z)
+  - Summary: Add escalation config to settings (workflow.escalation)
+  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Status: COMPLETE
+- abc-123: VERIFIED (2026-02-10T13:33:58Z)
+  - Summary: Hello-world utility - re-verification complete
   - Issues: Critical(0)/Major(0)/Minor(1)
-  - Status: COMPLETE
-- pt-m387: COMPLETE (2026-02-09T14:26:35Z)
-  - Summary: Add /api/stream SSE endpoint (Sanic) for live board updates
-  - Issues: Critical(0)/Major(0)/Minor(2)
-  - Status: COMPLETE
-  - Commit: f3611f8
-- pt-m387: COMPLETE (2026-02-09T14:30:56Z)
-  - Summary: Add /api/stream SSE endpoint (Sanic) for live board updates
-  - Issues: Critical(0)/Major(0)/Minor(2)
-  - Status: COMPLETE
-- pt-q2og: COMPLETE (2026-02-09T14:31:08Z)
-  - Summary: Accessibility pass for web UI styling (focus-visible, contrast, reduced motion)
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-  - Commit: ca64cb4
-- pt-q2og: COMPLETE (2026-02-09T14:33:22Z)
-  - Summary: Accessibility pass for web UI styling (focus-visible, contrast, reduced motion)
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-- pt-2xr4: COMPLETE (2026-02-09T14:34:00Z)
-  - Summary: Add dark mode toggle (or auto dark mode) for web UI
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-  - Commit: 9471e69
-- pt-2xr4: COMPLETE (2026-02-09T14:36:15Z)
-  - Summary: Add dark-mode toggle (or auto dark mode) for web UI
-  - Issues: Critical(0)/Major(0)/Minor(0)
-- abc-123: COMPLETE (2026-02-09T18:21:00Z)
-  - Summary: Fixed type consistency and added CLI tests for hello-world utility
-  - Issues: Critical(0)/Major(0)/Minor(2 fixed)
-  - Status: COMPLETE
-  - Commit: 0a8d1ce
-- abc-123: COMPLETE (2026-02-09T18:19:00Z)
-  - Summary: Demo hello-world utility - workflow re-run with --auto flag
-  - Issues: Critical(0)/Major(0)/Minor(5)
-  - Status: COMPLETE
-  - Commit: fbcb359
-- abc-123: COMPLETE (2026-02-09T18:17:00Z)
-  - Summary: Workflow execution - fixed None handling and docstring in hello utility
-  - Issues: Critical(0)/Major(0)/Minor(1)
-  - Status: COMPLETE
-  - Commit: 938ee0f
-- abc-123: COMPLETE (2026-02-09T18:12:00Z)
-  - Summary: Workflow re-executed for demo hello-world utility
-  - Issues: Critical(0)/Major(0)/Minor(3) - Critical and Major issues fixed
-  - Status: COMPLETE
-  - Commit: 8e958a6
-- abc-123: COMPLETE (2026-02-09T18:06:06Z)
-  - Summary: Workflow re-run - Fixed docstring placement and removed duplicate CLI entry point
-  - Issues: Critical(0)/Major(0)/Minor(3)
-  - Status: COMPLETE
-  - Commit: c0fe841
-  - Status: COMPLETE
-- pt-uo1b: COMPLETE (2026-02-09T14:39:00Z)
-  - Summary: Add CI smoke test for headless import of tf_cli.ui
-  - Issues: Critical(0)/Major(2)/Minor(3)
-  - Status: COMPLETE
-  - Commit: 571a404
-- pt-uo1b: COMPLETE (2026-02-09T14:40:30Z)
-  - Summary: Add CI smoke test: headless import of `tf_cli.ui`
-  - Issues: Critical(0)/Major(2)/Minor(3)
-  - Status: COMPLETE
-- pt-et1v: COMPLETE (2026-02-09T14:46:50Z)
-  - Summary: Then open http://localhost:8000
-  - Issues: Critical(0)/Major(0)/Minor(3)
-  - Status: COMPLETE
-- pt-fpz7: COMPLETE (2026-02-09T14:48:51Z)
-  - Summary: Optional: add `tf ui --web` helper (prints serve command)
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-- pt-za25: COMPLETE (2026-02-09T14:56:00Z)
-  - Summary: Add server-side search/filter using Datastar signals (read_signals)
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-  - Commit: 02b3329
-- pt-za25: COMPLETE (2026-02-09T14:58:13Z)
-  - Summary: Add server-side search/filter using Datastar signals (read_signals)
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-
-- pt-k2rk: COMPLETE (2026-02-09T16:31:00Z)
-  - Summary: Inventory of tf_cli packaging structure completed
-  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Retry: Attempt 1, Count 0
   - Status: CLOSED
-  - Commit: f9014ee
-- pt-k2rk: COMPLETE (2026-02-09T16:32:12Z)
-  - Summary: Inventory current packaging + entrypoints for tf_cli
-  - Issues: Critical(0)/Major(0)/Minor(0)
+  - Commit: daab6fa
+- pt-lbvu: COMPLETE (2026-02-10T13:35:52Z)
+  - Summary: Add escalation config to settings (workflow.escalation)
+  - Issues: Critical(0)/Major(0)/Minor(4)
   - Status: COMPLETE
-- pt-mu0s: COMPLETE (2026-02-09T16:34:45Z)
-  - Summary: Define tf_cli shim + deprecation strategy (timeline + warning policy)
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-- pt-62g6: COMPLETE (2026-02-09T16:36:00Z)
-  - Summary: Wired packaging/entrypoints so tf console script uses tf namespace
-  - Issues: Critical(0)/Major(0)/Minor(0)
+- abc-123: COMPLETE (2026-02-10T13:33:13Z)
+  - Summary: Hello-world utility - fixed 3 Major type safety issues
+  - Issues: Critical(0)/Major(0)/Minor(3)
+  - Retry: Attempt 1, Count 0
   - Status: CLOSED
-  - Commit: 574e3de
-- pt-62g6: COMPLETE (2026-02-09T16:37:06Z)
-  - Summary: Wire packaging/entrypoints so tf console script uses tf namespace
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-- pt-ce2e: COMPLETE (2026-02-09T16:38:00Z)
-  - Summary: Add tf/__main__.py for python -m tf module execution
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: CLOSED
-  - Commit: c34e189
-- pt-ce2e: COMPLETE (2026-02-09T16:39:29Z)
-  - Summary: Introduce tf package skeleton + module entrypoint (python -m tf)
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-- pt-hpme: COMPLETE (2026-02-09T16:47:00Z)
-  - Summary: Implement tf_cli compatibility shims with opt-in deprecation warnings
-  - Issues: Critical(2→0)/Major(5→0)/Minor(3→1)
-  - Status: COMPLETE
-  - Commit: e0b8617
-- pt-hpme: COMPLETE (2026-02-09T16:50:03Z)
-  - Summary: Implement tf_cli compatibility shims (re-export) + optional deprecation warnings
-  - Issues: Critical(2)/Major(5)/Minor(3)
-  - Status: COMPLETE
-- pt-tupn: FAILED (2026-02-09T17:05:08Z)
-  - Summary: Move CLI dispatcher + core modules from tf_cli to tf
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: FAILED
-  - Error: Ticket failed after 2 attempt(s) due to timeout (threshold: 450000ms)
-- abc-123: COMPLETE (2026-02-09T17:13:00Z)
-  - Summary: Workflow re-run for hello-world utility - artifacts updated
+  - Commit: 1f4171c
+- pt-lbvu: COMPLETE (2026-02-10T13:39:24Z)
+  - Summary: Add escalation config to settings (workflow.escalation)
   - Issues: Critical(0)/Major(0)/Minor(4)
   - Status: COMPLETE
-  - Commit: f828181
-- abc-123: COMPLETE (2026-02-09T17:17:55Z)
-  - Summary: Workflow re-run - applied minor docstring improvement
-  - Issues: Critical(0)/Major(0)/Minor(0) - 1 fixed
-  - Status: COMPLETE
-  - Commit: d04be01
-- abc-123: COMPLETE (2026-02-09T17:18:52Z)
-  - Summary: Workflow re-run - verified implementation, updated review artifacts
-  - Issues: Critical(0)/Major(0)/Minor(3)
-  - Status: COMPLETE
-  - Commit: e5c8e02
-- abc-123: COMPLETE (2026-02-09T17:21:00Z)
-  - Summary: Workflow executed - minor fixes applied (CLI args, docstrings)
-  - Issues: Critical(0)/Major(0)/Minor(0) - all fixed
-  - Status: COMPLETE
-  - Commit: befe32c
-
-- abc-123: COMPLETE (2026-02-09T17:28:00Z)
-  - Summary: Workflow re-executed - verified existing hello-world implementation
-  - Issues: Critical(0)/Major(0)/Minor(2)
-  - Status: COMPLETE (already closed)
-
-- abc-123: RE-RUN (2026-02-09T17:32:00Z)
-  - Summary: Workflow re-executed with --auto flag on closed ticket
-  - Issues: Critical(0)/Major(0)/Minor(3 - 2 fixed)
-  - Status: COMPLETE
-  - Commit: 7442840
-
-- pt-tupn: COMPLETE (2026-02-09T17:08:00Z)
-  - Summary: Moved CLI dispatcher + 32 core modules from tf_cli to tf namespace
-  - Issues: Critical(2)/Major(2)/Minor(2) - all fixed
-  - Status: COMPLETE
-- pt-7li0: COMPLETE (2026-02-09T17:56:00Z)
-  - Summary: Updated docs for tf namespace migration (README, CHANGELOG)
-  - Issues: Critical(0)/Major(0)/Minor(1)
-  - Status: COMPLETE
-- pt-7li0: COMPLETE (2026-02-09T17:58:01Z)
-  - Summary: Update docs: canonical namespace is tf (migration notes + deprecation timeline)
-  - Issues: Critical(0)/Major(0)/Minor(1)
-  - Status: COMPLETE
-
-- abc-123: COMPLETE (2026-02-09T18:02:00Z)
-  - Summary: Workflow re-run on closed demo ticket
+- abc-123: CLOSED 2026-02-10T13:37:00Z
+  - Summary: Workflow re-verification - all checks passed
   - Issues: Critical(0)/Major(0)/Minor(2)
   - Status: COMPLETE
-  - Commit: fc50625
-- abc-123: COMPLETE $(date -Iseconds)
-  - Summary: Fixed CLI RuntimeWarning by adding demo/__main__.py entry point
-  - Issues: Critical(0)/Major(0 to 1 fixed)/Minor(2 to 1 fixed)
-  - Status: COMPLETE
-  - Commit: 2522237
-
-- abc-123: COMPLETE - 2026-02-09T18:08:00Z
-  - Summary: Re-run workflow with --auto flag, applied CLI whitespace fix
-  - Issues: Critical:0, Major:0, Minor:5
-  - Status: COMPLETE
-
-- abc-123: COMPLETE (2026-02-09T18:10:00Z)
-  - Summary: Fixed Major issue - main() now returns proper exit code
-  - Issues: Critical(0)/Major(0)/Minor(2)
-  - Status: COMPLETE
-  - Commit: d7cc352
-
-- abc-123: COMPLETE (2026-02-09T18:11:00Z)
-  - Summary: Fixed empty string handling and added type annotation
-  - Issues: Critical(0)/Major(0)/Minor(2)
-  - Status: COMPLETE
-
-- abc-123: COMPLETE (2026-02-09T18:11:00Z)
-  - Summary: Workflow re-run with --auto flag on closed demo ticket
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-  - Commit: e7e8f6a
-- pt-m06z: FAILED (2026-02-09T18:13:06Z)
-  - Summary: Update tests to use tf namespace + add regression test for tf_cli shim
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: FAILED
-  - Error: Ticket failed after 2 attempt(s) due to timeout (threshold: 450000ms)
-- abc-123: CLOSED (2026-02-09T18:16:00Z)
-  - Summary: Hello-world utility implementation verified, all tests passing
-  - Issues: Critical(0)/Major(0)/Minor(2)
-  - Status: COMPLETE
-
-- abc-123: COMPLETE (2026-02-09T18:18:00Z)
-  - Summary: Workflow re-execution - verified hello-world utility
-  - Issues: Critical(0)/Major(0)/Minor(1)
-  - Status: COMPLETE
-  - Commit: 6b73ad3
-
-- pt-m06z: COMPLETE (2026-02-09T18:15:00Z)
-  - Summary: Updated 24 test files to use tf.* namespace, fixed 18 mock patch path mismatches
-  - Issues: Critical(18)/Major(2)/Minor(0) - all fixed
-  - Status: COMPLETE
-
-- abc-123: WORKFLOW_REPLAY (2026-02-10T00:01:43+01:00)
-  - Summary: Workflow re-run on closed demo ticket - applied 2 Minor fixes
-  - Issues: Critical(0)/Major(0)/Minor(2 fixed)
-  - Status: COMPLETE
-  - Commit: 83ceccd
-- abc-123: COMPLETE (2026-02-10T00:05:52+01:00)
-  - Summary: Applied Minor fixes from review - docstring wording, test count docs
-  - Issues: Critical:0/Major:0/Minor:0 - 2 Minor fixed
-  - Status: COMPLETE
-- abc-123: COMPLETE (2026-02-10T00:05:00Z)
-  - Summary: Workflow re-run for verification
-  - Issues: Critical(0)/Major(0)/Minor(2)
-  - Commit: 5d98fae
-  - Status: COMPLETE
-- pt-m54d: COMPLETE (2026-02-10T12:26:02Z)
-  - Summary: Define Ralph ready/blocked semantics + output contract
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-- pt-oa8n: COMPLETE (2026-02-10T12:28:00Z)
-  - Summary: Implement queue-state snapshot helper (ready/blocked/running/done)
-  - Issues: Critical(0)/Major(0)/Minor(2)
-  - Status: COMPLETE
-  - Commit: b1dfde8
-- pt-oa8n: COMPLETE (2026-02-10T12:30:36Z)
-  - Summary: Implement queue-state snapshot helper (ready/blocked/running/done)
-  - Issues: Critical(1)/Major(1)/Minor(2)
-  - Status: COMPLETE
-- abc-123: COMPLETE (2025-02-10T12:35:00Z)
-  - Summary: Hello-world utility demo - workflow verification re-run
-  - Issues: Critical(0)/Major(0)/Minor(3)
-  - Status: COMPLETE
-  - Commit: 8b96ef3
-- abc-123: COMPLETE (2026-02-10T12:37:59Z)
-  - Summary: Workflow re-execution - updated review artifacts
-  - Issues: Critical(0)/Major(0)/Minor(5)
-  - Status: COMPLETE
-  - Commit: 8ee96eb
-- pt-te9b: COMPLETE (2026-02-10T12:44:00Z)
-  - Summary: Defined retry state spec + quality-gate block detection algorithm
-  - Issues: Critical(0)/Major(0)/Minor(4)
-  - Status: COMPLETE
-  - Commit: 2e43496
-- pt-te9b: COMPLETE (2026-02-10T12:45:38Z)
-  - Summary: Define retry state + quality-gate block detection
-  - Issues: Critical(0)/Major(0)/Minor(4)
-  - Status: COMPLETE
-- pt-ussr: FAILED (2026-02-10T12:45:41Z)
-  - Summary: Update Ralph progress display to show ready/blocked counts
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: FAILED
-  - Error: Ticket failed after 2 attempt(s) due to timeout (threshold: 450000ms)
-- pt-ussr: COMPLETE (2026-02-10T12:46:00Z)
-  - Summary: Verify Ralph progress display ready/blocked counts implementation
-  - Issues: Critical(0)/Major(0)/Minor(4)
-  - Status: COMPLETE
-  - Commit: 64bd8c4
-- pt-ussr: COMPLETE (2026-02-10T12:50:00Z)
-  - Summary: Update Ralph progress display to show ready/blocked counts
-  - Issues: Critical(0)/Major(0)/Minor(4)
-  - Status: COMPLETE
-
-- pt-ussr: COMPLETE (2026-02-10T12:48:00Z)
-  - Summary: Updated Ralph progress display to show ready/blocked counts
-  - Issues: Critical(0)/Major(0)/Minor(3)
-  - Status: COMPLETE
-  - Commit: 7bed29f
-- pt-ussr: COMPLETE (2026-02-10T12:51:26Z)
-  - Summary: Update Ralph progress display to show ready/blocked counts
-  - Issues: Critical(0)/Major(0)/Minor(3)
-  - Status: COMPLETE
-- pt-ussr: FAILED (2026-02-10T12:54:21Z)
-  - Summary: Update Ralph progress display to show ready/blocked counts
-  - Issues: Critical(0)/Major(0)/Minor(3)
-  - Status: FAILED
-  - Error: Ticket failed after 2 attempt(s) due to timeout (threshold: 450000ms)
-- abc-123: COMPLETE (2026-02-10T12:53:53Z)
-  - Summary: Workflow re-executed for verification - no changes needed
-  - Issues: Critical(0)/Major(0)/Minor(2)
-  - Status: COMPLETE
-- pt-g6be: COMPLETE (2026-02-10T12:54:00Z)
-  - Summary: Add ready/blocked counts to normal Ralph logging (ticket start/finish)
-  - Issues: Critical(0)/Major(0)/Minor(1)
-  - Status: COMPLETE
-  - Commit: 70fe231
-- pt-g6be: COMPLETE (2026-02-10T12:56:47Z)
-  - Summary: Add ready/blocked counts to normal Ralph logging (ticket start/finish)
-  - Issues: Critical(0)/Major(0)/Minor(1)
-  - Status: COMPLETE
-- pt-g6be: COMPLETE (2026-02-10T12:57:57Z)
-  - Summary: Add ready/blocked counts to normal Ralph logging (ticket start/finish)
-  - Issues: Critical(0)/Major(0)/Minor(1)
-  - Status: COMPLETE
-
-## abc-123: 2026-02-10T12:58:45+00:00
-- Summary: Workflow re-verification complete
-- Issues: Critical(0)/Major(0)/Minor(4)
-- Status: COMPLETE
-- Commit: 12cb37d
-
-- abc-123: COMPLETE (2026-02-10T13:04:00Z)
-  - Summary: Workflow re-verification - all reviewers report zero issues
-  - Issues: Critical(0)/Major(0)/Minor(0)
-  - Status: COMPLETE
-  - Commit: 4d9d565
