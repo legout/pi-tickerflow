@@ -2,7 +2,7 @@
   "metaModels": {
     "planning": {
       "model": "openai-codex/gpt-5.2",
-      "thinking": "high",
+      "thinking": "medium",
       "description": "Fast, capable model for planning and specification"
     },
     "worker": {
@@ -32,11 +32,11 @@
     },
     "review-spec": {
       "model": "openai-codex/gpt-5.2-codex",
-      "thinking": "high",
+      "thinking": "medium",
       "description": "Strong model for specification compliance audit"
     },
     "review-secop": {
-      "model": "github-copilot/grok-code-fast-1",
+      "model": "openrouter/stepfun/step-3.5-flash:free",
       "thinking": "high",
       "description": "Fast model for second-opinion review"
     }
@@ -56,9 +56,9 @@
     "tf-next": "general",
     "tf-plan": "planning",
     "tf-plan-chain": "planning",
-    "tf-plan-consult": "planning",
-    "tf-plan-revise": "planning",
-    "tf-plan-review": "planning",
+    "tf-plan-consult": "worker",
+    "tf-plan-revise": "review-secop",
+    "tf-plan-review": "review-general",
     "tf-seed": "planning",
     "tf-backlog": "planning",
     "tf-backlog-ls": "fast",
@@ -78,7 +78,7 @@
       "files": "\\.(py|pyi)$",
       "lint": "ruff check {files} --fix",
       "format": "ruff format {files}",
-      "typecheck": "mypy ."
+      "typecheck": "ty check ."
     },
     "typescript": {
       "files": "\\.(js|jsx|ts|tsx)$",
@@ -143,7 +143,7 @@
     ],
     "enableFixer": true,
     "enableCloser": true,
-    "enableQualityGate": false,
+    "enableQualityGate": true,
     "failOn": [],
     "exclude": [
       "node_modules/**",
