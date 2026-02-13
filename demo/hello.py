@@ -30,15 +30,19 @@ def hello(name: str = "World") -> str:
 
     Args:
         name: The name to greet. Defaults to "World".
-            Leading and trailing whitespace is stripped.
-            Empty strings and whitespace-only strings return
+            All whitespace runs (including internal) are collapsed to a single
+            space, and zero-width Unicode characters (U+200B-U+200D, U+FEFF)
+            are removed from anywhere in the string. Leading/trailing whitespace
+            is then stripped. Empty strings and whitespace-only strings return
             the full greeting "Hello, World!".
 
     Returns:
         str: A greeting string in the format "Hello, {name}!".
 
     Raises:
-        TypeError: If name is not a string type.
+        TypeError: If name is not a string type. Note: This is only raised
+            when calling the function directly. The CLI interface will treat
+            non-string input as a string argument and not raise TypeError.
     """
     if not isinstance(name, str):
         raise TypeError(f"name must be a string, got {type(name).__name__}")

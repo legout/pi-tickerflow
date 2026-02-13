@@ -48,6 +48,14 @@ def test_hello_whitespace_stripped() -> None:
     assert result == "Hello, Bob!"
 
 
+def test_hello_internal_whitespace_normalized() -> None:
+    """Test hello collapses internal whitespace runs to a single space."""
+    result = hello("Alice   Bob")
+    assert result == "Hello, Alice Bob!"
+    result = hello("Alice\t\t\nBob")
+    assert result == "Hello, Alice Bob!"
+
+
 def test_hello_unicode_whitespace_stripped() -> None:
     """Test hello strips Unicode zero-width whitespace characters."""
     # Zero-width space (U+200B), zero-width non-joiner (U+200C), zero-width joiner (U+200D)

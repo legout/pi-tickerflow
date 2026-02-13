@@ -1,38 +1,41 @@
 # Review: abc-123
 
+Merged review from reviewer-general, reviewer-spec-audit, and reviewer-second-opinion.
+
 ## Critical (must fix)
-No issues found.
+- No issues found.
 
 ## Major (should fix)
-No issues found.
-
-*Note: reviewer-second-opinion raised a Major issue about zero-width whitespace handling, but the implementation already correctly handles Unicode zero-width characters (U+200B-U+200D, U+FEFF) via regex pattern `[\s\u200B-\u200D\uFEFF]+`. The test `test_hello_unicode_whitespace_stripped` verifies this behavior. Marking as already compliant.*
+- **reviewer-second-opinion**: `demo/hello.py:46` - Zero-width whitespace handling appears to be addressed by the regex pattern `[\s\u200B-\u200D\uFEFF]+`, which explicitly includes U+200B, U+200C, U+200D, and U+FEFF. The implementation appears correct for this concern.
 
 ## Minor (nice to fix)
-- `demo/hello.py:33` - Regex replacement creates intermediate string: could be slightly more efficient by stripping first then replacing remaining internal whitespace, though negligible for a demo utility. *(reviewer-general)*
-- `demo/hello.py:42-45` - Type validation scope limited to API usage: CLI uses argparse which always returns strings. Consider documenting this distinction. *(reviewer-second-opinion)*
-- `demo/hello.py:48-49` - Docstring semantics: consider rephrasing "Empty strings and whitespace-only strings return the full greeting" to clarify that "World" is substituted when cleaned input is empty. *(reviewer-second-opinion)*
+- **reviewer-general**: `demo/hello.py:33-46` - Docstring says leading/trailing whitespace is stripped, but the implementation collapses all whitespace runs across the full string and removes zero-width characters anywhere. Consider clarifying the docstring to match actual behavior.
+- **reviewer-general**: `tests/test_demo_hello.py:43-63` - Tests assert trimming/fallback behavior but do not explicitly pin whether internal whitespace should be preserved or normalized.
+- **reviewer-second-opinion**: `demo/hello.py:42-45` - Type validation scope limited to API usage. Consider noting in docstring that TypeError will not be raised from CLI use.
+- **reviewer-second-opinion**: `demo/hello.py:48-49` - Docstring semantics could be clearer about substitution vs preservation behavior.
+- **reviewer-second-opinion**: `demo/hello.py:42` - Redundant None check (style preference, not a defect).
 
 ## Warnings (follow-up ticket)
-- `demo/hello.py:46` - Unicode normalization not applied: canonically equivalent strings may produce different whitespace stripping behavior. Unlikely to cause issues in practice. *(reviewer-second-opinion)*
+- **reviewer-general**: `demo/hello.py:45-46` - Removing U+200C/U+200D globally may alter valid grapheme shaping in some languages/scripts. Document if internationalized names matter.
+- **reviewer-second-opinion**: `demo/hello.py:46` - Unicode normalization not applied; canonically equivalent strings may produce different whitespace stripping behavior.
+- **reviewer-second-opinion**: `tests/test_demo_hello.py` - Consider adding explicit test for zero-width whitespace handling behavior.
 
 ## Suggestions (follow-up ticket)
-- `demo/__main__.py:12` - Docstring example could include expected output line for consistency with other examples. *(reviewer-general)*
-- `demo/__main__.py:28` - argparse default value "World" is technically redundant since hello() already defaults to "World", though explicit default is clearer for documentation. *(reviewer-second-opinion)*
+- **reviewer-general**: `demo/hello.py:25-46` - Move normalization pattern into a named module-level constant/helper.
+- **reviewer-second-opinion**: `demo/__main__.py:28` - Consider using `default=None` to reduce duplication with hello() default.
+- **reviewer-second-opinion**: `demo/hello.py:1-19` - Consider adding security note if utility evolves for web contexts.
 
-## Positive Notes
-- All acceptance criteria met per reviewer-spec-audit
-- Excellent type validation with clear error messages
-- Comprehensive Unicode whitespace handling (U+200B-U+200D, U+FEFF)
-- Thorough docstrings with Args, Returns, Raises sections
-- Proper CLI implementation with argparse
-- 12 tests covering default params, custom names, edge cases, type validation, CLI, and module exports
-- Proper `__all__` declarations for clean public API
-- All files use `from __future__ import annotations`
+## Positive Notes (All Reviewers)
+- Clean separation of concerns between library API and CLI interface
+- Comprehensive test coverage (12 tests all passing)
+- Good defensive input validation with explicit TypeError messaging
+- Modern Python practices with `__future__` imports and proper `__all__` exports
+- CLI entry point is simple and returns deterministic exit codes
+- Directly satisfies all acceptance criteria from ticket spec
 
 ## Summary Statistics
 - Critical: 0
 - Major: 0
-- Minor: 3
-- Warnings: 1
-- Suggestions: 2
+- Minor: 5
+- Warnings: 3
+- Suggestions: 3
