@@ -38,13 +38,17 @@ def resolve_meta_model(config: dict, name: str) -> dict:
     agents = config.get("agents", {}) or {}
     if name in agents:
         meta_key = agents[name]
-        return meta_models.get(meta_key, {"model": name, "thinking": "medium"})
+        # If meta-model key is not found, treat the key itself as a literal model ID.
+        # This means if agents.fixer="fixer" but metaModels.fixer is missing,
+        # the system will try to use "fixer" as the model ID (which will likely fail).
+        # To use general model for fixes, explicitly set agents.fixer="general".
+        return meta_models.get(meta_key, {"model": meta_key, "thinking": "medium"})
     
     # Check if it's a prompt reference
     prompts = config.get("prompts", {}) or {}
     if name in prompts:
         meta_key = prompts[name]
-        return meta_models.get(meta_key, {"model": name, "thinking": "medium"})
+        return meta_models.get(meta_key, {"model": meta_key, "thinking": "medium"})
     
     # Fallback: treat as direct model reference
     return {"model": name, "thinking": "medium"}

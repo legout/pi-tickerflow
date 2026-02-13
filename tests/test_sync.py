@@ -73,6 +73,40 @@ class TestResolveMetaModel:
         }
         assert sync.resolve_meta_model(config, "my_agent") == {"model": "gpt-4", "thinking": "medium"}
 
+    def test_fallback_when_meta_model_missing(self) -> None:
+        """When agents.fixer points to missing meta-model, fallback to meta-key as literal model ID."""
+        config = {
+            "metaModels": {"general": {"model": "gpt-4", "thinking": "medium"}},
+            "agents": {"fixer": "fixer"},  # metaModels.fixer is missing
+        }
+        # Fallback treats the meta-model key ("fixer") as literal model ID
+        assert sync.resolve_meta_model(config, "fixer") == {"model": "fixer", "thinking": "medium"}
+
+    def test_fallback_uses_meta_key_not_agent_name(self) -> None:
+        """Fallback should use meta-model key, not agent name, when meta-model is missing."""
+        config = {
+            "metaModels": {},
+            "agents": {"fixer": "custom-fixer"},  # Different agent name vs meta-key
+        }
+        # Should use "custom-fixer" (the meta-key), not "fixer" (the agent name)
+        assert sync.resolve_meta_model(config, "fixer") == {"model": "custom-fixer", "thinking": "medium"}
+
+    def test_resolves_via_prompts_map(self) -> None:
+        config = {
+            "metaModels": {"planning": {"model": "gpt-4", "thinking": "medium"}},
+            "prompts": {"tf-plan": "planning"},
+        }
+        assert sync.resolve_meta_model(config, "tf-plan") == {"model": "gpt-4", "thinking": "medium"}
+
+    def test_prompt_fallback_when_meta_model_missing(self) -> None:
+        """When prompt points to missing meta-model, fallback to meta-key as literal model ID."""
+        config = {
+            "metaModels": {},
+            "prompts": {"tf-custom": "custom-model"},
+        }
+        # Fallback treats the meta-model key as literal model ID
+        assert sync.resolve_meta_model(config, "tf-custom") == {"model": "custom-model", "thinking": "medium"}
+
 
 class TestUpdateFrontmatter:
     def test_updates_agent_frontmatter(self, tmp_path: Path) -> None:
