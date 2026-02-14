@@ -25,7 +25,14 @@ from tf.utils import calculate_timeout_backoff, find_project_root
 from tf.ralph.queue_state import QueueStateSnapshot, get_queue_state
 
 # Dispatch monitoring helpers
-from tf.ralph_completion import graceful_terminate_dispatch, poll_dispatch_status
+from tf.ralph_completion import (
+    graceful_terminate_dispatch,
+    poll_dispatch_status,
+    wait_for_dispatch_completion,
+    DispatchCompletionResult,
+    DispatchCompletionStatus,
+    update_dispatch_tracking_status,
+)
 
 # Session recovery and TTL cleanup (pt-8qk8)
 from tf.ralph.session_recovery import (
@@ -2736,6 +2743,8 @@ def ralph_start(args: List[str]) -> int:
                 attempt = 0
                 max_attempts = max_restarts + 1 if max_restarts > 0 else 1
                 ticket_rc = 0
+                worktree_path: Optional[Path] = None
+                worktree_cwd: Optional[Path] = None
 
                 while attempt < max_attempts:
                     attempt += 1
@@ -2781,8 +2790,9 @@ def ralph_start(args: List[str]) -> int:
                         ticket_logger.info(timeout_log, ticket=ticket)
 
                     # Per-ticket worktree lifecycle for dispatch backend (pt-0v53)
-                    worktree_path: Optional[Path] = None
-                    worktree_cwd: Optional[Path] = None
+                    # Reset worktree variables for each attempt
+                    worktree_path = None
+                    worktree_cwd = None
 
                     # Determine if we should use worktree for this ticket
                     use_worktree = execution_backend == "dispatch" and not options["dry_run"]
@@ -2812,22 +2822,97 @@ def ralph_start(args: List[str]) -> int:
                         worktree_cwd = worktree_path
 
                     cmd = build_cmd(workflow, ticket, workflow_flags)
-                    ticket_rc = run_ticket(
-                        ticket,
-                        workflow,
-                        workflow_flags,
-                        options["dry_run"],
-                        logger=ticket_logger,
-                        mode="serial",
-                        capture_json=capture_json,
-                        logs_dir=logs_dir,
-                        ticket_title=ticket_title,
-                        pi_output=pi_output,
-                        pi_output_file=pi_output_file,
-                        timeout_ms=effective_timeout_ms,
-                        execution_backend=execution_backend,
-                        cwd=worktree_cwd,
-                    )
+
+                    # Use dispatch backend if configured (pt-4eor)
+                    if execution_backend == "dispatch":
+                        dispatch_result = run_ticket_dispatch(
+                            ticket=ticket,
+                            workflow=workflow,
+                            flags=workflow_flags,
+                            dry_run=options["dry_run"],
+                            cwd=worktree_cwd,
+                            logger=ticket_logger,
+                            mode="serial",
+                            capture_json=capture_json,
+                            logs_dir=logs_dir,
+                            ticket_title=ticket_title,
+                            pi_output=pi_output,
+                            pi_output_file=pi_output_file,
+                            timeout_ms=effective_timeout_ms,
+                            ralph_dir=ralph_dir,
+                        )
+
+                        if dispatch_result.status == "failed":
+                            ticket_logger.error(f"Dispatch launch failed: {dispatch_result.error}", ticket=ticket)
+                            # Clean up worktree on launch failure (Major fix)
+                            if worktree_path is not None:
+                                cleanup_worktree(
+                                    repo_root=project_root,
+                                    worktree_path=worktree_path,
+                                    ticket=ticket,
+                                    logger=ticket_logger,
+                                )
+                                worktree_path = None
+                                worktree_cwd = None
+                            ticket_rc = 1
+                        elif options["dry_run"]:
+                            # Dry run: dispatch was logged, treat as success
+                            ticket_rc = 0
+                        else:
+                            # Wait for dispatch completion
+                            completion_result = wait_for_dispatch_completion(
+                                dispatch_result=dispatch_result,
+                                ticket_id=ticket,
+                                timeout_ms=effective_timeout_ms,
+                                poll_interval_ms=1000.0,
+                                logger=ticket_logger,
+                            )
+
+                            # Map completion status to return code
+                            if completion_result.status == DispatchCompletionStatus.COMPLETED:
+                                ticket_rc = completion_result.return_code or 0
+                            elif completion_result.status == DispatchCompletionStatus.TIMEOUT:
+                                ticket_rc = -1  # Timeout signal for restart loop
+                            else:
+                                ticket_rc = completion_result.return_code or 1
+
+                            # Update dispatch tracking with completion status
+                            update_dispatch_tracking_status(
+                                ralph_dir=ralph_dir,
+                                ticket=ticket,
+                                completion_result=completion_result,
+                                logger=ticket_logger,
+                            )
+
+                            # Unregister dispatch child PID after completion (Critical fix)
+                            if dispatch_result.pid:
+                                _unregister_dispatch_child(dispatch_result.pid)
+
+                            # Update dispatch session status in sessions file (Major fix)
+                            session_status = "completed" if completion_result.status == DispatchCompletionStatus.COMPLETED else "failed"
+                            update_dispatch_session_status(
+                                ralph_dir, dispatch_result.session_id, session_status,
+                                return_code=ticket_rc, logger=ticket_logger
+                            )
+                    else:
+                        # Legacy subprocess backend
+                        ticket_rc = run_ticket(
+                            ticket,
+                            workflow,
+                            workflow_flags,
+                            options["dry_run"],
+                            logger=ticket_logger,
+                            mode="serial",
+                            capture_json=capture_json,
+                            logs_dir=logs_dir,
+                            ticket_title=ticket_title,
+                            pi_output=pi_output,
+                            pi_output_file=pi_output_file,
+                            timeout_ms=effective_timeout_ms,
+                            execution_backend=execution_backend,
+                            cwd=worktree_cwd,
+                        )
+
                     ticket_logger.log_command_executed(ticket, cmd, ticket_rc, mode="serial", iteration=iteration, ticket_title=ticket_title)
 
                     # Per-ticket worktree lifecycle: handle success/failure (pt-0v53)
@@ -2843,7 +2928,8 @@ def ralph_start(args: List[str]) -> int:
                             if not merge_ok:
                                 # Merge failed - mark as failed
                                 ticket_logger.error(f"Worktree merge failed for {ticket}, marking as FAILED", ticket=ticket)
-                                update_state(ralph_dir, project_root, ticket, "FAILED", "worktree merge failed")
+                                artifact_root = worktree_path / ".tf/knowledge" if worktree_path else None
+                                update_state(ralph_dir, project_root, ticket, "FAILED", "worktree merge failed", artifact_root)
                                 ticket_rc = 1  # Override to mark as failed
                         else:
                             # Failure: safe cleanup without merge
@@ -2868,6 +2954,16 @@ def ralph_start(args: List[str]) -> int:
                                 f"Attempt {attempt} timed out after {effective_timeout_ms}ms, restarting...",
                                 ticket=ticket
                             )
+                            # Clean up worktree before restart (Minor fix)
+                            if worktree_path is not None:
+                                cleanup_worktree(
+                                    repo_root=project_root,
+                                    worktree_path=worktree_path,
+                                    ticket=ticket,
+                                    logger=ticket_logger,
+                                )
+                                worktree_path = None
+                                worktree_cwd = None
                             continue
                         else:
                             # Max restarts exceeded - ticket will be marked FAILED below
@@ -2909,13 +3005,15 @@ def ralph_start(args: List[str]) -> int:
                         artifact_path = str(knowledge_dir / "tickets" / ticket)
                         ticket_logger.log_ticket_complete(ticket, "FAILED", mode="serial", iteration=iteration, ticket_title=ticket_title, queue_state=queue_state)
                         ticket_logger.log_error_summary(ticket, error_msg, artifact_path=artifact_path, iteration=iteration, ticket_title=ticket_title)
-                        update_state(ralph_dir, project_root, ticket, "FAILED", error_msg)
+                        artifact_root = worktree_path / ".tf/knowledge" if worktree_path else None
+                        update_state(ralph_dir, project_root, ticket, "FAILED", error_msg, artifact_root)
                         return ticket_rc
                     # Update progress display on success
                     if progress_display:
                         progress_display.complete_ticket(ticket, "COMPLETE", iteration, queue_state=queue_state)
                     ticket_logger.log_ticket_complete(ticket, "COMPLETE", mode="serial", iteration=iteration, ticket_title=ticket_title, queue_state=queue_state)
-                    update_state(ralph_dir, project_root, ticket, "COMPLETE", "")
+                    artifact_root = worktree_path / ".tf/knowledge" if worktree_path else None
+                    update_state(ralph_dir, project_root, ticket, "COMPLETE", "", artifact_root)
 
                 iteration += 1
                 time.sleep(sleep_between / 1000)
