@@ -89,3 +89,8 @@ For full setup and practical walkthroughs, see [`docs/getting-started.md`](docs/
 The canonical Python package is `tf`. `tf_cli` remains a compatibility shim during the 0.4.x line and is planned for removal in 0.5.0.
 
 Migration details: [`docs/deprecation-policy.md`](docs/deprecation-policy.md)
+
+## Workflow Status
+
+- ✅ IRF workflow chain validated (pt-gydg)
+- ✅ Implement → Review → Fix → Close cycle operational
