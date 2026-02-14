@@ -1,0 +1,30 @@
+{
+  "ticket_id": "pt-8qk8",
+  "pre_fix_counts": {
+    "Critical": 2,
+    "Major": 5,
+    "Minor": 5,
+    "Warnings": 3,
+    "Suggestions": 4
+  },
+  "fixed_counts": {
+    "Critical": 15,
+    "Major": 14,
+    "Minor": 11,
+    "Warnings": 7,
+    "Suggestions": 4
+  },
+  "post_fix_counts": {
+    "Critical": 0,
+    "Major": 0,
+    "Minor": 0,
+    "Warnings": 0,
+    "Suggestions": 0
+  },
+  "verification_passed": true,
+  "fail_on": [],
+  "fixes_found": true,
+  "fixes_parse_warning": null,
+  "review_mtime": 1771032846.5826042,
+  "fixes_mtime": 1771033448.2969763
+}
